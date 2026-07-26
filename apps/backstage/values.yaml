@@ -35,6 +35,9 @@ backstage:
         origin: http://192.168.0.108:30900
         methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
         credentials: true
+      reading:
+        allow:
+          - host: raw.githubusercontent.com
 
     auth:
       environment: development
