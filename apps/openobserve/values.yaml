@@ -1,0 +1,28 @@
+replicaCount: 1
+
+# TODO: move credentials to a SealedSecret
+# kubectl create secret generic openobserve-root-user -n openobserve \
+#   --from-literal=ZO_ROOT_USER_EMAIL=admin@homelab.local \
+#   --from-literal=ZO_ROOT_USER_PASSWORD=YOURPASSWORD \
+#   --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/openobserve/root-user-sealed.yaml
+config:
+  ZO_ROOT_USER_EMAIL: "admin@homelab.local"
+  ZO_ROOT_USER_PASSWORD: "CHANGE_ME"
+  ZO_DATA_DIR: "/data"
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 20Gi
+
+service:
+  type: ClusterIP
+  port: 5080
+  grpcPort: 5081
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 2Gi

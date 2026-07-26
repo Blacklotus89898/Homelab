@@ -1,0 +1,14 @@
+manager:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+admissionWebhooks:
+  certManager:
+    enabled: true  # use cert-manager (already installed) for webhook TLS
+
+crds:
+  create: true
