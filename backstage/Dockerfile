@@ -34,7 +34,6 @@ RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid
 
 COPY --chown=node:node . .
 
-RUN yarn tsc
 RUN yarn --cwd packages/backend build
 
 RUN mkdir packages/backend/dist/skeleton packages/backend/dist/bundle \
