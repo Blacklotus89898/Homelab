@@ -9,17 +9,10 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: https://charts.openobserve.ai
-      chart: openobserve
-      targetRevision: "0.80.3"
-      helm:
-        releaseName: openobserve
-        valueFiles:
-          - $values/apps/openobserve/values.yaml
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
-      targetRevision: HEAD
-      ref: values
+  source:
+    repoURL: git@github.com:Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: infrastructure/openobserve
   destination:
     server: https://kubernetes.default.svc
     namespace: openobserve
