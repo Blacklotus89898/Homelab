@@ -61,7 +61,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends python3-pip && \
-    pip3 install mkdocs-material --break-system-packages && \
+    pip3 install mkdocs-techdocs-core --break-system-packages && \
     rm -rf /var/lib/apt/lists/*
 
 USER node

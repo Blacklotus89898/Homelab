@@ -1,3 +1,5 @@
 site_name: audiobookshelf
 site_description: Self-hosted audiobook and podcast server
 docs_dir: docs
+plugins:
+  - techdocs-core

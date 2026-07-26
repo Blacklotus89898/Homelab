@@ -36,8 +36,12 @@ jobs:
 
       - name: Validate manifests
         run: |
-          find services/ infrastructure/ platform/ -name '*.yaml' 2>/dev/null \
-            | kubeconform \
+          files=$(find services/ infrastructure/ platform/ -name '*.yaml' 2>/dev/null)
+          if [ -z "$files" ]; then
+            echo "No YAML files found, skipping"
+            exit 0
+          fi
+          echo "$files" | xargs kubeconform \
                 -strict \
                 -summary \
                 -ignore-missing-schemas \
