@@ -12,7 +12,7 @@ spec:
   sources:
     - repoURL: https://charts.openobserve.ai
       chart: openobserve
-      targetRevision: "0.91.2"
+      targetRevision: "0.80.3"
       helm:
         releaseName: openobserve
         valueFiles:
