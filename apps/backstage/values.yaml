@@ -8,9 +8,9 @@ backstage:
   resources:
     requests:
       cpu: 200m
-      memory: 512Mi
+      memory: 768Mi
     limits:
-      memory: 1Gi
+      memory: 2Gi
 
   appConfig:
     app:
