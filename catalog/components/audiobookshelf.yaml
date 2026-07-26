@@ -3,6 +3,15 @@ kind: Component
 metadata:
   name: audiobookshelf
   description: Self-hosted audiobook and podcast server
+  links:
+    - url: http://192.168.0.108:30030
+      title: Audiobookshelf UI
+  annotations:
+    backstage.io/kubernetes-namespace: audiobookshelf
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/audiobookshelf
+  tags:
+    - media
+    - self-hosted
 spec:
   type: service
   lifecycle: production
