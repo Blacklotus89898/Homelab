@@ -16,6 +16,9 @@ backstage:
     app:
       title: Homelab Portal
       baseUrl: http://192.168.0.108:30900
+      extensions:
+        - notifications/nav-item:
+            disabled: true
 
     organization:
       name: Homelab
