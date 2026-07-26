@@ -2,7 +2,7 @@ backstage:
   image:
     registry: ghcr.io
     repository: backstage/backstage
-    tag: "1.53.0"
+    tag: "1.40.0"
     pullPolicy: IfNotPresent
 
   resources:
@@ -16,9 +16,6 @@ backstage:
     app:
       title: Homelab Portal
       baseUrl: http://192.168.0.108:30900
-      extensions:
-        - "nav-item:notifications":
-            disabled: true
     organization:
       name: Homelab
 
