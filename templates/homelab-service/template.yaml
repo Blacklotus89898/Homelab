@@ -57,7 +57,7 @@ spec:
       name: Generate manifests
       action: fetch:template
       input:
-        url: https://github.com/Blacklotus89898/Homelab/tree/main/templates/homelab-service/skeleton
+        url: ./skeleton
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}

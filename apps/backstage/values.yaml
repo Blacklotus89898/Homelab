@@ -68,7 +68,7 @@ backstage:
         - type: url
           target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/all.yaml
         - type: url
-          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/templates/homelab-service/template.yaml
+          target: https://github.com/Blacklotus89898/Homelab/blob/main/templates/homelab-service/template.yaml
 
 service:
   type: NodePort
