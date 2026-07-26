@@ -5,9 +5,6 @@ backstage:
     tag: "1.28.0"
     pullPolicy: IfNotPresent
 
-  extraEnvVarsSecrets:
-    - backstage-github-auth
-
   resources:
     requests:
       cpu: 200m
@@ -46,10 +43,8 @@ backstage:
     auth:
       environment: development
       providers:
-        github:
-          development:
-            clientId: ${AUTH_GITHUB_CLIENT_ID}
-            clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
 
     techdocs:
       builder: local
