@@ -1,0 +1,94 @@
+name: Validate PR
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-yaml:
+    name: YAML syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check YAML syntax
+        run: |
+          find . \( -name '*.yaml' -o -name '*.yml' \) \
+            ! -path './.github/*' \
+            ! -path './templates/*/skeleton/*' \
+            -print0 | xargs -0 -I{} python3 -c "
+          import yaml, sys
+          with open('{}') as f:
+              list(yaml.safe_load_all(f))
+          print('OK: {}')
+          "
+
+  validate-k8s:
+    name: Kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin kubeconform
+
+      - name: Validate manifests
+        run: |
+          find services/ infrastructure/ platform/ -name '*.yaml' 2>/dev/null \
+            | kubeconform \
+                -strict \
+                -summary \
+                -ignore-missing-schemas \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+
+  validate-helm:
+    name: Helm templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Add Helm repos
+        run: |
+          helm repo add backstage https://backstage.github.io/charts
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+
+      - name: Template Backstage chart
+        run: |
+          helm template backstage backstage/backstage \
+            --version 2.8.2 \
+            -f apps/backstage/values.yaml \
+            --set backstage.appConfig.backend.database.connection.host=localhost \
+            --set backstage.appConfig.backend.database.connection.password=dummy \
+            > /dev/null && echo "Backstage chart OK"
+
+      - name: Template ArgoCD chart
+        run: |
+          helm template argocd argo/argo-cd \
+            --version 10.2.1 \
+            -f apps/argocd/values.yaml \
+            > /dev/null && echo "ArgoCD chart OK"
+
+  check-nodeport-conflicts:
+    name: NodePort conflicts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for duplicate NodePorts
+        run: |
+          echo "Scanning for NodePort assignments..."
+          grep -r 'nodePort:' services/ infrastructure/ apps/ --include='*.yaml' -h \
+            | grep -o '[0-9]\{5\}' \
+            | sort | uniq -d \
+            | while read port; do
+                echo "ERROR: NodePort $port is assigned more than once"
+                exit 1
+              done
+          echo "No NodePort conflicts found"

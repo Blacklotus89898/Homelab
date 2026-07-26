@@ -8,6 +8,7 @@ metadata:
       title: ${{ values.name }} UI
   annotations:
     backstage.io/kubernetes-namespace: ${{ values.namespace }}
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/${{ values.name }}
   tags:
     - self-hosted
 spec:

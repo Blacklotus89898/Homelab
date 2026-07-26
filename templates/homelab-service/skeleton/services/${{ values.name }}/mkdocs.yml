@@ -1,0 +1,3 @@
+site_name: ${{ values.name }}
+site_description: ${{ values.description }}
+docs_dir: docs
