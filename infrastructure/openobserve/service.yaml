@@ -6,11 +6,12 @@ metadata:
 spec:
   selector:
     app: openobserve
+  type: NodePort
   ports:
     - name: http
       port: 5080
       targetPort: 5080
+      nodePort: 30500
     - name: grpc
       port: 5081
       targetPort: 5081
-  type: ClusterIP

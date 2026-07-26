@@ -22,10 +22,10 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    # TODO: move to SealedSecret
-    # base64("admin@homelab.local:CHANGE_ME") — update after setting OO password
+    # TODO: move to SealedSecret — seal openobserve-auth and derive this from it
+    # base64("admin@homelab.local:<password>") — regenerate if you change the OO password
     - name: OO_AUTH
-      value: "CHANGE_ME_BASE64_EMAIL_COLON_PASSWORD"
+      value: "YWRtaW5AaG9tZWxhYi5sb2NhbDphZG1pbg=="
 
   config:
     receivers:

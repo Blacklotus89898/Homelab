@@ -23,3 +23,10 @@ spec:
     syncOptions:
       - CreateNamespace=false
       - ServerSideApply=true
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/updateStrategy/type
+        - /spec/volumeClaimTemplates/0/apiVersion
+        - /spec/volumeClaimTemplates/0/kind
