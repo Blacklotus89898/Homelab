@@ -2,7 +2,7 @@ backstage:
   image:
     registry: ghcr.io
     repository: backstage/backstage
-    tag: "1.28.0"
+    tag: "1.53.0"
     pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
