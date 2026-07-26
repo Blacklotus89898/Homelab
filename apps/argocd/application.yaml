@@ -13,7 +13,6 @@ spec:
     # Upstream Helm chart
     - repoURL: https://argoproj.github.io/argo-helm
       chart: argo-cd
-      # Pin to a specific version: helm search repo argo/argo-cd --versions | head -5
       targetRevision: "10.2.1"
       helm:
         releaseName: argocd
