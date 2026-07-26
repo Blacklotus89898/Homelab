@@ -23,7 +23,7 @@ spec:
           image: ghcr.io/advplyr/audiobookshelf:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
+            - containerPort: 80
               protocol: TCP
           volumeMounts:
             - name: audiobooks
