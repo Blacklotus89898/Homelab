@@ -11,6 +11,7 @@ import { SidebarLogo } from './SidebarLogo';
 import MenuIcon from '@material-ui/icons/Menu';
 import SearchIcon from '@material-ui/icons/Search';
 import { SidebarSearchModal } from '@backstage/plugin-search';
+import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
 import { UserSettingsSignInAvatar } from '@backstage/plugin-user-settings';
 
 export const SidebarContent = NavContentBlueprint.make({
@@ -20,9 +21,8 @@ export const SidebarContent = NavContentBlueprint.make({
         <SidebarItem icon={() => item.icon} to={item.href} text={item.title} />
       ));
 
-      // Skipped items
       nav.take('page:search'); // Using search modal instead
-      nav.take('page:notifications'); // Using NotificationsSidebarItem manually instead
+      nav.take('page:notifications'); // Using NotificationsSidebarItem manually below
 
       return (
         <Sidebar>
@@ -40,6 +40,8 @@ export const SidebarContent = NavContentBlueprint.make({
             </SidebarScrollWrapper>
           </SidebarGroup>
           <SidebarSpace />
+          <SidebarDivider />
+          <NotificationsSidebarItem />
           <SidebarDivider />
           <SidebarGroup
             label="Settings"
