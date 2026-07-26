@@ -37,6 +37,10 @@ spec:
               value: "sqlite"
             - name: ZO_DATA_DIR
               value: "/data"
+            - name: ZO_COMPACT_ENABLED
+              value: "true"
+            - name: ZO_COMPACT_DATA_RETENTION_DAYS
+              value: "30"
             - name: RUST_LOG
               value: "info"
           ports:
