@@ -1,0 +1,7 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: homelab
+  description: Self-hosted homelab services running on k3s
+spec:
+  owner: user:blacklotus

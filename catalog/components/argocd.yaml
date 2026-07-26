@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: argocd
+  description: GitOps continuous deployment
+  links:
+    - url: http://192.168.0.108:30080
+      title: ArgoCD UI
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus
+  system: homelab

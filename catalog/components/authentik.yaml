@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: authentik
+  description: Identity provider and SSO
+  links:
+    - url: http://192.168.0.108:30080
+      title: Authentik UI
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus
+  system: homelab

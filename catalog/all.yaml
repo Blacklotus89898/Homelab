@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: homelab-root
+  description: All Homelab catalog entities
+spec:
+  targets:
+    - ./homelab-system.yaml
+    - ./components/argocd.yaml
+    - ./components/openobserve.yaml
+    - ./components/authentik.yaml
+    - ./components/linkding.yaml
+    - ./components/paperless.yaml
+    - ./components/audiobookshelf.yaml
+    - ./components/kavita.yaml

@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: kavita
+  description: Self-hosted manga and comic reader
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus
+  system: homelab

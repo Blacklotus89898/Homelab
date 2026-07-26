@@ -1,0 +1,75 @@
+backstage:
+  image:
+    registry: ghcr.io
+    repository: backstage/backstage
+    tag: latest
+    pullPolicy: Always
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+  extraEnvVars:
+    - name: POSTGRES_HOST
+      value: backstage-postgresql
+    - name: POSTGRES_PORT
+      value: "5432"
+    - name: POSTGRES_USER
+      value: backstage
+    - name: POSTGRES_PASSWORD
+      value: backstage
+
+  appConfig:
+    app:
+      title: Homelab Portal
+      baseUrl: http://192.168.0.108:30900
+
+    organization:
+      name: Homelab
+
+    backend:
+      baseUrl: http://192.168.0.108:30900
+      listen:
+        port: 7007
+      database:
+        client: pg
+        connection:
+          host: ${POSTGRES_HOST}
+          port: ${POSTGRES_PORT}
+          user: ${POSTGRES_USER}
+          password: ${POSTGRES_PASSWORD}
+      cors:
+        origin: http://192.168.0.108:30900
+        methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+        credentials: true
+
+    auth:
+      environment: development
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
+
+    catalog:
+      rules:
+        - allow: [Component, System, API, Resource, Location]
+      locations:
+        - type: url
+          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/all.yaml
+
+service:
+  type: NodePort
+  ports:
+    name: http-backend
+    port: 7007
+    targetPort: backend
+    nodePort: 30900
+
+postgresql:
+  enabled: true
+  auth:
+    username: backstage
+    password: backstage
+    database: backstage

@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: linkding
+  description: Self-hosted bookmark manager
+  links:
+    - url: http://192.168.0.108:30090
+      title: Linkding UI
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus
+  system: homelab
