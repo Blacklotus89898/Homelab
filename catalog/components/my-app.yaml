@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-app
+  description: homelab test
+  links:
+    - url: http://192.168.0.108:31000
+      title: my-app UI
+  annotations:
+    backstage.io/kubernetes-namespace: test
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/my-app
+  tags:
+    - self-hosted
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab
