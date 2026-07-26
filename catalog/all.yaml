@@ -6,6 +6,7 @@ metadata:
 spec:
   targets:
     - ./homelab-system.yaml
+    - ./users.yaml
     - ./components/argocd.yaml
     - ./components/openobserve.yaml
     - ./components/authentik.yaml

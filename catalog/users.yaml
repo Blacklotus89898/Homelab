@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: blacklotus89898
+  annotations:
+    github.com/user-login: Blacklotus89898
+spec:
+  profile:
+    displayName: Blacklotus
+    email: song.yang.chen89898@gmail.com
+  memberOf: []

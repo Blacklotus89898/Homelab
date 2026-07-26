@@ -6,8 +6,13 @@ metadata:
   links:
     - url: http://192.168.0.108:30090
       title: Linkding UI
+  annotations:
+    backstage.io/kubernetes-namespace: linkding
+  tags:
+    - productivity
+    - self-hosted
 spec:
   type: service
   lifecycle: production
-  owner: user:blacklotus
+  owner: user:blacklotus89898
   system: homelab

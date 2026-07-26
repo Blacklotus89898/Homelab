@@ -3,8 +3,16 @@ kind: Component
 metadata:
   name: kavita
   description: Self-hosted manga and comic reader
+  links:
+    - url: http://192.168.0.108:30050
+      title: Kavita UI
+  annotations:
+    backstage.io/kubernetes-namespace: kavita
+  tags:
+    - media
+    - self-hosted
 spec:
   type: service
   lifecycle: production
-  owner: user:blacklotus
+  owner: user:blacklotus89898
   system: homelab

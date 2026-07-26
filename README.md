@@ -21,8 +21,8 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 | ArgoCD | http://192.168.0.108:30080 | admin / see argocd secret |
 | Backstage | http://192.168.0.108:30900 | guest login |
 | OpenObserve | http://192.168.0.108:30500 | admin@homelab.local / admin |
-| Kavita | http://192.168.0.108:30050 | manga/comic reader; hostPath /mnt/smb_storage |
-| Linkding | http://192.168.0.108:30090 | bookmark manager; data in PVC linkding-pvc |
+| Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
+| Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
 | Authentik | – | existing service (not yet GitOps-managed) |
 
 ## Bootstrap (one-time, manual)
@@ -226,6 +226,7 @@ kubectl create secret generic my-secret -n my-namespace \
 | Backstage 1.40+ notifications crash | Pin image to 1.28.0 until fix lands in stable |
 | Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config |
 | NodePort conflicts (30080 authentik, 30090 linkding) | Check `kubectl get svc -A` before assigning NodePorts |
+| Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
 
 ---
 
