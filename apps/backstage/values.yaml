@@ -62,10 +62,9 @@ backstage:
 service:
   type: NodePort
   ports:
-    name: http-backend
-    port: 7007
-    targetPort: backend
-    nodePort: 30900
+    backend: 7007
+  nodePorts:
+    backend: "30900"
 
 postgresql:
   enabled: true
