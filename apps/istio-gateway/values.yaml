@@ -1,6 +1,22 @@
 service:
-  # k3s klipper-lb will assign 192.168.0.108 automatically
-  type: LoadBalancer
+  # Using NodePort because Traefik holds ports 80/443 on the node.
+  # HTTP:  192.168.0.108:30080
+  # HTTPS: 192.168.0.108:30443
+  # Switch to LoadBalancer after Traefik is removed (post step 3).
+  type: NodePort
+  ports:
+    - name: status-port
+      port: 15021
+      targetPort: 15021
+      nodePort: 30021
+    - name: http2
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+    - name: https
+      port: 443
+      targetPort: 443
+      nodePort: 30443
 
 resources:
   requests:

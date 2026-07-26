@@ -7,7 +7,9 @@ pilot:
       memory: 512Mi
 
 cni:
-  namespace: istio-cni
+  # k3s stores CNI config at a non-standard path
+  cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
+  cniBinDir: /opt/cni/bin
 
 ztunnel:
   resources:
