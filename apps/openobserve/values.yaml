@@ -1,10 +1,15 @@
-replicaCount: 1
+replicaCount:
+  router: 1
+  querier: 1
+  ingester: 1
+  compactor: 1
+  alertManager: 1
 
 # TODO: move credentials to a SealedSecret
-# kubectl create secret generic openobserve-root-user -n openobserve \
+# kubectl create secret generic openobserve-auth -n openobserve \
 #   --from-literal=ZO_ROOT_USER_EMAIL=admin@homelab.local \
 #   --from-literal=ZO_ROOT_USER_PASSWORD=YOURPASSWORD \
-#   --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/openobserve/root-user-sealed.yaml
+#   --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/openobserve/auth-sealed.yaml
 config:
   ZO_ROOT_USER_EMAIL: "admin@homelab.local"
   ZO_ROOT_USER_PASSWORD: "CHANGE_ME"
