@@ -6,13 +6,9 @@ replicaCount:
   alertquerier: 0
   compactor: 1
   reportserver: 0
-  o2ai: 0  # disable AI component — resource intensive
+  o2ai: 0
 
 # TODO: move to SealedSecret
-# kubectl create secret generic openobserve-auth -n openobserve \
-#   --from-literal=ZO_ROOT_USER_EMAIL=admin@homelab.local \
-#   --from-literal=ZO_ROOT_USER_PASSWORD=YOURPASSWORD \
-#   --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/openobserve/auth-sealed.yaml
 auth:
   ZO_ROOT_USER_EMAIL: "admin@homelab.local"
   ZO_ROOT_USER_PASSWORD: "CHANGE_ME"
@@ -30,6 +26,14 @@ auth:
   ZO_SMTP_PASSWORD: ""
   O2_MCP_USERNAME: ""
   O2_MCP_PASSWORD: ""
+
+config:
+  ZO_META_STORE: "sqlite"
+  ZO_META_CONNECTION_POOL_MIN_SIZE: "0"
+  ZO_META_CONNECTION_POOL_MAX_SIZE: "0"
+
+postgres:
+  enabled: false
 
 alertmanager:
   persistence:
