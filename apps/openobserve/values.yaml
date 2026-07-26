@@ -1,20 +1,47 @@
 replicaCount:
-  router: 1
-  querier: 1
   ingester: 1
+  querier: 1
+  router: 1
+  alertmanager: 1
+  alertquerier: 0
   compactor: 1
-  alertManager: 1
+  reportserver: 0
+  o2ai: 0  # disable AI component — resource intensive
 
-# TODO: move credentials to a SealedSecret
-config:
+# TODO: move to SealedSecret
+# kubectl create secret generic openobserve-auth -n openobserve \
+#   --from-literal=ZO_ROOT_USER_EMAIL=admin@homelab.local \
+#   --from-literal=ZO_ROOT_USER_PASSWORD=YOURPASSWORD \
+#   --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/openobserve/auth-sealed.yaml
+auth:
   ZO_ROOT_USER_EMAIL: "admin@homelab.local"
   ZO_ROOT_USER_PASSWORD: "CHANGE_ME"
-  ZO_DATA_DIR: "/data"
+  ZO_ROOT_USER_TOKEN: ""
+  ZO_S3_ACCESS_KEY: ""
+  ZO_S3_SECRET_KEY: ""
+  ZO_META_POSTGRES_DSN: ""
+  ZO_META_POSTGRES_RO_DSN: ""
+  ZO_TRACING_HEADER_KEY: "Authorization"
+  ZO_TRACING_HEADER_VALUE: ""
+  ZO_RUM_CLIENT_TOKEN: ""
+  ZO_REPORT_USER_EMAIL: ""
+  ZO_REPORT_USER_PASSWORD: ""
+  ZO_SMTP_USER_NAME: ""
+  ZO_SMTP_PASSWORD: ""
+  O2_MCP_USERNAME: ""
+  O2_MCP_PASSWORD: ""
 
-persistence:
-  enabled: true
-  storageClass: local-path
-  size: 20Gi
+alertmanager:
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: local-path
+    accessModes:
+      - ReadWriteOnce
+
+compactor:
+  persistence:
+    enabled: false
 
 service:
   type: ClusterIP
