@@ -7,9 +7,9 @@ pilot:
       memory: 512Mi
 
 cni:
-  # k3s stores CNI config at a non-standard path
+  # k3s 1.34 uses non-standard paths for both config and binaries
   cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
-  cniBinDir: /opt/cni/bin
+  cniBinDir: /var/lib/rancher/k3s/data/cni
 
 ztunnel:
   resources:
