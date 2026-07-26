@@ -7,5 +7,10 @@ spec:
   targets:
     - ./homelab-system.yaml
     - ./users.yaml
-    - ./components/*.yaml
-    - https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/templates/homelab-service/template.yaml
+    - ./components/argocd.yaml
+    - ./components/openobserve.yaml
+    - ./components/authentik.yaml
+    - ./components/linkding.yaml
+    - ./components/paperless.yaml
+    - ./components/audiobookshelf.yaml
+    - ./components/kavita.yaml

@@ -5,9 +5,6 @@ backstage:
     tag: "1.28.0"
     pullPolicy: IfNotPresent
 
-  extraEnvVarsSecrets:
-    - backstage-github-token
-
   resources:
     requests:
       cpu: 200m
@@ -56,17 +53,14 @@ backstage:
       publisher:
         type: local
 
-    integrations:
-      github:
-        - host: github.com
-          token: ${GITHUB_TOKEN}
-
     catalog:
       rules:
         - allow: [Component, System, API, Resource, Location, Template, User, Group]
       locations:
         - type: url
           target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/all.yaml
+        - type: url
+          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/templates/homelab-service/template.yaml
 
 service:
   type: NodePort
