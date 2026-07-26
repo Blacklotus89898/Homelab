@@ -8,15 +8,15 @@ service:
     - name: status-port
       port: 15021
       targetPort: 15021
-      nodePort: 30021
+      nodePort: 30233
     - name: http2
       port: 80
       targetPort: 80
-      nodePort: 30090
+      nodePort: 30131
     - name: https
       port: 443
       targetPort: 443
-      nodePort: 30453
+      nodePort: 30328
 
 resources:
   requests:
