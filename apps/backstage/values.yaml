@@ -5,6 +5,9 @@ backstage:
     tag: "1.28.0"
     pullPolicy: IfNotPresent
 
+  extraEnvVarsSecrets:
+    - backstage-github-token
+
   resources:
     requests:
       cpu: 200m
@@ -52,6 +55,11 @@ backstage:
         runIn: local
       publisher:
         type: local
+
+    integrations:
+      github:
+        - host: github.com
+          token: ${GITHUB_TOKEN}
 
     catalog:
       rules:
