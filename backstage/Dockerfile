@@ -4,7 +4,6 @@ COPY backstage.json package.json yarn.lock ./
 COPY .yarn ./.yarn
 COPY .yarnrc.yml ./
 COPY packages packages
-COPY plugins plugins
 RUN find packages \! -name "package.json" -mindepth 2 -maxdepth 2 -exec rm -rf {} \+
 
 FROM node:20-bookworm-slim AS build
