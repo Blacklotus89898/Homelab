@@ -1,0 +1,34 @@
+global:
+  domain: argocd.homelab.local  # CHANGE: your ArgoCD hostname
+
+configs:
+  params:
+    server.insecure: true  # Set false when you have TLS via Istio/cert-manager
+  cm:
+    # Allow ArgoCD to manage its own Application resources
+    resource.exclusions: |
+      - apiGroups:
+          - "*"
+        kinds:
+          - ProviderConfigUsage
+        clusters:
+          - "*"
+    # Helm release name to ArgoCD app name mapping
+    application.instanceLabelKey: argocd.argoproj.io/app-name
+
+server:
+  replicas: 1  # Scale to 2 for HA when ready
+  service:
+    type: ClusterIP  # Exposed via Istio Gateway later
+
+applicationSet:
+  replicas: 1
+
+notifications:
+  enabled: false  # Enable later with notification secrets in Sealed Secrets
+
+redis:
+  enabled: true
+
+dex:
+  enabled: false  # Enable when you add SSO (e.g. GitHub/Okta)

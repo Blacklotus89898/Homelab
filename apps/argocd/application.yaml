@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Upstream Helm chart
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      # Pin to a specific version: helm search repo argo/argo-cd --versions | head -5
+      targetRevision: "7.7.11"
+      helm:
+        releaseName: argocd
+        valueFiles:
+          - $values/apps/argocd/values.yaml
+    # Local values file
+    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      # Never auto-prune ArgoCD itself — could self-destruct
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,18 @@
+# Cluster-wide variables — referenced in Application manifests via $values source
+# CHANGE all values below to match your environment
+
+cluster:
+  name: homelab
+  server: https://kubernetes.default.svc
+
+# Base domain for all ingress hostnames (e.g. argocd.homelab.local)
+domain: homelab.local
+
+# Default StorageClass for PVCs (check: kubectl get storageclass)
+storageClass: local-path
+
+# Container registry for homelab images (e.g. registry.homelab.local or Docker Hub username)
+registry: REGISTRY_PLACEHOLDER
+
+# Ingress gateway IP/hostname (set after Istio step)
+# gatewayIP: 192.168.X.X

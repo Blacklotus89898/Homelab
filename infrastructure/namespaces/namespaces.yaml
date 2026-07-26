@@ -1,0 +1,61 @@
+# Wave -5: all namespaces created before any other app installs
+# Istio ambient enrollment is controlled per-namespace via the label below.
+# To enroll a namespace in the mesh: add label istio.io/dataplane-mode: ambient
+# To enroll for L7 (waypoint proxy): also add istio.io/use-waypoint: waypoint
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-cni
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sealed-secrets
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    # Enroll monitoring namespace in Istio ambient mesh
+    istio.io/dataplane-mode: ambient
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openobserve
+  labels:
+    istio.io/dataplane-mode: ambient
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backstage
+  labels:
+    istio.io/dataplane-mode: ambient
+
+---
+# Catch-all namespace for homelab services
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homelab
+  labels:
+    istio.io/dataplane-mode: ambient
