@@ -13,7 +13,7 @@ spec:
     - repoURL: https://bitnami-labs.github.io/sealed-secrets
       chart: sealed-secrets
       # Pin to a specific version: helm search repo sealed-secrets/sealed-secrets --versions | head -5
-      targetRevision: "2.16.1"
+      targetRevision: "2.5.19"
       helm:
         releaseName: sealed-secrets
         valueFiles:
