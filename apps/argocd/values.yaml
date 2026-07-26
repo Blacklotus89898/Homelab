@@ -20,7 +20,7 @@ server:
   replicas: 1  # Scale to 2 for HA when ready
   service:
     type: NodePort  # Switch to ClusterIP once Istio ingress gateway is in place (step 3)
-    nodePortHttp: 30080
+    nodePortHttp: 31991
     nodePortHttps: 30443
 
 applicationSet:
