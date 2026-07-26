@@ -8,4 +8,4 @@ spec:
     - ./homelab-system.yaml
     - ./users.yaml
     - ./components/*.yaml
-    - ../templates/homelab-service/template.yaml
+    - https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/templates/homelab-service/template.yaml
