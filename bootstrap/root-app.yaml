@@ -11,6 +11,8 @@ spec:
     repoURL: git@github.com:Blacklotus89898/Homelab.git
     targetRevision: HEAD
     path: apps
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
