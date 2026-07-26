@@ -1,0 +1,10 @@
+service:
+  # k3s klipper-lb will assign 192.168.0.108 automatically
+  type: LoadBalancer
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
