@@ -38,6 +38,8 @@ backstage:
       reading:
         allow:
           - host: raw.githubusercontent.com
+      csp:
+        upgrade-insecure-requests: false
 
     auth:
       environment: development
