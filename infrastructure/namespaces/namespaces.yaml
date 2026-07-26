@@ -44,12 +44,11 @@ metadata:
     istio.io/dataplane-mode: ambient
 
 ---
+# Backstage excluded from ambient mesh — NodePort access requires plain HTTP
 apiVersion: v1
 kind: Namespace
 metadata:
   name: backstage
-  labels:
-    istio.io/dataplane-mode: ambient
 
 ---
 # Catch-all namespace for homelab services
