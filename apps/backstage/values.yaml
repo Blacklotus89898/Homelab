@@ -12,16 +12,6 @@ backstage:
     limits:
       memory: 1Gi
 
-  extraEnvVars:
-    - name: POSTGRES_HOST
-      value: backstage-postgresql
-    - name: POSTGRES_PORT
-      value: "5432"
-    - name: POSTGRES_USER
-      value: backstage
-    - name: POSTGRES_PASSWORD
-      value: backstage
-
   appConfig:
     app:
       title: Homelab Portal
