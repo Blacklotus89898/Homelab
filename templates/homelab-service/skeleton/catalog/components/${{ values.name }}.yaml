@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  links:
+    - url: http://192.168.0.108:${{ values.nodePort }}
+      title: ${{ values.name }} UI
+  annotations:
+    backstage.io/kubernetes-namespace: ${{ values.namespace }}
+  tags:
+    - self-hosted
+spec:
+  type: service
+  lifecycle: production
+  owner: ${{ values.owner }}
+  system: homelab

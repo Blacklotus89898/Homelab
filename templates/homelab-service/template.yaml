@@ -1,0 +1,90 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: homelab-service
+  title: New Homelab Service
+  description: Scaffold a new Kubernetes service with ArgoCD Application and catalog entry
+  tags:
+    - homelab
+    - kubernetes
+spec:
+  owner: user:blacklotus89898
+  type: service
+
+  parameters:
+    - title: Service Details
+      required:
+        - name
+        - namespace
+        - image
+        - containerPort
+        - nodePort
+        - description
+      properties:
+        name:
+          title: Service Name
+          type: string
+          description: Lowercase name, no spaces (e.g. my-app)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Short description of what this service does
+        namespace:
+          title: Namespace
+          type: string
+          description: Kubernetes namespace for this service
+          default: default
+        image:
+          title: Container Image
+          type: string
+          description: Docker image to run (e.g. nginx:latest)
+        containerPort:
+          title: Container Port
+          type: integer
+          description: Port the container listens on
+          default: 8080
+        nodePort:
+          title: NodePort
+          type: integer
+          description: External NodePort (30000-32767) — check existing services to avoid conflicts
+          minimum: 30000
+          maximum: 32767
+
+  steps:
+    - id: fetch
+      name: Generate manifests
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          namespace: ${{ parameters.namespace }}
+          image: ${{ parameters.image }}
+          containerPort: ${{ parameters.containerPort }}
+          nodePort: ${{ parameters.nodePort }}
+          owner: user:blacklotus89898
+
+    - id: publish
+      name: Open Pull Request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?repo=Homelab&owner=Blacklotus89898
+        title: "feat: add ${{ parameters.name }} service"
+        branchName: "add-service-${{ parameters.name }}"
+        description: |
+          Adds **${{ parameters.name }}** to the homelab.
+
+          - Namespace: `${{ parameters.namespace }}`
+          - Image: `${{ parameters.image }}`
+          - Port: `${{ parameters.containerPort }}`
+          - NodePort: `${{ parameters.nodePort }}`
+
+          Merge this PR to deploy via ArgoCD automatically.
+
+  output:
+    links:
+      - title: Pull Request
+        url: ${{ steps.publish.output.remoteUrl }}
