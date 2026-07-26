@@ -15,7 +15,7 @@ spec:
     path: services/kavita
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: kavita
   syncPolicy:
     automated:
       prune: false

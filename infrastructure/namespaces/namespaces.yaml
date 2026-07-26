@@ -58,3 +58,17 @@ metadata:
   name: homelab
   labels:
     istio.io/dataplane-mode: ambient
+
+---
+# No ambient label — NodePort plain HTTP access
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kavita
+
+---
+# No ambient label — NodePort plain HTTP access
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: linkding
