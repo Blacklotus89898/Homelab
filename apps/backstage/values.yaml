@@ -1,9 +1,9 @@
 backstage:
   image:
     registry: ghcr.io
-    repository: backstage/backstage
-    tag: "1.53.0"
-    pullPolicy: IfNotPresent
+    repository: blacklotus89898/backstage
+    tag: "latest"
+    pullPolicy: Always
 
   extraEnvVarsSecrets:
     - backstage-github-token
@@ -28,7 +28,6 @@ backstage:
         port: 7007
       database:
         client: pg
-        pluginDivisionMode: schema
         connection:
           host: ${POSTGRES_HOST}
           port: ${POSTGRES_PORT}
@@ -84,3 +83,9 @@ postgresql:
     username: backstage
     password: backstage
     database: backstage
+    postgresPassword: postgresadmin
+  primary:
+    initdb:
+      scripts:
+        grant_createdb.sql: |
+          ALTER USER backstage CREATEDB;
