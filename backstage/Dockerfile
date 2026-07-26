@@ -17,7 +17,7 @@ USER node
 WORKDIR /app
 COPY --from=packages --chown=node:node /app .
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
-    yarn install --immutable
+    yarn install
 COPY --chown=node:node . .
 RUN yarn tsc
 RUN yarn --cwd packages/backend build
@@ -42,7 +42,7 @@ COPY --from=build --chown=node:node /app/.yarnrc.yml ./
 COPY --from=build --chown=node:node /app/backstage.json ./
 COPY --from=build --chown=node:node /app/yarn.lock /app/package.json /app/packages/backend/dist/skeleton/ ./
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
-    yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
+    yarn workspaces focus --all --production
 COPY --from=build --chown=node:node /app/packages/backend/dist/bundle/ ./
 COPY --chown=node:node app-config*.yaml ./
 ENV NODE_ENV=production
