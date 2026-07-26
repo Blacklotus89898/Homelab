@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: linkding-pvc
+  namespace: default
+  labels:
+    app: linkding
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  volumeName: pvc-26195814-504a-43de-89ab-80ce5faf201d
+  resources:
+    requests:
+      storage: 1Gi

@@ -21,8 +21,9 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 | ArgoCD | http://192.168.0.108:30080 | admin / see argocd secret |
 | Backstage | http://192.168.0.108:30900 | guest login |
 | OpenObserve | http://192.168.0.108:30500 | admin@homelab.local / admin |
-| Authentik | http://192.168.0.108:30080 | existing service |
-| Linkding | http://192.168.0.108:30090 | existing service |
+| Kavita | http://192.168.0.108:30050 | manga/comic reader; hostPath /mnt/smb_storage |
+| Linkding | http://192.168.0.108:30090 | bookmark manager; data in PVC linkding-pvc |
+| Authentik | – | existing service (not yet GitOps-managed) |
 
 ## Bootstrap (one-time, manual)
 
@@ -97,6 +98,11 @@ apps/               # ArgoCD Application manifests (one subdir per service)
   openobserve/
   backstage/
   platform-observability/
+  kavita/
+  linkding/
+services/           # Plain Kubernetes manifests for non-Helm services
+  kavita/           # Deployment + Service (hostPath /mnt/smb_storage)
+  linkding/         # Deployment + Service + PVC (data preserved via linkding-pvc)
 infrastructure/     # Raw Kubernetes manifests
   namespaces/       # All namespaces (with Istio ambient labels)
   gateway-api/      # Gateway API CRDs (remote kustomize)

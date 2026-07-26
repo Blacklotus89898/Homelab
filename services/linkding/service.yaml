@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkding-svc
+  namespace: default
+  labels:
+    app: linkding
+spec:
+  type: NodePort
+  selector:
+    app: linkding
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+      nodePort: 30090
+      protocol: TCP
