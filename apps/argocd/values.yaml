@@ -23,6 +23,14 @@ server:
     nodePortHttp: 31991
     nodePortHttps: 30443
 
+# apps/argocd/values.yaml - add under repoServer:
+repoServer:
+  resources:
+    requests:
+      ephemeral-storage: "500Mi"
+    limits:
+      ephemeral-storage: "2Gi"
+
 applicationSet:
   replicas: 1
 
