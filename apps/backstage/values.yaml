@@ -7,6 +7,7 @@ backstage:
 
   extraEnvVarsSecrets:
     - backstage-github-token
+    - backstage-github-oauth
 
   resources:
     requests:
@@ -44,10 +45,17 @@ backstage:
         upgrade-insecure-requests: false
 
     auth:
-      environment: development
+      environment: production
       providers:
         guest:
           dangerouslyAllowOutsideDevelopment: true
+        github:
+          production:
+            clientId: ${AUTH_GITHUB_CLIENT_ID}
+            clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+            signIn:
+              resolvers:
+                - resolver: usernameMatchingUserEntityName
 
     techdocs:
       builder: local
