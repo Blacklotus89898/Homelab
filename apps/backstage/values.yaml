@@ -7,7 +7,7 @@ backstage:
 
   extraEnvVarsSecrets:
     - backstage-github-token
-    - backstage-github-oauth
+    - backstage-github-auth
 
   resources:
     requests:
