@@ -9,6 +9,7 @@ metadata:
   annotations:
     backstage.io/kubernetes-namespace: linkding
     backstage.io/kubernetes-label-selector: 'app=linkding'
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/linkding
   tags:
     - productivity
     - self-hosted

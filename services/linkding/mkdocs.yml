@@ -1,0 +1,5 @@
+site_name: linkding
+site_description: Self-hosted bookmark manager
+docs_dir: docs
+plugins:
+  - techdocs-core

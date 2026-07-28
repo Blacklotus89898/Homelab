@@ -36,6 +36,21 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data

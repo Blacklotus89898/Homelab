@@ -60,15 +60,25 @@ metadata:
     istio.io/dataplane-mode: ambient
 
 ---
-# No ambient label — NodePort plain HTTP access
 apiVersion: v1
 kind: Namespace
 metadata:
   name: kavita
+  labels:
+    istio.io/dataplane-mode: ambient
 
 ---
-# No ambient label — NodePort plain HTTP access
 apiVersion: v1
 kind: Namespace
 metadata:
   name: linkding
+  labels:
+    istio.io/dataplane-mode: ambient
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: audiobookshelf
+  labels:
+    istio.io/dataplane-mode: ambient

@@ -79,6 +79,24 @@ jobs:
             -f apps/argocd/values.yaml \
             > /dev/null && echo "ArgoCD chart OK"
 
+  validate-techdocs:
+    name: TechDocs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install techdocs-core
+        run: pip install mkdocs-techdocs-core
+
+      - name: Validate mkdocs builds
+        run: |
+          find services/ -name 'mkdocs.yml' | while read f; do
+            dir=$(dirname "$f")
+            echo "Building TechDocs for $dir..."
+            mkdocs build --config-file "$f" --site-dir /tmp/techdocs-build --strict
+          done
+          echo "All TechDocs builds passed"
+
   check-nodeport-conflicts:
     name: NodePort conflicts
     runs-on: ubuntu-latest

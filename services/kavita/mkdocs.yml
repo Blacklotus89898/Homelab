@@ -1,0 +1,5 @@
+site_name: kavita
+site_description: Self-hosted manga and comic reader
+docs_dir: docs
+plugins:
+  - techdocs-core
