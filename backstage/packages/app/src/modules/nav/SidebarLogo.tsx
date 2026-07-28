@@ -28,7 +28,7 @@ export const SidebarLogo = () => {
 
   return (
     <div className={classes.root}>
-      <Link to="/" underline="none" className={classes.link} aria-label="Home">
+      <Link to="/catalog" underline="none" className={classes.link} aria-label="Home">
         {isOpen ? <LogoFull /> : <LogoIcon />}
       </Link>
     </div>

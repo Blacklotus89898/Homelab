@@ -13,6 +13,7 @@ import apiDocsPlugin from '@backstage/plugin-api-docs/alpha';
 import signalsPlugin from '@backstage/plugin-signals/alpha';
 import notificationsPlugin from '@backstage/plugin-notifications/alpha';
 import { navModule } from './modules/nav';
+import { signInModule } from './modules/signIn';
 
 export default createApp({
   features: [
@@ -30,5 +31,6 @@ export default createApp({
     signalsPlugin,
     notificationsPlugin,
     navModule,
+    signInModule,
   ],
 });
