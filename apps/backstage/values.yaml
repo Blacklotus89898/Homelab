@@ -8,6 +8,7 @@ backstage:
   extraEnvVarsSecrets:
     - backstage-github-token
     - backstage-github-auth
+    - backstage-k8s-token
 
   resources:
     requests:
@@ -68,6 +69,18 @@ backstage:
       github:
         - host: github.com
           token: ${GITHUB_TOKEN}
+
+    kubernetes:
+      serviceLocatorMethod:
+        type: multiTenant
+      clusterLocatorMethods:
+        - type: config
+          clusters:
+            - url: https://kubernetes.default.svc
+              name: homelab
+              authProvider: serviceAccount
+              skipTLSVerify: true
+              serviceAccountToken: ${K8S_SA_TOKEN}
 
     catalog:
       rules:

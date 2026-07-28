@@ -6,6 +6,9 @@ metadata:
   links:
     - url: http://192.168.0.108:30500
       title: OpenObserve UI
+  annotations:
+    backstage.io/kubernetes-namespace: openobserve
+    backstage.io/kubernetes-label-selector: 'app=openobserve'
 spec:
   type: service
   lifecycle: production

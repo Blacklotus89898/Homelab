@@ -8,6 +8,7 @@ metadata:
       title: Kavita UI
   annotations:
     backstage.io/kubernetes-namespace: kavita
+    backstage.io/kubernetes-label-selector: 'app=kavita'
   tags:
     - media
     - self-hosted
