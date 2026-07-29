@@ -23,6 +23,12 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
   ignoreDifferences:
     - group: ""
       kind: PersistentVolumeClaim
@@ -32,3 +38,4 @@ spec:
         - /metadata/annotations/volume.beta.kubernetes.io~1storage-provisioner
         - /metadata/annotations/volume.kubernetes.io~1selected-node
         - /metadata/annotations/volume.kubernetes.io~1storage-provisioner
+

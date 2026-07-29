@@ -23,3 +23,5 @@ spec:
                     --field-selector 'status.phase=Succeeded' 2>/dev/null || true
                   kubectl delete pods --all-namespaces \
                     --field-selector 'status.phase=Failed' 2>/dev/null || true
+                  kubectl delete pods --all-namespaces \
+                    --field-selector 'status.phase=Unknown' 2>/dev/null || true

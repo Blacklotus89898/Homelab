@@ -23,6 +23,12 @@ spec:
     syncOptions:
       - CreateNamespace=false
       - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
   ignoreDifferences:
     - group: apps
       kind: StatefulSet
@@ -30,3 +36,4 @@ spec:
         - /spec/updateStrategy/type
         - /spec/volumeClaimTemplates/0/apiVersion
         - /spec/volumeClaimTemplates/0/kind
+

@@ -24,3 +24,10 @@ spec:
       - CreateNamespace=false
       - ServerSideApply=true
       - Replace=true  # CRDs need Replace strategy on update
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
