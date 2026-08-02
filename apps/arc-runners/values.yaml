@@ -31,13 +31,3 @@ template:
           limits:
             cpu: "2"
             memory: 4Gi
-      # DinD sidecar — injected automatically by containerMode: dind.
-      # Override resources only:
-      - name: dind
-        resources:
-          requests:
-            cpu: 200m
-            memory: 256Mi
-          limits:
-            cpu: "2"
-            memory: 2Gi
