@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: homelab-runner
+    runs-on: ubuntu-latest
     steps:
       - name: Basic check
         run: |
