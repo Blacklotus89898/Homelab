@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: backstage-argocd-token
+  namespace: backstage
+spec:
+  encryptedData:
+    ARGOCD_TOKEN: AgAZSiBtJxM9dz4+zeU5D2ORQcRKnMW/ZJT6Ej4BtXKkgYC9dmCiPUgUOeYIjI0m6sLiR/9uD45xdJBPPb77nK5KUayqnbQX3xouVnSKi/ehp2zi4uUY/zfPRLVI2l82h8pETyHxdnb4lKiAVrUwCgNGXnALhGcq2d+vnn4iiWhKkH5Qq/SwBw+1kmUfw9n5CBH7HkMqaEvgA4OBD/E/wrc2jYMtGhnA58+4LH/9RFa8O7foXZPp3lAts8swZA5QkghPyvFYJGvXonYtYr3v28gxwLFegEpfVoHMh8o5iGYNoEhqIyOEvicfFxP6L8IxzeFfEEs7lX+UjVOXp/4Tq/dUfYIxdGTB0Ph/Fxh6dslryAdRkHXIg52mleSm34JLGT8srf5Ews2GT7GPmMYf/6nQIwIBpDw4XCPgwACczOkq74irE46fCYwsLUQ9WIlhxPN7cx5rX5vv4iXRN/KE5Ktt5rhUqmNHqMmpYhzyhJT9xmcR2WcicFwTeykssdtl+XttoYmn3K9ityq+lR3m641MWqA4nYAKoQNmjLhI/kHot+oyLI0gJpwUt+z7T4/QAgbTdqyOWEs2wdZsDGeGBydlMEjHOuLkpkv0p7YtI20Kv1aTpW5Jkxm+GmwZovtptFQXktn9nqyYB+lJl8x1kjNFiEcFB1plB++CulvCDTBUIqH5hSDE5Ly5CkdzL1lBDMrOL/8znjpcIhEZIaqMtzj35qiHV75VtYq8gmZMZNEtDD687J2M0cWwNBDLBicT4bmAe25APG9jn+NJf8AZ1RnTKyRakqRTYaHSqZ3/L4QOhmWbXQeSDLLB0+VhGJUtHvJXSEQpBUFD2C5phVOJYDDgYNYuduWH/OCtQlT3YlIx6jH2k9jFwzR+J0Afr9SFVCIyV1XeeCXA3l96Xn3L2XmAvIGF+DyyQXqWEEWrErPIE16rkR/tw9+YQ4KjRleRIw3zCrX84KmPbdj3d9d9DkQMICZhoWsh2MWLD0USHUVbkaQEjQjpLlLl4beMww==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: backstage-argocd-token
+      namespace: backstage

@@ -4,8 +4,10 @@ metadata:
   name: argocd
   description: GitOps continuous deployment
   links:
-    - url: http://192.168.0.108:30080
+    - url: http://192.168.0.108:31991
       title: ArgoCD UI
+  annotations:
+    argocd/app-name: argocd
 spec:
   type: service
   lifecycle: production

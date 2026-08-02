@@ -10,6 +10,8 @@ import { NavContentBlueprint } from '@backstage/plugin-app-react';
 import { SidebarLogo } from './SidebarLogo';
 import MenuIcon from '@material-ui/icons/Menu';
 import SearchIcon from '@material-ui/icons/Search';
+import HomeIcon from '@material-ui/icons/Home';
+import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { SidebarSearchModal } from '@backstage/plugin-search';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
 import { UserSettingsSignInAvatar } from '@backstage/plugin-user-settings';
@@ -32,6 +34,7 @@ export const SidebarContent = NavContentBlueprint.make({
           </SidebarGroup>
           <SidebarDivider />
           <SidebarGroup label="Menu" icon={<MenuIcon />}>
+            <SidebarItem icon={HomeIcon} to="/home" text="Home" />
             {nav.take('page:catalog')}
             {nav.take('page:scaffolder')}
             <SidebarDivider />
@@ -40,6 +43,9 @@ export const SidebarContent = NavContentBlueprint.make({
             </SidebarScrollWrapper>
           </SidebarGroup>
           <SidebarSpace />
+          <SidebarDivider />
+          <SidebarItem icon={OpenInNewIcon} to="http://192.168.0.108:31991" text="ArgoCD" />
+          <SidebarItem icon={OpenInNewIcon} to="http://192.168.0.108:30500" text="OpenObserve" />
           <SidebarDivider />
           <NotificationsSidebarItem />
           <SidebarDivider />

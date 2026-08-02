@@ -7,6 +7,7 @@ metadata:
     - url: http://192.168.0.108:30500
       title: OpenObserve UI
   annotations:
+    argocd/app-name: openobserve
     backstage.io/kubernetes-namespace: openobserve
     backstage.io/kubernetes-label-selector: 'app=openobserve'
 spec:

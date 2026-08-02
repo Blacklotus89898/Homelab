@@ -16,7 +16,6 @@ const CustomSignInPage = SignInPageBlueprint.make({
             message: 'Sign in using your GitHub account',
             apiRef: githubAuthApiRef,
           },
-          'guest',
         ]}
       />
     ),

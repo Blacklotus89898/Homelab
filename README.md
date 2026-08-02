@@ -18,8 +18,8 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 
 | Service | URL | Notes |
 |---|---|---|
-| ArgoCD | http://192.168.0.108:30080 | admin / see argocd secret |
-| Backstage | http://192.168.0.108:30900 | guest login |
+| ArgoCD | http://192.168.0.108:31991 | admin / see argocd secret |
+| Backstage | http://192.168.0.108:30900 | GitHub OAuth |
 | OpenObserve | http://192.168.0.108:30500 | admin@homelab.local / admin |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
 | Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
@@ -79,7 +79,7 @@ kubectl get svc -n argocd argocd-server
 ### 6. ArgoCD CLI login
 
 ```bash
-argocd login 192.168.0.108:30080 --username admin --password <password> --plaintext
+argocd login 192.168.0.108:31991 --username admin --password <password> --insecure
 ```
 
 ---
@@ -178,17 +178,43 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 ## Backstage
 
 - Helm chart: `backstage/backstage` v2.8.2
-- **Image pinned to `1.28.0`** — do NOT use `latest` or versions >= 1.40.0
-- `latest` resolves to pre-release `1.54.0-next.0`
-- Versions 1.40+ use the new frontend system which crashes with `NotImplementedError: No implementation available for apiRef{plugin.notifications.service}`
+- Backstage platform: `1.53.0` (new declarative frontend system)
+- Custom image built via CI: `ghcr.io/blacklotus89898/backstage:latest`
 - CSP fix required for plain HTTP: `backend.csp.upgrade-insecure-requests: false`
-- Guest auth: `auth.providers.guest.dangerouslyAllowOutsideDevelopment: true`
-- Software catalog loaded from `catalog/all.yaml` via raw.githubusercontent.com
+- Auth: **GitHub OAuth only** — guest provider removed
+- Software catalog loaded from `catalog/all.yaml` + GitHub org auto-discovery (every 30 min)
 
-**Upgrading Backstage:**
-1. Pin to a new stable version (check https://github.com/backstage/backstage/pkgs/container/backstage)
-2. Test for notifications crash before deploying
-3. **Must wipe PostgreSQL PVC** — Backstage runs forward-only migrations and older versions reject a newer schema:
+### Installed plugins
+
+| Plugin | Purpose |
+|---|---|
+| `@backstage/plugin-kubernetes` | k3s cluster pod/resource view per entity |
+| `@backstage/plugin-github-actions` | CI workflow runs per entity |
+| `@backstage/plugin-home` | Home page at `/home` |
+| `@backstage/plugin-techdocs` | Docs per service |
+| `@roadiehq/backstage-plugin-argo-cd` | ArgoCD sync status tab per entity |
+| `@backstage/plugin-catalog-backend-module-github` | Auto-discover `catalog-info.yaml` from GitHub org |
+| `@backstage/plugin-notifications` + signals | Real-time notifications |
+
+### ArgoCD integration
+
+- Proxy configured at `/argocd/api` → `argocd-server.argocd.svc.cluster.local`
+- Auth token stored in `backstage-argocd-token` SealedSecret (namespace: `backstage`)
+- Add `argocd/app-name: <app>` annotation to any catalog entity to get the ArgoCD tab
+- To regenerate the token:
+  ```bash
+  argocd login 192.168.0.108:31991 --username admin --password <pass> --insecure
+  # Ensure apiKey capability is enabled:
+  kubectl -n argocd patch configmap argocd-cm --patch '{"data":{"accounts.admin":"apiKey,login"}}'
+  argocd account generate-token --account admin
+  # Re-seal and commit infrastructure/backstage-k8s-rbac/sealed-argocd-token.yaml
+  ```
+
+### Upgrading Backstage
+
+1. Update `backstage.json` version and run `yarn install`
+2. Rebuild and push image via CI
+3. **Must wipe PostgreSQL PVC** — Backstage runs forward-only migrations:
    ```bash
    kubectl delete pod -n backstage backstage-postgresql-0
    kubectl delete pvc data-backstage-postgresql-0 -n backstage
@@ -205,13 +231,18 @@ Controller runs in `sealed-secrets` namespace. To seal a secret:
 curl -sL https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.3/kubeseal-0.27.3-linux-amd64.tar.gz \
   | tar -xz kubeseal && sudo mv kubeseal /usr/local/bin/
 
-# Seal a secret
+# Seal a secret (controller runs in sealed-secrets namespace)
 kubectl create secret generic my-secret -n my-namespace \
   --from-literal=key=value \
-  --dry-run=client -o yaml | kubeseal -o yaml > infrastructure/my-service/sealed-secret.yaml
+  --dry-run=client -o yaml \
+  | kubeseal \
+    --controller-name sealed-secrets-controller \
+    --controller-namespace sealed-secrets \
+    --format yaml \
+  > infrastructure/my-service/sealed-secret.yaml
 ```
 
-**TODO:** Seal `infrastructure/openobserve/secret.yaml` before making this repo public.
+**TODO:** Seal `infrastructure/openobserve/secret.yaml` and `platform/observability/otel-collector.yaml` (OO_AUTH) before making this repo public.
 
 ---
 
@@ -220,11 +251,10 @@ kubectl create secret generic my-secret -n my-namespace \
 | Issue | Workaround |
 |---|---|
 | k3s 1.34 port-forward dies | Use NodePort services instead |
-| ArgoCD CLI needs `--plaintext` | `argocd login <ip>:<port> --plaintext` |
+| ArgoCD CLI needs `--insecure` | `argocd login <ip>:<port> --insecure` (TLS not yet configured) |
 | Istio CNI binary not in k3s path | Copy binary manually; fixed in `cniBinDir` values |
 | OpenObserve Helm chart requires CloudNativePG | Use plain StatefulSet with `ZO_META_STORE=sqlite` |
-| Backstage 1.40+ notifications crash | Pin image to 1.28.0 until fix lands in stable |
-| Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config |
+| Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config (required for plain HTTP NodePort) |
 | NodePort conflicts (30080 authentik, 30090 linkding) | Check `kubectl get svc -A` before assigning NodePorts |
 | Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
 

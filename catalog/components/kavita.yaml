@@ -7,6 +7,7 @@ metadata:
     - url: http://192.168.0.108:30050
       title: Kavita UI
   annotations:
+    argocd/app-name: kavita
     backstage.io/kubernetes-namespace: kavita
     backstage.io/kubernetes-label-selector: 'app=kavita'
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/kavita
