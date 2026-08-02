@@ -40,8 +40,8 @@ Add `backend.add(import('@backstage/plugin-<name>-backend'))` to `packages/backe
 | Package | Type | What it does |
 |---|---|---|
 | `@backstage/plugin-kubernetes` | frontend | k3s pod/resource view on entity pages |
-| `@backstage/plugin-github-actions` | frontend | CI run history on entity pages (pending — no `/alpha` export yet) |
-| `@backstage/plugin-home` | frontend | Home page at `/home` (pending — no `/alpha` export yet) |
+| `@backstage/plugin-github-actions` | frontend | CI run history on entity pages — **pending**, v0.6.15 has no `/alpha` export |
+| `@backstage/plugin-home` | frontend | Home page at `/home` |
 | `@backstage/plugin-techdocs` | frontend + backend | Rendered docs per service |
 | `@backstage/plugin-scaffolder` | frontend + backend | New service templates |
 | `@roadiehq/backstage-plugin-argo-cd` | frontend | ArgoCD sync/health tab on entity pages |

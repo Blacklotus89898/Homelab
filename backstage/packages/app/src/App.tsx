@@ -12,6 +12,8 @@ import techdocsPlugin from '@backstage/plugin-techdocs/alpha';
 import apiDocsPlugin from '@backstage/plugin-api-docs/alpha';
 import signalsPlugin from '@backstage/plugin-signals/alpha';
 import notificationsPlugin from '@backstage/plugin-notifications/alpha';
+import homePlugin from '@backstage/plugin-home/alpha';
+import argocdPlugin from '@roadiehq/backstage-plugin-argo-cd/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 
@@ -30,6 +32,8 @@ export default createApp({
     apiDocsPlugin,
     signalsPlugin,
     notificationsPlugin,
+    homePlugin,
+    argocdPlugin,
     navModule,
     signInModule,
   ],

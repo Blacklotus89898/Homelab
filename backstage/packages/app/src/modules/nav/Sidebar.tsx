@@ -10,6 +10,7 @@ import { NavContentBlueprint } from '@backstage/plugin-app-react';
 import { SidebarLogo } from './SidebarLogo';
 import MenuIcon from '@material-ui/icons/Menu';
 import SearchIcon from '@material-ui/icons/Search';
+import HomeIcon from '@material-ui/icons/Home';
 import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { SidebarSearchModal } from '@backstage/plugin-search';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
@@ -33,6 +34,7 @@ export const SidebarContent = NavContentBlueprint.make({
           </SidebarGroup>
           <SidebarDivider />
           <SidebarGroup label="Menu" icon={<MenuIcon />}>
+            <SidebarItem icon={HomeIcon} to="/home" text="Home" />
             {nav.take('page:catalog')}
             {nav.take('page:scaffolder')}
             <SidebarDivider />
