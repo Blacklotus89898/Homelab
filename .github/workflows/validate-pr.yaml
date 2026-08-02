@@ -114,3 +114,32 @@ jobs:
                 exit 1
               done
           echo "No NodePort conflicts found"
+
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - validate-yaml
+      - validate-k8s
+      - validate-helm
+      - validate-techdocs
+      - check-nodeport-conflicts
+    steps:
+      - name: Write summary
+        run: |
+          icon() { [ "$1" = "success" ] && echo "✅" || [ "$1" = "skipped" ] && echo "⏭️" || echo "❌"; }
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## PR Validation Report
+
+          | Check | Result |
+          |---|---|
+          | YAML syntax | $(icon "${{ needs.validate-yaml.result }}") \`${{ needs.validate-yaml.result }}\` |
+          | Kubernetes manifests | $(icon "${{ needs.validate-k8s.result }}") \`${{ needs.validate-k8s.result }}\` |
+          | Helm templates | $(icon "${{ needs.validate-helm.result }}") \`${{ needs.validate-helm.result }}\` |
+          | TechDocs | $(icon "${{ needs.validate-techdocs.result }}") \`${{ needs.validate-techdocs.result }}\` |
+          | NodePort conflicts | $(icon "${{ needs.check-nodeport-conflicts.result }}") \`${{ needs.check-nodeport-conflicts.result }}\` |
+
+          **PR:** #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}
+          **Author:** ${{ github.actor }} · **Base:** \`${{ github.base_ref }}\` ← \`${{ github.head_ref }}\`
+          EOF

@@ -30,6 +30,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ./backstage
@@ -39,3 +40,24 @@ jobs:
             ghcr.io/blacklotus89898/backstage:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ "${{ steps.build.outcome }}" = "success" ]; then
+            ICON="✅"; STATUS="Success"
+          else
+            ICON="❌"; STATUS="Failed"
+          fi
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## ${ICON} Backstage Image Build — ${STATUS}
+
+          | | |
+          |---|---|
+          | **Commit** | \`${{ github.sha }}\` |
+          | **Branch** | \`${{ github.ref_name }}\` |
+          | **Triggered by** | ${{ github.actor }} |
+          | **Image: latest** | \`ghcr.io/blacklotus89898/backstage:latest\` |
+          | **Image: SHA tag** | \`ghcr.io/blacklotus89898/backstage:${{ github.sha }}\` |
+
+          EOF

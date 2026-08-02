@@ -18,6 +18,7 @@ configs:
 
 server:
   replicas: 1  # Scale to 2 for HA when ready
+  revisionHistoryLimit: 3
   service:
     type: NodePort  # Switch to ClusterIP once Istio ingress gateway is in place (step 3)
     nodePortHttp: 31991
@@ -25,6 +26,7 @@ server:
 
 # apps/argocd/values.yaml - add under repoServer:
 repoServer:
+  revisionHistoryLimit: 3
   resources:
     requests:
       ephemeral-storage: "500Mi"
@@ -33,6 +35,7 @@ repoServer:
 
 applicationSet:
   replicas: 1
+  revisionHistoryLimit: 3
 
 notifications:
   enabled: false  # Enable later with notification secrets in Sealed Secrets
