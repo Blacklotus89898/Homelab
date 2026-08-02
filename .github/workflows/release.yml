@@ -19,15 +19,18 @@ jobs:
 
       - name: Job summary
         if: always()
+        env:
+          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          PRS_CREATED: ${{ steps.release.outputs.prs_created }}
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
         run: |
-          if [ "${{ steps.release.outputs.release_created }}" = "true" ]; then
-            echo "## Released v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "$RELEASE_CREATED" = "true" ]; then
+            echo "## Released \`$TAG_NAME\`" >> $GITHUB_STEP_SUMMARY
             echo "| | |" >> $GITHUB_STEP_SUMMARY
             echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-            echo "| **Tag** | \`${{ steps.release.outputs.tag_name }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Tag** | \`$TAG_NAME\` |" >> $GITHUB_STEP_SUMMARY
             echo "| **SHA** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ steps.release.outputs.pr }}" != "" ]; then
+          elif [ "$PRS_CREATED" = "true" ]; then
             echo "## Release PR open" >> $GITHUB_STEP_SUMMARY
             echo "A release PR was opened/updated — merge it to cut the next release." >> $GITHUB_STEP_SUMMARY
           else
