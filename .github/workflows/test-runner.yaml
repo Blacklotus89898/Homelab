@@ -1,0 +1,22 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: homelab-runner
+    steps:
+      - name: Basic check
+        run: |
+          echo "Runner hostname: $(hostname)"
+          echo "User: $(whoami)"
+          echo "Kernel: $(uname -r)"
+
+      - name: Docker check
+        run: |
+          echo "Waiting for Docker..."
+          timeout 60 sh -c 'until docker info > /dev/null 2>&1; do sleep 2; done'
+          echo "Docker is ready"
+          docker version
+          docker run --rm hello-world
