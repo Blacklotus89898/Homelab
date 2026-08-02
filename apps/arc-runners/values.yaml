@@ -1,6 +1,12 @@
 githubConfigUrl: "https://github.com/Blacklotus89898/Homelab"
 githubConfigSecret: arc-runner-secret
 
+# Explicit service account ref — required when helm template runs offline (ArgoCD)
+# without this the chart tries to discover it via cluster API and fails
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-controller-gha-rs-controller
+
 # Label used in workflows: runs-on: homelab-runner
 runnerScaleSetName: homelab-runner
 
