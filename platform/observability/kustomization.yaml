@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - rbac.yaml
   - otel-collector.yaml
+  - limitrange.yaml

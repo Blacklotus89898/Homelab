@@ -186,15 +186,15 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 ### Installed plugins
 
-| Plugin | Purpose |
-|---|---|
-| `@backstage/plugin-kubernetes` | k3s cluster pod/resource view per entity |
-| `@backstage/plugin-github-actions` | CI workflow runs per entity |
-| `@backstage/plugin-home` | Home page at `/home` |
-| `@backstage/plugin-techdocs` | Docs per service |
-| `@roadiehq/backstage-plugin-argo-cd` | ArgoCD sync status tab per entity |
-| `@backstage/plugin-catalog-backend-module-github` | Auto-discover `catalog-info.yaml` from GitHub org |
-| `@backstage/plugin-notifications` + signals | Real-time notifications |
+| Plugin | Purpose | Status |
+|---|---|---|
+| `@backstage/plugin-kubernetes` | k3s cluster pod/resource view per entity | ✅ |
+| `@backstage/plugin-home` | Home page at `/home` | ✅ |
+| `@backstage/plugin-techdocs` | Docs per service | ✅ |
+| `@roadiehq/backstage-plugin-argo-cd` | ArgoCD sync/health tab per entity | ✅ |
+| `@backstage/plugin-catalog-backend-module-github` | Auto-discover `catalog-info.yaml` from GitHub org | ✅ |
+| `@backstage/plugin-notifications` + signals | Real-time notifications | ✅ |
+| `@backstage/plugin-github-actions` | CI workflow runs per entity | ⏳ pending — v0.6.15 has no `/alpha` export |
 
 ### ArgoCD integration
 
@@ -255,7 +255,7 @@ kubectl create secret generic my-secret -n my-namespace \
 | Istio CNI binary not in k3s path | Copy binary manually; fixed in `cniBinDir` values |
 | OpenObserve Helm chart requires CloudNativePG | Use plain StatefulSet with `ZO_META_STORE=sqlite` |
 | Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config (required for plain HTTP NodePort) |
-| NodePort conflicts (30080 authentik, 30090 linkding) | Check `kubectl get svc -A` before assigning NodePorts |
+| NodePort conflicts | Check `kubectl get svc -A` before assigning; authentik uses 30080, linkding uses 30090, ArgoCD uses 31991 |
 | Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
 
 ---
@@ -265,8 +265,9 @@ kubectl create secret generic my-secret -n my-namespace \
 1. Create `apps/<service>/application.yaml` (ArgoCD Application)
 2. Create `apps/<service>/values.yaml` if using Helm
 3. Add namespace to `infrastructure/namespaces/namespaces.yaml`
-4. Add catalog entry to `catalog/components/<service>.yaml` and register in `catalog/all.yaml`
-5. `git push` — ArgoCD auto-deploys
+4. Add `services/<service>/limitrange.yaml` to cap container resources in the namespace
+5. Add `catalog-info.yaml` to the service repo (auto-discovered by Backstage) or add a manual entry to `catalog/components/<service>.yaml` and register in `catalog/all.yaml`
+6. `git push` — ArgoCD auto-deploys
 
 ## Enrolling a service in the Istio ambient mesh
 
