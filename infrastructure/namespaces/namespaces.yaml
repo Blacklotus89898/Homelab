@@ -82,3 +82,17 @@ metadata:
   name: audiobookshelf
   labels:
     istio.io/dataplane-mode: ambient
+
+---
+# ARC controller — must NOT be in ambient mesh (webhook TLS conflicts with ztunnel)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-systems
+
+---
+# ARC runner pods — DinD (Docker-in-Docker) conflicts with Istio ambient; keep outside mesh
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners

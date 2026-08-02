@@ -82,6 +82,17 @@ kubectl get svc -n argocd argocd-server
 argocd login 192.168.0.108:31991 --username admin --password <password> --insecure
 ```
 
+### 7. Register ARC OCI Helm repo in ArgoCD (one-time, for self-hosted runners)
+
+The `actions-runner-controller` charts are OCI-only — ArgoCD needs the registry added before it can sync the `arc-controller` and `arc-runners` apps:
+
+```bash
+argocd repo add ghcr.io/actions/actions-runner-controller-charts \
+  --type helm --name arc-charts --enable-oci
+```
+
+Then seal the GitHub PAT secret and push it (see **Self-hosted runners** section below).
+
 ---
 
 ## Directory layout
@@ -219,6 +230,55 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
    kubectl delete pod -n backstage backstage-postgresql-0
    kubectl delete pvc data-backstage-postgresql-0 -n backstage
    ```
+
+---
+
+## Self-hosted runners (ARC)
+
+`actions-runner-controller` v2 (scale-set mode) runs ephemeral GitHub Actions runners inside the cluster. Runners scale to 0 when idle and up to 3 concurrent jobs. Each runner pod has a Docker-in-Docker (DinD) sidecar so `docker/build-push-action` works unchanged.
+
+### Setup (one-time after bootstrap step 7)
+
+1. **Seal the GitHub PAT** — create a PAT at https://github.com/settings/tokens with `repo` scope, then:
+   ```bash
+   kubectl create secret generic arc-runner-secret \
+     --namespace arc-runners \
+     --from-literal=github_token=<YOUR_PAT> \
+     --dry-run=client -o yaml \
+   | kubeseal \
+       --controller-name sealed-secrets-controller \
+       --controller-namespace sealed-secrets \
+       --format yaml \
+   > infrastructure/arc-runners/sealed-github-pat.yaml
+   git add infrastructure/arc-runners/sealed-github-pat.yaml && git commit -m "chore: seal ARC GitHub PAT" && git push
+   ```
+
+2. **ArgoCD syncs** `arc-controller` → `arc-runners-infra` → `arc-runners` automatically.
+
+3. **Switch workflows to self-hosted** — once runners show as idle in GitHub (Settings → Actions → Runners), change `runs-on: ubuntu-latest` to `runs-on: homelab-runner` in `.github/workflows/build-backstage.yaml`.
+
+### Runner label
+
+`homelab-runner` — the `runnerScaleSetName` set in `apps/arc-runners/values.yaml`.
+
+---
+
+## Releases and changelog
+
+This repo uses [release-please](https://github.com/googleapis/release-please) for automated changelog generation and GitHub Releases.
+
+**Commit convention** — use these prefixes for commits that should appear in the changelog:
+
+| Prefix | Changelog section | Version bump |
+|---|---|---|
+| `feat: …` | Features | minor |
+| `fix: …` | Bug Fixes | patch |
+| `chore: …` | Chores | patch |
+| `docs: …` | Documentation | patch |
+| `ci: …` | CI / CD | patch |
+| `feat!: …` or `BREAKING CHANGE:` | Breaking Changes | major |
+
+When commits land on `main`, the `release.yml` workflow opens a "Release PR" that bundles them into the next version with an updated `CHANGELOG.md`. Merge the PR to cut the release and create the GitHub Release.
 
 ---
 

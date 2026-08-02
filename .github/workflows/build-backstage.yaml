@@ -10,10 +10,12 @@ on:
 
 jobs:
   build-and-push:
+    # Switch to 'homelab-runner' once ARC is deployed and sealed-github-pat.yaml is sealed
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+      security-events: write
 
     steps:
       - name: Checkout
@@ -41,16 +43,35 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Scan image for vulnerabilities
+        id: trivy
+        if: steps.build.outcome == 'success'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/blacklotus89898/backstage:${{ github.sha }}
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security tab
+        if: steps.trivy.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-backstage-image
+
       - name: Job summary
         if: always()
         run: |
+          icon() { [ "$1" = "success" ] && echo "✅" || [ "$1" = "skipped" ] && echo "⏭️" || echo "❌"; }
           if [ "${{ steps.build.outcome }}" = "success" ]; then
-            ICON="✅"; STATUS="Success"
+            BUILD_STATUS="Success"
           else
-            ICON="❌"; STATUS="Failed"
+            BUILD_STATUS="Failed"
           fi
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ## ${ICON} Backstage Image Build — ${STATUS}
+          ## $(icon "${{ steps.build.outcome }}") Backstage Image Build — ${BUILD_STATUS}
 
           | | |
           |---|---|
@@ -59,5 +80,6 @@ jobs:
           | **Triggered by** | ${{ github.actor }} |
           | **Image: latest** | \`ghcr.io/blacklotus89898/backstage:latest\` |
           | **Image: SHA tag** | \`ghcr.io/blacklotus89898/backstage:${{ github.sha }}\` |
+          | **Trivy image scan** | $(icon "${{ steps.trivy.outcome }}") \`${{ steps.trivy.outcome }}\` |
 
           EOF

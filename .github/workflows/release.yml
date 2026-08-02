@@ -1,0 +1,36 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: simple
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ "${{ steps.release.outputs.release_created }}" = "true" ]; then
+            echo "## Released v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| | |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| **Tag** | \`${{ steps.release.outputs.tag_name }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| **SHA** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.release.outputs.pr }}" != "" ]; then
+            echo "## Release PR open" >> $GITHUB_STEP_SUMMARY
+            echo "A release PR was opened/updated — merge it to cut the next release." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No release" >> $GITHUB_STEP_SUMMARY
+            echo "No releasable commits found on this push." >> $GITHUB_STEP_SUMMARY
+          fi

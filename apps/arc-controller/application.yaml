@@ -1,0 +1,41 @@
+# Prerequisite: register the ARC OCI Helm repo in ArgoCD once:
+#   argocd repo add ghcr.io/actions/actions-runner-controller-charts \
+#     --type helm --name arc-charts --enable-oci
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set-controller
+      targetRevision: "0.10.1"
+      helm:
+        releaseName: arc-controller
+        valueFiles:
+          - $values/apps/arc-controller/values.yaml
+    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-systems
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

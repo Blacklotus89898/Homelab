@@ -1,0 +1,37 @@
+githubConfigUrl: "https://github.com/Blacklotus89898/Homelab"
+githubConfigSecret: arc-runner-secret
+
+# Label used in workflows: runs-on: homelab-runner
+runnerScaleSetName: homelab-runner
+
+# Scale to zero when idle; max 3 concurrent jobs
+minRunners: 0
+maxRunners: 3
+
+# Docker-in-Docker: gives runner pods a privileged Docker daemon sidecar.
+# Required for docker/build-push-action (Backstage image build).
+containerMode:
+  type: dind
+
+template:
+  spec:
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: "2"
+            memory: 4Gi
+      # DinD sidecar — injected automatically by containerMode: dind.
+      # Override resources only:
+      - name: dind
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: "2"
+            memory: 2Gi
