@@ -10,8 +10,7 @@ on:
 
 jobs:
   build-and-push:
-    # Switch to 'homelab-runner' once ARC is deployed and sealed-github-pat.yaml is sealed
-    runs-on: ubuntu-latest
+    runs-on: homelab-runner
     permissions:
       contents: read
       packages: write
