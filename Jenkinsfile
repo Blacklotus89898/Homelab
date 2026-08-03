@@ -1,5 +1,17 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: python
+    image: python:3.12-slim
+    command: ['sleep', 'infinity']
+"""
+        }
+    }
 
     options {
         timeout(time: 15, unit: 'MINUTES')
@@ -15,8 +27,10 @@ pipeline {
 
         stage('Validate YAML') {
             steps {
-                sh '''
-                    python3 -c "
+                container('python') {
+                    sh 'pip install pyyaml --quiet'
+                    sh '''
+                        python3 -c "
 import yaml, glob, sys
 errors = []
 for f in sorted(glob.glob('**/*.yaml', recursive=True)):
@@ -33,7 +47,8 @@ if errors:
     sys.exit(1)
 print('All YAML files valid (' + str(len(glob.glob('**/*.yaml', recursive=True))) + ' scanned)')
 "
-                '''
+                    '''
+                }
             }
         }
 

@@ -75,6 +75,5 @@ persistence:
   size: 10Gi
   storageClass: local-path
 
-# Agent pods disabled — using controller as agent for homelab simplicity
 agent:
-  enabled: false
+  enabled: true
