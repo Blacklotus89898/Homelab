@@ -1,7 +1,6 @@
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: arc-runner-secret
   namespace: arc-runners
 spec:
@@ -9,7 +8,6 @@ spec:
     github_token: AgCLbji1ut8W8oA3karOTYokyHd5x3Iy4ms1LY6hOeGtB0v11Q3rXkAsIJXgDYpasYfKseXkUrZ0YInMJavpFREuOUIJnradiN3iw//O/kLo7ghMSpk2MJDrf8RCGNLh/nlTdjK7WUutuGW32iri4CFMeCY0oOIpVWQ4Sr/u/4cZnWcnSuilF0r7ypjSat0G4in7jQK+qh76qXRFXNAKgZeIJvbgzHq3jh1ZH3XKR5KgME8eGIMsvLlI6av0pNKDATQMI8HfIc0SfyWmaXO6aQ0+SVF0JkMcbLpQU1WZHMccraNNHkhOygQQW+yvA9ygOCSicBBtOq6U3jhqkryetlu3QAeqVGYQiEV7mxQy1a1IwPj2afzzTqzj+op5SDrLWL37iWocgASzi7PXhT2EAmnGW+FTlDefiiFWT+TjvhvFBcZRP4Y3FWmRWgfSHwKEY0i1vhbAPSSbDhUFmVfLVTvKVtBvJiwpN9NmgsB9UCa/Tu9UUTUlhNzjsQZOi4JmC2PV9MJCJkgG5HmRj2p3eQ2XJDyXpvfUdRqh3YYEVySCVh+NNt8jJXQgi/aKViOB8uYfyMrOzzGZSbc5vQhKMYe4PptEsYOR+0jKMojlN+ocnUqNf94PLNotL5ohGiCqjXuqf0z5Y0mkCQAnJPaoList4SZ3OS0sRk2MjN/ZjRVdxK3/un77W6nQujJw5sciMKDJFOmb4dJIRHI2Q5+FaU7KI8wnmt0uaR61ZBj4+EFhDBpDdzFreQ/6
   template:
     metadata:
-      creationTimestamp: null
       name: arc-runner-secret
       namespace: arc-runners
     type: Opaque
