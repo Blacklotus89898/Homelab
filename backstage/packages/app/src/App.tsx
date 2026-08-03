@@ -14,6 +14,9 @@ import signalsPlugin from '@backstage/plugin-signals/alpha';
 import notificationsPlugin from '@backstage/plugin-notifications/alpha';
 import homePlugin from '@backstage/plugin-home/alpha';
 import argocdPlugin from '@roadiehq/backstage-plugin-argo-cd/alpha';
+// TODO: uncomment after running: yarn workspace app add @backstage/plugin-jenkins@latest
+// and verifying: ls backstage/node_modules/@backstage/plugin-jenkins/dist/alpha*
+// import jenkinsPlugin from '@backstage/plugin-jenkins/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
 

@@ -1,0 +1,36 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: jenkins
+  description: Jenkins CI server — builds the Homelab repo on every branch
+  links:
+    - url: http://192.168.0.108:30808
+      title: Jenkins UI
+    - url: http://192.168.0.108:30808/job/homelab/
+      title: Homelab Pipeline
+  annotations:
+    argocd/app-name: jenkins
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: homelab-platform
+  description: Homelab GitOps platform repo — the code that drives this cluster
+  links:
+    - url: https://github.com/Blacklotus89898/Homelab
+      title: GitHub
+    - url: http://192.168.0.108:30808/job/homelab/
+      title: Jenkins Builds
+  annotations:
+    github.com/project-slug: Blacklotus89898/Homelab
+    jenkins.io/job-full-name: homelab/main
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

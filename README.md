@@ -136,9 +136,9 @@ catalog/            # Backstage software catalog entities
 | -5  | Namespaces |
 | -4  | Sealed Secrets, cert-manager, Gateway API CRDs |
 | -3  | Istio (ambient umbrella chart) |
-| -2  | OTel operator, Istio ingress gateway |
-| -1  | OpenObserve |
-|  0  | OTel collector, platform observability |
+| -2  | OTel operator, Istio ingress gateway, ARC controller |
+| -1  | OpenObserve, ARC runner infra (SealedSecret) |
+|  0  | OTel collector, platform observability, ARC runner scale set |
 |  1  | Backstage |
 
 ---
@@ -237,9 +237,27 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 `actions-runner-controller` v2 (scale-set mode) runs ephemeral GitHub Actions runners inside the cluster. Runners scale to 0 when idle and up to 3 concurrent jobs. Each runner pod has a Docker-in-Docker (DinD) sidecar so `docker/build-push-action` works unchanged.
 
+### Architecture
+
+| Component | Namespace | What it does |
+|---|---|---|
+| `arc-controller` (Helm) | `arc-systems` | Operator managing the scale set lifecycle |
+| Listener pod | `arc-systems` | Long-polls GitHub API; triggers runner pod creation on job demand |
+| `arc-runners` (Helm) | `arc-runners` | `AutoscalingRunnerSet` CR — defines the `homelab-runner` scale set |
+| `arc-runners-infra` (kustomize) | `arc-runners` | SealedSecret + LimitRange |
+| Runner pods | `arc-runners` | Ephemeral; one per job, gone when done |
+
+**Known ArgoCD quirk:** `arc-controller` shows 4 CRDs as `OutOfSync`. Cosmetic only — cluster-scoped CRDs appear twice in ArgoCD's diff. Everything works correctly.
+
 ### Setup (one-time after bootstrap step 7)
 
-1. **Seal the GitHub PAT** — create a PAT at https://github.com/settings/tokens with `repo` scope, then:
+1. **Register the ARC OCI Helm repo** in ArgoCD:
+   ```bash
+   argocd repo add ghcr.io/actions/actions-runner-controller-charts \
+     --type helm --name arc-charts --enable-oci
+   ```
+
+2. **Seal the GitHub PAT** — create a PAT at github.com/settings/tokens with `repo` scope:
    ```bash
    kubectl create secret generic arc-runner-secret \
      --namespace arc-runners \
@@ -250,16 +268,71 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
        --controller-namespace sealed-secrets \
        --format yaml \
    > infrastructure/arc-runners/sealed-github-pat.yaml
-   git add infrastructure/arc-runners/sealed-github-pat.yaml && git commit -m "chore: seal ARC GitHub PAT" && git push
+   git add infrastructure/arc-runners/sealed-github-pat.yaml
+   git commit -m "chore: seal ARC GitHub PAT" && git push
    ```
 
-2. **ArgoCD syncs** `arc-controller` → `arc-runners-infra` → `arc-runners` automatically.
+3. **ArgoCD syncs** `arc-controller` (wave -2) → `arc-runners-infra` (wave -1) → `arc-runners` (wave 0). Verify:
+   ```bash
+   argocd app list | grep arc
+   kubectl get pods -n arc-systems   # listener pod should be Running
+   ```
 
-3. **Switch workflows to self-hosted** — once runners show as idle in GitHub (Settings → Actions → Runners), change `runs-on: ubuntu-latest` to `runs-on: homelab-runner` in `.github/workflows/build-backstage.yaml`.
+4. **Confirm registration** — GitHub → repo → Settings → Actions → Runners → "Scale sets" shows `homelab-runner`.
+
+5. **Switch workflows** — set `runs-on: homelab-runner` in the target workflow and push.
 
 ### Runner label
 
-`homelab-runner` — the `runnerScaleSetName` set in `apps/arc-runners/values.yaml`.
+`homelab-runner` — set via `runnerScaleSetName` in `apps/arc-runners/values.yaml`.
+
+### Diagnosing a hanging job
+
+A job is hung if it stays "Waiting for a runner…" for more than ~60 seconds.
+
+```bash
+# 1. Is the listener pod alive?
+kubectl get pods -n arc-systems
+kubectl logs -n arc-systems \
+  -l app.kubernetes.io/component=runner-scale-set-listener --tail=20
+
+# 2. Did a runner pod spawn?
+kubectl get pods -n arc-runners -w
+
+# 3. Pod exists but Pending — check scheduling
+kubectl describe pod <runner-pod> -n arc-runners
+
+# 4. Pod Running but job stuck — check DinD sidecar
+kubectl logs <runner-pod> -n arc-runners -c dind
+kubectl logs <runner-pod> -n arc-runners -c runner
+
+# 5. Controller errors
+kubectl logs -n arc-systems \
+  deployment/arc-controller-gha-rs-controller --tail=50
+```
+
+| Symptom | Likely cause |
+|---|---|
+| No runner pod after 60 s | Listener pod crashed — check listener logs |
+| Pod stuck `Pending` | Node resource pressure — check `kubectl describe node` |
+| Pod running, Docker step hangs | DinD not ready — check `-c dind` logs |
+| Job queued but 0 runners in GitHub | PAT expired — re-seal with a new token |
+
+### Rotating the GitHub PAT
+
+```bash
+kubectl create secret generic arc-runner-secret \
+  --namespace arc-runners \
+  --from-literal=github_token=<NEW_PAT> \
+  --dry-run=client -o yaml \
+| kubeseal \
+    --controller-name sealed-secrets-controller \
+    --controller-namespace sealed-secrets \
+    --format yaml \
+> infrastructure/arc-runners/sealed-github-pat.yaml
+git add infrastructure/arc-runners/sealed-github-pat.yaml
+git commit -m "chore: rotate ARC GitHub PAT" && git push
+```
 
 ---
 

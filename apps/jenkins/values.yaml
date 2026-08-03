@@ -1,0 +1,70 @@
+controller:
+  # Jenkins LTS on JDK 21
+  image:
+    registry: docker.io
+    repository: jenkins/jenkins
+    tag: lts-jdk21
+    pullPolicy: IfNotPresent
+
+  # NodePort — consistent with other services in this cluster
+  serviceType: NodePort
+  nodePort: 30808
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+  # Additional plugins on top of chart defaults
+  additionalPlugins:
+    - job-dsl:latest
+    - github-branch-source:latest
+    - github:latest
+    - pipeline-stage-view:latest
+
+  # JCasC: declarative Jenkins configuration (no setup wizard)
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      jobs: |
+        jobs:
+          - script: >
+              multibranchPipelineJob('homelab') {
+                description('Homelab GitOps repo — CI via Jenkinsfile on each branch')
+                branchSources {
+                  git {
+                    id('homelab-git')
+                    remote('https://github.com/Blacklotus89898/Homelab.git')
+                    credentialsId('')
+                  }
+                }
+                factory {
+                  workflowBranchProjectFactory {
+                    scriptPath('Jenkinsfile')
+                  }
+                }
+                orphanedItemStrategy {
+                  discardOldItems {
+                    numToKeep(5)
+                  }
+                }
+                triggers {
+                  periodic(15)
+                }
+              }
+
+  # Prometheus metrics endpoint
+  prometheus:
+    enabled: false
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: local-path
+
+# Agent pods disabled — using controller as agent for homelab simplicity
+agent:
+  enabled: false

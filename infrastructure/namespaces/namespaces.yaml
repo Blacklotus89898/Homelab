@@ -96,3 +96,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: arc-runners
+
+---
+# Jenkins CI — NodePort access; excluded from ambient mesh
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jenkins

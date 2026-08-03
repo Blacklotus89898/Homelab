@@ -1,0 +1,3 @@
+resources:
+  - limitrange.yaml
+  # sealed-jenkins-github-pat.yaml  # uncomment after running kubeseal (Phase 2)
