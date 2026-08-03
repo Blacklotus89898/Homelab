@@ -46,6 +46,7 @@ backstage:
           - host: raw.githubusercontent.com
       csp:
         upgrade-insecure-requests: false
+        connect-src: ["'self'", 'http:', 'https:']
 
     auth:
       environment: production
