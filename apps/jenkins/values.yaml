@@ -18,6 +18,14 @@ controller:
       cpu: "2"
       memory: 2Gi
 
+  # Jenkins downloads plugins on first boot — give it up to 10 minutes
+  startupProbe:
+    httpGet:
+      path: /login
+      port: 8080
+    failureThreshold: 60
+    periodSeconds: 10
+
   # Additional plugins on top of chart defaults
   additionalPlugins:
     - job-dsl:latest
@@ -50,9 +58,6 @@ controller:
                   discardOldItems {
                     numToKeep(5)
                   }
-                }
-                triggers {
-                  periodic(15)
                 }
               }
 
