@@ -50,6 +50,8 @@ controller:
                     id('homelab-git')
                     remote('https://github.com/Blacklotus89898/Homelab.git')
                     credentialsId('')
+                    includes('main feature/* fix/* ci/* chore/* feat/*')
+                    excludes('release-please--*')
                   }
                 }
                 factory {
