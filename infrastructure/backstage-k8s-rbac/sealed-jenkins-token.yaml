@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: backstage-jenkins
+  namespace: backstage
+spec:
+  encryptedData:
+    JENKINS_API_KEY: AgB9WRdp5Lrq1NIn2T5MJZu9HSfLgYuW3jtjxz90jxb0rxL0Y9Ek0YWY0s2HHnhRHLvmzP3nbsfbEzMc9tQIXpF8+PpIcYjAKHdkiHxMVJ42+Cz4AAOXUbw6KhmYYtgWrJD03OLfh9lzGAEyx8mAiIjz5jlMawSq5H5PhE70gRZC6UWYs8vADiQ6pqI3kElD/EVTmB1SZah6haklGr+i8OGI9quQaOP2tmhj/9rIAl2weqLh07BRoZ+ihy5Fw3zRVzGjbpOW+Nwt64I/h5ijy1BtWa6gg9n48doEhfzqHXVy5Es6shnVKZBYpXjE+2QB8QhFUotlD2ZNHO0wL4qIA4PAloUrIR9uFDcMDc3v9FGGkpXaxF/GJ+h9UK43jAQkbJvvtBwRp9hs4kpS33wGlIldXNUWYRcn9a2yELlvDLBP0C64HYmE0iJL1yZg/FhYhBQDlVlb9x8I0bFpuUT9kOmPVKsmclIu4stPe7bOfm8PnENaqmY3KJXm7c5aaviee+hso1JkSG4OjK9lmB4s+vPnZ2Lqn+BCd3ynkgBhVQ4gjxaLU+hQxYLylD6dHE4Y7HJXNhfqyC0m6ItXSXR92Mj1GKZLzPUm0ecjX93O3WwkQmYFw/TJYpATLelojHYGWSKV32P66Ju8AIRrGTfx/JDPWCm889uMBZJ/98Dt9KcKU/EiSV8D+koZ/A7A0R9YTvA0LWLEyUbtPlP1tzqO3qR/zmdeIH3GAKwl3Dpu7/JCUnVs
+  template:
+    metadata:
+      creationTimestamp: null
+      name: backstage-jenkins
+      namespace: backstage

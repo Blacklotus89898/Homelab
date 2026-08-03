@@ -10,7 +10,7 @@ backstage:
     - backstage-github-auth
     - backstage-k8s-token
     - backstage-argocd-token
-    # backstage-jenkins  # uncomment after sealing the Jenkins API token
+    - backstage-jenkins
 
   resources:
     requests:
@@ -73,13 +73,12 @@ backstage:
           headers:
             Cookie: "argocd.token=${ARGOCD_TOKEN}"
 
-    # Jenkins integration — uncomment after backstage-jenkins secret is sealed
-    # jenkins:
-    #   instances:
-    #     - name: default
-    #       baseUrl: http://jenkins.jenkins.svc.cluster.local:8080
-    #       username: admin
-    #       apiKey: ${JENKINS_API_KEY}  # from backstage-jenkins SealedSecret
+    jenkins:
+      instances:
+        - name: default
+          baseUrl: http://jenkins.jenkins.svc.cluster.local:8080
+          username: admin
+          apiKey: ${JENKINS_API_KEY}
 
     integrations:
       github:

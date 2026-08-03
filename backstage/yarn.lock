@@ -3615,6 +3615,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@backstage/plugin-jenkins@npm:^0.9.10":
+  version: 0.9.10
+  resolution: "@backstage/plugin-jenkins@npm:0.9.10"
+  dependencies:
+    "@backstage/catalog-model": "npm:^1.4.5"
+    "@backstage/core-components": "npm:^0.14.4"
+    "@backstage/core-plugin-api": "npm:^1.9.2"
+    "@backstage/errors": "npm:^1.2.4"
+    "@backstage/plugin-catalog-react": "npm:^1.11.3"
+    "@backstage/plugin-jenkins-common": "npm:^0.1.26"
+    "@material-ui/core": "npm:^4.12.2"
+    "@material-ui/icons": "npm:^4.9.1"
+    "@types/react": "npm:^16.13.1 || ^17.0.0 || ^18.0.0"
+    luxon: "npm:^3.0.0"
+    react-use: "npm:^17.2.4"
+  peerDependencies:
+    react: ^16.13.1 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.13.1 || ^17.0.0 || ^18.0.0
+    react-router-dom: 6.0.0-beta.0 || ^6.3.0
+  checksum: 10c0/f17b5b9132f1ac6d2dca9cb8c985330e87de010b7b88b297f085c1c084c5fa2b176aae7b91c6da88f2d35009911b20df50be770b9005a519e60bd5049886e23b
+  languageName: node
+  linkType: hard
+
 "@backstage/plugin-kubernetes-backend@npm:^0.21.6":
   version: 0.21.6
   resolution: "@backstage/plugin-kubernetes-backend@npm:0.21.6"
@@ -13348,6 +13371,7 @@ __metadata:
     "@backstage/plugin-catalog-import": "npm:^0.13.15"
     "@backstage/plugin-github-actions": "npm:^0.6.16"
     "@backstage/plugin-home": "npm:*"
+    "@backstage/plugin-jenkins": "npm:^0.9.10"
     "@backstage/plugin-kubernetes": "npm:^0.12.21"
     "@backstage/plugin-notifications": "npm:^0.5.19"
     "@backstage/plugin-org": "npm:^0.7.6"

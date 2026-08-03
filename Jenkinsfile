@@ -41,15 +41,13 @@ print('All YAML files valid (' + str(len(glob.glob('**/*.yaml', recursive=True))
             steps {
                 sh '''
                     echo "Scanning for duplicate NodePorts..."
-                    grep -r "nodePort:" apps/ services/ infrastructure/ --include="*.yaml" -h \
-                      | grep -oE '[0-9]+' \
-                      | sort \
-                      | uniq -d \
-                      | while read port; do
-                          echo "CONFLICT: nodePort $port is used more than once"
-                          grep -r "nodePort: $port" apps/ services/ infrastructure/ --include="*.yaml" -l
-                        done
-                    echo "NodePort check complete"
+                    DUPS=$(grep -r "nodePort:" apps/ services/ infrastructure/ --include="*.yaml" -h \
+                      | grep -oE '[0-9]+' | sort | uniq -d)
+                    if [ -n "$DUPS" ]; then
+                        echo "DUPLICATE NodePorts detected: $DUPS"
+                        exit 1
+                    fi
+                    echo "No NodePort conflicts found"
                 '''
             }
         }
