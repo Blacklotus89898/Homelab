@@ -26,6 +26,9 @@ controller:
     failureThreshold: 60
     periodSeconds: 10
 
+  # Run builds directly on the controller (homelab — no separate agents needed)
+  numExecutors: 2
+
   # Additional plugins on top of chart defaults
   additionalPlugins:
     - job-dsl:latest
