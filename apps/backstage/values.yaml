@@ -10,7 +10,7 @@ backstage:
     - backstage-github-auth
     - backstage-k8s-token
     - backstage-argocd-token
-    - backstage-jenkins  # create after Jenkins is running (see Jenkins setup docs)
+    # backstage-jenkins  # uncomment after sealing the Jenkins API token
 
   resources:
     requests:
@@ -73,18 +73,13 @@ backstage:
           headers:
             Cookie: "argocd.token=${ARGOCD_TOKEN}"
 
-    jenkins:
-      instances:
-        - name: default
-          baseUrl: http://jenkins.jenkins.svc.cluster.local:8080
-          username: admin
-          # JENKINS_API_KEY comes from the backstage-jenkins SealedSecret.
-          # To create it: get admin password from the jenkins secret, generate an
-          # API token in Jenkins UI, then seal it:
-          #   kubectl create secret generic backstage-jenkins -n backstage \
-          #     --from-literal=JENKINS_API_KEY=<token> --dry-run=client -o yaml \
-          #   | kubeseal ... > infrastructure/backstage-k8s-rbac/sealed-jenkins-token.yaml
-          apiKey: ${JENKINS_API_KEY}
+    # Jenkins integration — uncomment after backstage-jenkins secret is sealed
+    # jenkins:
+    #   instances:
+    #     - name: default
+    #       baseUrl: http://jenkins.jenkins.svc.cluster.local:8080
+    #       username: admin
+    #       apiKey: ${JENKINS_API_KEY}  # from backstage-jenkins SealedSecret
 
     integrations:
       github:
