@@ -15,6 +15,8 @@ spec:
   lifecycle: production
   owner: user:blacklotus89898
   system: homelab
+  providesApis:
+    - jenkins-api
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component

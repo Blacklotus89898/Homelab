@@ -15,3 +15,5 @@ spec:
   lifecycle: production
   owner: user:blacklotus89898
   system: homelab
+  providesApis:
+    - openobserve-api

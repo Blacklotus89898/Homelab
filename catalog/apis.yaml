@@ -1,0 +1,89 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: openobserve-api
+  description: OpenObserve REST API — logs, metrics, traces ingestion and query
+  links:
+    - url: http://192.168.0.108:30500/swagger-ui
+      title: Swagger UI
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab
+  definition:
+    $text: http://192.168.0.108:30500/api-json
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: argocd-api
+  description: ArgoCD REST API — application sync, health, and resource management
+  links:
+    - url: http://192.168.0.108:31991/swagger-ui
+      title: Swagger UI
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab
+  definition:
+    $text: http://192.168.0.108:31991/swagger.json
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: jenkins-api
+  description: Jenkins REST API — job triggers, build status, and configuration
+  links:
+    - url: http://192.168.0.108:30808/api
+      title: Jenkins REST API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab
+  definition: |
+    openapi: "3.0.0"
+    info:
+      title: Jenkins REST API
+      version: "2.x"
+      description: |
+        Jenkins exposes a REST API at /api/json. Authentication uses HTTP Basic
+        with username and API token. See http://192.168.0.108:30808/api for live docs.
+    servers:
+      - url: http://192.168.0.108:30808
+    paths:
+      /api/json:
+        get:
+          summary: Jenkins root info
+          responses:
+            "200":
+              description: Jenkins instance info
+      /job/{jobName}/api/json:
+        get:
+          summary: Job details
+          parameters:
+            - name: jobName
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            "200":
+              description: Job info
+      /job/{jobName}/build:
+        post:
+          summary: Trigger a build
+          parameters:
+            - name: jobName
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            "201":
+              description: Build queued
