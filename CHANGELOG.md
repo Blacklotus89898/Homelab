@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Blacklotus89898/Homelab/compare/v1.0.0...v1.1.0) (2026-08-04)
+
+
+### Features
+
+* add API catalog entities for OpenObserve, ArgoCD, and Jenkins ([a093c56](https://github.com/Blacklotus89898/Homelab/commit/a093c5614d1f324ee9a0b25c5c2c5ccd862800c6))
+
 ## 1.0.0 (2026-08-04)
 
 
