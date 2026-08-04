@@ -398,9 +398,9 @@ This repo uses [release-please](https://github.com/googleapis/release-please) fo
 |---|---|---|
 | `feat: …` | Features | minor |
 | `fix: …` | Bug Fixes | patch |
-| `chore: …` | Chores | patch |
-| `docs: …` | Documentation | patch |
-| `ci: …` | CI / CD | patch |
+| `chore: …` | Chores | none (changelog only) |
+| `docs: …` | Documentation | none (changelog only) |
+| `ci: …` | CI / CD | none (changelog only) |
 | `feat!: …` or `BREAKING CHANGE:` | Breaking Changes | major |
 
 When commits land on `main`, the `release.yml` workflow opens a "Release PR" that bundles them into the next version with an updated `CHANGELOG.md`. Merge the PR to cut the release and create the GitHub Release.
