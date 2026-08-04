@@ -55,7 +55,7 @@ spec:
         Jenkins exposes a REST API at /api/json. Authentication uses HTTP Basic
         with username and API token. See http://192.168.0.108:30808/api for live docs.
     servers:
-      - url: http://192.168.0.108:30808
+      - url: http://192.168.0.108:30900/api/proxy/jenkins
     paths:
       /api/json:
         get:

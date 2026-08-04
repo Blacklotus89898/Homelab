@@ -73,6 +73,12 @@ backstage:
           changeOrigin: true
           headers:
             Cookie: "argocd.token=${ARGOCD_TOKEN}"
+        '/jenkins':
+          target: http://jenkins.jenkins.svc.cluster.local:8080
+          changeOrigin: true
+          allowedHeaders:
+            - Authorization
+          credentials: dangerously-allow-unauthenticated
 
     jenkins:
       instances:
