@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Blacklotus89898/Homelab/compare/v1.1.0...v1.1.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* proxy Jenkins API through Backstage backend to resolve CORS on Try-it-out ([bb673e6](https://github.com/Blacklotus89898/Homelab/commit/bb673e6ff55525cc4b4cd3e5e4f53cab1d640b2e))
+
 ## [1.1.0](https://github.com/Blacklotus89898/Homelab/compare/v1.0.0...v1.1.0) (2026-08-04)
 
 
