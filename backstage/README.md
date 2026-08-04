@@ -40,7 +40,7 @@ Add `backend.add(import('@backstage/plugin-<name>-backend'))` to `packages/backe
 | Package | Type | What it does |
 |---|---|---|
 | `@backstage/plugin-kubernetes` | frontend | k3s pod/resource view on entity pages |
-| `@backstage/plugin-github-actions` | frontend | CI run history on entity pages — **pending**, v0.6.15 has no `/alpha` export |
+| `@backstage/plugin-github-actions` | frontend | CI run history on entity pages — **pending**, v0.6.16 has no `/alpha` export |
 | `@backstage/plugin-home` | frontend | Home page at `/home` |
 | `@backstage/plugin-techdocs` | frontend + backend | Rendered docs per service |
 | `@backstage/plugin-scaffolder` | frontend + backend | New service templates |
@@ -48,6 +48,8 @@ Add `backend.add(import('@backstage/plugin-<name>-backend'))` to `packages/backe
 | `@backstage/plugin-catalog-backend-module-github` | backend | Auto-discovers `catalog-info.yaml` from GitHub org |
 | `@backstage/plugin-notifications` + signals | frontend + backend | Real-time notifications |
 | `@backstage/plugin-search` (pg) | backend | Full-text search backed by PostgreSQL |
+| `@backstage/plugin-jenkins-backend` | backend | Jenkins integration — serves build data to frontend |
+| `@backstage/plugin-jenkins` | frontend | Jenkins build tab on entity pages — **pending**, v0.9.10 has no `/alpha` export |
 
 ## Auth
 
@@ -81,6 +83,7 @@ annotations:
 | `backstage-github-auth` | backstage | `AUTH_GITHUB_CLIENT_ID`, `AUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth login |
 | `backstage-k8s-token` | backstage | `K8S_SA_TOKEN` | Kubernetes plugin |
 | `backstage-argocd-token` | backstage | `ARGOCD_TOKEN` | ArgoCD proxy auth |
+| `backstage-jenkins` | backstage | `JENKINS_API_KEY` | Jenkins backend plugin auth |
 
 ## Rebuilding the image
 

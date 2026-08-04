@@ -21,8 +21,10 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 | ArgoCD | http://192.168.0.108:31991 | admin / see argocd secret |
 | Backstage | http://192.168.0.108:30900 | GitHub OAuth |
 | OpenObserve | http://192.168.0.108:30500 | admin@homelab.local / admin |
+| Jenkins | http://192.168.0.108:30808 | ns: jenkins; JCasC auto-configured |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
 | Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
+| Audiobookshelf | http://192.168.0.108:30030 | ns: audiobookshelf |
 | Authentik | – | existing service (not yet GitOps-managed) |
 
 ## Bootstrap (one-time, manual)
@@ -108,16 +110,29 @@ apps/               # ArgoCD Application manifests (one subdir per service)
   otel-operator/
   openobserve/
   backstage/
+  backstage-k8s-rbac/  # Backstage RBAC + sealed secrets (ArgoCD token, Jenkins token)
   platform-observability/
+  pod-cleanup/      # CronJob to prune completed/failed pods every 15 min
+  arc-controller/
+  arc-runners-infra/
+  arc-runners/
+  audiobookshelf/
+  jenkins-infra/    # Jenkins namespace LimitRange
+  jenkins/          # Jenkins Helm chart (multi-source with git values)
   kavita/
   linkding/
 services/           # Plain Kubernetes manifests for non-Helm services
+  audiobookshelf/   # Deployment + Service (NodePort 30030)
   kavita/           # Deployment + Service (hostPath /mnt/smb_storage)
   linkding/         # Deployment + Service + PVC (data preserved via linkding-pvc)
 infrastructure/     # Raw Kubernetes manifests
   namespaces/       # All namespaces (with Istio ambient labels)
   gateway-api/      # Gateway API CRDs (remote kustomize)
   openobserve/      # StatefulSet, Service, Secret
+  jenkins/          # LimitRange for jenkins namespace
+  pod-cleanup/      # CronJob + RBAC
+  arc-runners/      # SealedSecret + LimitRange
+  backstage-k8s-rbac/  # RBAC + SealedSecrets for Backstage integrations
 platform/           # Shared platform config
   observability/    # OTel collector CR
 catalog/            # Backstage software catalog entities
@@ -137,9 +152,9 @@ catalog/            # Backstage software catalog entities
 | -4  | Sealed Secrets, cert-manager, Gateway API CRDs |
 | -3  | Istio (ambient umbrella chart) |
 | -2  | OTel operator, Istio ingress gateway, ARC controller |
-| -1  | OpenObserve, ARC runner infra (SealedSecret) |
-|  0  | OTel collector, platform observability, ARC runner scale set |
-|  1  | Backstage |
+| -1  | OpenObserve, ARC runner infra (SealedSecret), pod-cleanup |
+|  0  | OTel collector, platform observability, ARC runner scale set, backstage-k8s-rbac, audiobookshelf, jenkins-infra, kavita, linkding |
+|  1  | Backstage, Jenkins |
 
 ---
 
@@ -205,7 +220,9 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 | `@roadiehq/backstage-plugin-argo-cd` | ArgoCD sync/health tab per entity | ✅ |
 | `@backstage/plugin-catalog-backend-module-github` | Auto-discover `catalog-info.yaml` from GitHub org | ✅ |
 | `@backstage/plugin-notifications` + signals | Real-time notifications | ✅ |
-| `@backstage/plugin-github-actions` | CI workflow runs per entity | ⏳ pending — v0.6.15 has no `/alpha` export |
+| `@backstage/plugin-jenkins-backend` | Jenkins backend integration | ✅ |
+| `@backstage/plugin-github-actions` | CI workflow runs per entity | ⏳ pending — v0.6.16 has no `/alpha` export |
+| `@backstage/plugin-jenkins` | Jenkins build tab per entity | ⏳ pending — v0.9.10 has no `/alpha` export |
 
 ### ArgoCD integration
 
@@ -229,6 +246,41 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
    ```bash
    kubectl delete pod -n backstage backstage-postgresql-0
    kubectl delete pvc data-backstage-postgresql-0 -n backstage
+   ```
+
+---
+
+## Jenkins
+
+- Helm chart: `jenkins/jenkins` (LTS JDK 21)
+- Deployed via ArgoCD multi-source (Helm chart + git values at `apps/jenkins/values.yaml`)
+- JCasC auto-configures Jenkins on first boot — no setup wizard
+- Multibranch pipeline `homelab` scans this repo on all feature branches; runs `Jenkinsfile` at repo root
+- Backstage backend plugin (`plugin-jenkins-backend`) connected via `http://jenkins.jenkins.svc.cluster.local:8080`; Jenkins API key stored in `backstage-jenkins` SealedSecret
+
+### Bootstrap (one-time)
+
+Register the Jenkins Helm repo in ArgoCD before applying apps:
+
+```bash
+argocd repo add https://charts.jenkins.io --type helm --name jenkins
+```
+
+### Rotating the Jenkins API key
+
+1. Generate a new API token in Jenkins UI → User → Configure → API Token
+2. Re-seal and commit `infrastructure/backstage-k8s-rbac/sealed-jenkins-token.yaml`:
+   ```bash
+   kubectl create secret generic backstage-jenkins -n backstage \
+     --from-literal=JENKINS_API_KEY=<new-token> \
+     --dry-run=client -o yaml \
+   | kubeseal \
+       --controller-name sealed-secrets-controller \
+       --controller-namespace sealed-secrets \
+       --format yaml \
+   > infrastructure/backstage-k8s-rbac/sealed-jenkins-token.yaml
+   git add infrastructure/backstage-k8s-rbac/sealed-jenkins-token.yaml
+   git commit -m "chore: rotate Jenkins API key" && git push
    ```
 
 ---
