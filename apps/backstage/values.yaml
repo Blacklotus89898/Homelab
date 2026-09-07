@@ -31,7 +31,7 @@ backstage:
   startupProbe:
     httpGet:
       path: /
-      port: http
+      port: 7007
     initialDelaySeconds: 10
     periodSeconds: 10
     timeoutSeconds: 3
