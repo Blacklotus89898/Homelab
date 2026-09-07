@@ -2,6 +2,8 @@
 
 GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (custom IDP, replacing Backstage).
 
+> **Architecture diagrams:** [docs/architecture.md](docs/architecture.md) — full visual walkthrough: cluster overview, GitOps flow, sync waves, CI/CD, Petal pipeline runs, observability, network, secrets.
+
 ## Cluster
 
 | Node | Role | IP |
