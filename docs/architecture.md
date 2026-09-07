@@ -65,9 +65,9 @@ flowchart TB
       ARCR["runner pods (ephemeral)<br/>+ DinD sidecar"]
     end
     subgraph petalns["namespace: petal — NOT in mesh"]
-      PP["petal<br/>API + UI + scheduler + SQLite<br/>NodePort 30990"]
-      PDIND["docker:dind sidecar"]
-      PENG["dagger engine (nested)"]
+      PP["petal<br/>API + UI + scheduler + step-runner<br/>NodePort 30990"]
+      PDIND["petal-dind sidecar<br/>(fuse-overlayfs)"]
+      PSTEP["pipeline step containers<br/>(siblings inside DinD)"]
       PGIT["git-sync sidecar"]
     end
     subgraph svcs["ambient service namespaces"]
@@ -81,7 +81,7 @@ flowchart TB
   AUTH["authentik :30080<br/>(existing, not GitOps)"]
 
   USER --> ARGO & BACK & JENK & OO & LINK & KAV & ABS & PP
-  PP --- PDIND --- PENG
+  PP --- PDIND --- PSTEP
   PGIT --> PP
   BACK --- PG
   OTEL --> OO
@@ -164,10 +164,11 @@ flowchart TB
 
 ## Petal pipeline run
 
-The core principle: **Dagger executes, Petal decides and remembers.** Every trigger
-funnels into one deduplicated queue (SQLite, unique `dedup_key`), a small worker pool
-executes runs via the Dagger SDK, and every state change lands in the append-only
-event log.
+The core principle: **Petal decides and remembers; Docker runs; YAML describes.**
+Every trigger funnels into one deduplicated queue (SQLite, unique `dedup_key`), a
+small worker pool executes runs via the first-party step-runner (ADR 0002 — it
+superseded the original Dagger-engine executor), and every state change lands in
+the append-only event log.
 
 ```mermaid
 sequenceDiagram
@@ -176,29 +177,34 @@ sequenceDiagram
   participant API as petal API
   participant DB as SQLite registry (PVC)
   participant Pool as worker pool
-  participant SDK as Dagger SDK
-  participant E as Dagger engine (inside DinD)
+  participant SR as step-runner (Docker API client)
+  participant D as DinD sidecar (step containers)
   participant Reg as Container registry
 
   T->>API: run request
   API->>DB: Enqueue (dedup_key unique — at-least-once triggers fire once)
-  API->>DB: event: enqueued
+  API->>DB: event: queued
   Pool->>DB: ClaimNext (atomic tx)
   Pool->>DB: event: started
-  Pool->>SDK: Execute(run)
-  SDK->>E: session (engine already running in DinD sidecar)
-  E->>E: build pipeline (source streamed from /git/repo)
-  E->>Reg: publish image (e.g. ttl.sh/petal-<run>:1h)
-  Reg-->>E: digest
-  SDK-->>Pool: Result {status, output}
-  Pool->>DB: Finish + event: output (digest, logs summary)
-  Note over DB: full audit trail: trigger → run → events
+  Pool->>SR: Execute(run)
+  SR->>SR: load .petal/pipelines/<name>.yaml from git-synced workdir
+  SR->>SR: snapshot repo → /data/work/<run_id> (per-run workspace)
+  loop each step, sequential fail-fast
+    SR->>D: pull image → create container (run: sh -eu, /src bind-mounted)
+    D->>Reg: pull step image (layer cache on PVC)
+    SR->>D: stream stdout/stderr → /data/logs/<run_id>/<step>.log
+    SR->>DB: events: step.started / step.finished (exit code)
+  end
+  SR->>SR: read output files → JSON
+  SR-->>Pool: Result {status, output}
+  Pool->>DB: Finish + event: output
+  Note over DB: full audit trail: trigger → run → per-step events
 ```
 
-The engine is **self-hosted**: petal's SDK cannot provision an engine from inside a
-plain container, so it talks to the `docker:dind` privileged sidecar
-(`DOCKER_HOST=tcp://127.0.0.1:2375`, vfs storage driver) and the engine runs as a
-nested container inside it — the same DinD pattern the ARC runners use.
+Step containers are **plain siblings in the DinD sidecar**: petal talks the
+Docker Engine API to the `petal-dind` privileged sidecar
+(`DOCKER_HOST=tcp://127.0.0.1:2375`, fuse-overlayfs storage driver) — the same
+DinD pattern the ARC runners use. No engine, no SDK, no docker CLI.
 
 ---
 

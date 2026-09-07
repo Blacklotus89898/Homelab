@@ -26,7 +26,7 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 | Jenkins | http://192.168.0.108:30808 | ns: jenkins; JCasC auto-configured |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
 | Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
-| Petal | http://192.168.0.108:30990 | ns: petal; IDP control plane (Dagger via DinD sidecar) |
+| Petal | http://192.168.0.108:30990 | ns: petal; IDP control plane (step-runner via DinD sidecar) |
 | Audiobookshelf | http://192.168.0.108:30030 | ns: audiobookshelf |
 | Authentik | – | existing service (not yet GitOps-managed) |
 
@@ -130,7 +130,7 @@ services/           # Plain Kubernetes manifests for non-Helm services
   audiobookshelf/   # Deployment + Service (NodePort 30030)
   kavita/           # Deployment + Service (hostPath /mnt/smb_storage)
   linkding/         # Deployment + Service + PVC (data preserved via linkding-pvc)
-  petal/            # Deployment (DinD sidecar hosts Dagger engine) + NodePort 30990 + PVC
+  petal/            # Deployment (DinD sidecar runs step containers) + NodePort 30990 + PVC
 infrastructure/     # Raw Kubernetes manifests
   namespaces/       # All namespaces (with Istio ambient labels)
   gateway-api/      # Gateway API CRDs (remote kustomize)
@@ -268,7 +268,7 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 ## Petal
 
-**Petal** (`github.com/Blacklotus89898/Petal`) is the custom internal developer platform built to replace Backstage: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs, with [Dagger](https://dagger.io) as the execution engine. Architecture and decision log live in the Petal repo (`docs/adr/0001-architecture.md`).
+**Petal** (`github.com/Blacklotus89898/Petal`) is the custom internal developer platform built to replace Backstage: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs. Pipelines are repo-native YAML (`.petal/pipelines/*.yaml` in the target repo) executed by Petal's first-party step-runner as plain Docker containers — *Petal decides and remembers; Docker runs; YAML describes* (ADR 0002, which superseded the original Dagger-engine design after vfs/extraction pain in this cluster). Decision log lives in the Petal repo (`docs/adr/`).
 
 > **Migration status:** Petal is deployed alongside Backstage. Once Petal covers catalog + notifications (Phases C/D), Backstage will be decommissioned — including its PostgreSQL PVC.
 
@@ -281,18 +281,18 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 ```mermaid
 flowchart LR
   subgraph pod["pod: petal"]
-    P["petal<br/>API + UI + scheduler<br/>+ SQLite on PVC"]
-    D["docker:27-dind<br/>privileged sidecar<br/>(vfs storage driver)"]
+    P["petal<br/>API + UI + scheduler + step-runner<br/>+ SQLite/logs on PVC"]
+    D["petal-dind:27.5.1<br/>privileged sidecar<br/>(fuse-overlayfs driver)"]
     G["git-sync<br/>Petal repo to /git/repo"]
-    E["dagger engine<br/>(nested container inside DinD)"]
+    S["step containers<br/>(sibling containers inside DinD,<br/>one per pipeline step)"]
   end
   P -- "DOCKER_HOST=tcp://127.0.0.1:2375" --> D
-  D --- E
+  D --- S
   G --> P
 ```
 
-- The Dagger engine is **fully self-hosted**: the SDK cannot provision an engine from inside a plain container (no docker driver there), so petal talks to the DinD sidecar daemon and the engine runs nested inside it — the same DinD pattern as the ARC runners. No Dagger Cloud.
-- `--storage-driver=vfs`: dockerd rejects overlay2-on-overlay, and `/var/lib/docker` sits on the host's overlayfs. Slower but universal.
+- Step containers are **plain siblings in the DinD sidecar** — petal talks the Docker Engine API to the sidecar daemon and creates one container per pipeline step (`/src` bind-mounted from a per-run workspace snapshot under the data PVC). Same DinD pattern as the ARC runners; no engine, no SDK.
+- `--storage-driver=fuse-overlayfs` (custom `petal-dind` image, built by `build-petal-dind.yaml`): dockerd rejects overlay2-on-overlay, and the `vfs` fallback deep-copies every layer — a 646MB image ballooned past 8Gi and evicted the pod back when the Dagger engine ran here. fuse-overlayfs layers properly on any fs.
 - `strategy: Recreate` — SQLite on an RWO PVC means exactly one replica.
 - LimitRange max 2 CPU / 3Gi — sized for the DinD sidecar's build layers.
 
@@ -306,10 +306,10 @@ flowchart LR
 
 ```bash
 kubectl -n petal logs deploy/petal -c petal --tail=5
-kubectl -n petal exec deploy/petal -c dind -- docker ps   # engine container appears after first pipeline run
+kubectl -n petal exec deploy/petal -c dind -- docker ps   # step containers appear during pipeline runs
 ```
 
-Then open the UI and trigger the `docker-image` pipeline — the dogfood build (Petal builds Petal) running on the cluster's own engine.
+Then open the UI and trigger the `docker-image` pipeline — the dogfood build (Petal builds Petal) running on the cluster's own Docker daemon.
 
 ---
 
@@ -506,7 +506,7 @@ kubectl create secret generic my-secret -n my-namespace \
 | NodePort conflicts | Check `kubectl get svc -A` before assigning. In use: 30030 audiobookshelf, 30050 kavita, 30080 authentik, 30090 linkding, 30443 ArgoCD https, 30500 OpenObserve, 30808 Jenkins, 30900 Backstage, 30990 Petal, 31991 ArgoCD http |
 | Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
 | Petal pod `ImagePullBackOff` | ghcr package still private — make `ghcr.io/blacklotus89898/petal` public (see Petal section) |
-| Petal image builds slow | DinD uses the `vfs` storage driver (overlay2-on-overlay is rejected) — expected, not a bug |
+| Petal step images pull slowly on first run | DinD uses fuse-overlayfs (overlay2-on-overlay is rejected; `vfs` deep-copies every layer) — first pull is slow, the PVC-backed layer cache makes repeats fast |
 
 ---
 

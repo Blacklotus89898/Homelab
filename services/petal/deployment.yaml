@@ -1,12 +1,13 @@
 # Petal control plane. Three containers in one pod:
 #
-#   petal    — the Go binary: API + UI + scheduler + SQLite registry
-#   dind     — Docker daemon that hosts the self-hosted Dagger engine.
-#              The Dagger SDK cannot provision an engine from inside a plain
-#              container (no docker driver there), so petal talks to this
-#              sidecar daemon (DOCKER_HOST=tcp://127.0.0.1:2375) and the
-#              engine runs as a nested container inside it — the same DinD
-#              pattern the ARC runners already run in this cluster.
+#   petal    — the Go binary: API + UI + scheduler + SQLite registry + the
+#              step-runner executor (pipelines from the target repo's
+#              .petal/pipelines/*.yaml, run as plain Docker containers —
+#              Petal repo ADR 0002)
+#   dind     — Docker daemon the step containers run in. petal talks to this
+#              sidecar daemon (DOCKER_HOST=tcp://127.0.0.1:2375) and creates
+#              sibling step containers inside it — the same DinD pattern the
+#              ARC runners already run in this cluster.
 #   git-sync — keeps the Petal repo checked out at /git/repo so the dogfood
 #              `docker-image` pipeline (Petal builds Petal) has real source.
 #
@@ -14,7 +15,7 @@
 #  - privileged: required for DinD (same as ARC runners / Jenkins agents)
 #  - fuse-overlayfs storage driver via the custom petal-dind image: the host's
 #    overlayfs rejects overlay2-on-overlay, and the vfs fallback deep-copies
-#    every layer (646MB engine image → >8Gi on disk).
+#    every layer (multi-hundred-MB step images would explode on disk).
 #  - strategy: Recreate — SQLite on RWO PVC means exactly one replica.
 apiVersion: apps/v1
 kind: Deployment
@@ -39,7 +40,7 @@ spec:
         - name: dind
           # Custom DinD with fuse-overlayfs (built by build-petal-dind.yaml) —
           # stock dind falls back to vfs on an overlayfs host, which deep-copies
-          # every image layer (646MB engine → >8Gi) and extracts ~15x slower.
+          # every image layer and extracts ~15x slower.
           # Rollback: docker:27-dind + --storage-driver=vfs.
           image: ghcr.io/blacklotus89898/petal-dind:27.5.1
           imagePullPolicy: IfNotPresent
@@ -52,16 +53,6 @@ spec:
               value: "" # TLS off; port is loopback-only inside the pod
           securityContext:
             privileged: true
-          lifecycle:
-            # Prime the engine image before any run needs it: the SDK aborts
-            # engine provisioning after ~5min, and pulling over vfs takes
-            # longer than that cold. Pin the version to the SDK's engine tag.
-            postStart:
-              exec:
-                command:
-                  - sh
-                  - -c
-                  - until docker info >/dev/null 2>&1; do sleep 2; done; docker pull registry.dagger.io/engine:v0.21.9 || true
           resources:
             requests:
               cpu: 250m
@@ -73,22 +64,24 @@ spec:
             exec:
               command: ["docker", "info"]
             periodSeconds: 15
-            timeoutSeconds: 10 # docker info is slow while vfs extracts layers
+            timeoutSeconds: 10 # docker info is slow while images extract
             failureThreshold: 5
           startupProbe:
             exec:
               command: ["docker", "info"]
             periodSeconds: 10
             timeoutSeconds: 10
-            failureThreshold: 60 # first boot can pull/extract the engine image for many minutes
+            failureThreshold: 60
           volumeMounts:
             - name: docker-lib
               mountPath: /var/lib/docker
 
         - name: petal
-          # Pinned to the CI-built image for Petal commit a98c79f (cron scheduler
-          # + build workflow). To upgrade: push Petal repo, wait for the
-          # build-petal.yaml run, then bump this to the new commit sha tag.
+          # Pinned to the CI-built image for Petal commit a98c79f. NOTE: the
+          # step-runner (below) needs an image built from Petal commit 1157ce2
+          # or later — push the Petal repo, let build-petal.yaml run, then bump
+          # this sha tag. Until then the binary ignores -executor steps and
+          # falls back to stub.
           image: ghcr.io/blacklotus89898/petal:a98c79fd4cab1d3f66dccfb296b971ab36cea9e4
           imagePullPolicy: IfNotPresent
           args:
@@ -96,8 +89,10 @@ spec:
             - :8080
             - -db
             - /data/petal.db
+            - -data
+            - /data
             - -executor
-            - dagger
+            - steps
             - -workdir
             - /git/repo
             - -workers
@@ -150,14 +145,15 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: petal-data
-        # Build context streamed to the engine per run; safe to lose.
+        # git-sync checkout (repo snapshot source). Safe to lose — re-synced
+        # on pod start. Per-run workspaces live under the data PVC instead
+        # (<data>/work/<run_id>), so steps never write into the checkout.
         - name: src
           emptyDir:
             sizeLimit: 1Gi
-        # Docker image layers + Dagger engine container live here. PVC (not
-        # emptyDir) so the engine image and build-layer cache survive pod
-        # restarts — re-pulling it over vfs takes >5min and exceeds the SDK's
-        # engine-connect deadline.
+        # Docker image layers live here. PVC (not emptyDir) so the step-image
+        # layer cache survives pod restarts — no re-pulling the same base
+        # images on every pod rollout.
         - name: docker-lib
           persistentVolumeClaim:
             claimName: petal-docker-lib
