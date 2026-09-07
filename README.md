@@ -24,6 +24,7 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 | Jenkins | http://192.168.0.108:30808 | ns: jenkins; JCasC auto-configured |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
 | Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
+| Petal | http://192.168.0.108:30990 | ns: petal; IDP control plane (Dagger via DinD sidecar) |
 | Audiobookshelf | http://192.168.0.108:30030 | ns: audiobookshelf |
 | Authentik | – | existing service (not yet GitOps-managed) |
 
@@ -125,6 +126,7 @@ services/           # Plain Kubernetes manifests for non-Helm services
   audiobookshelf/   # Deployment + Service (NodePort 30030)
   kavita/           # Deployment + Service (hostPath /mnt/smb_storage)
   linkding/         # Deployment + Service + PVC (data preserved via linkding-pvc)
+  petal/            # Deployment (DinD sidecar hosts Dagger engine) + NodePort 30990 + PVC
 infrastructure/     # Raw Kubernetes manifests
   namespaces/       # All namespaces (with Istio ambient labels)
   gateway-api/      # Gateway API CRDs (remote kustomize)

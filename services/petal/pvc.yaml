@@ -1,0 +1,14 @@
+# SQLite run registry — WAL mode, single writer, so the Deployment uses
+# strategy: Recreate and this PVC is the only durable state.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: petal-data
+  namespace: petal
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi

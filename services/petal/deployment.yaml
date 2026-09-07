@@ -1,0 +1,147 @@
+# Petal control plane. Three containers in one pod:
+#
+#   petal    — the Go binary: API + UI + scheduler + SQLite registry
+#   dind     — Docker daemon that hosts the self-hosted Dagger engine.
+#              The Dagger SDK cannot provision an engine from inside a plain
+#              container (no docker driver there), so petal talks to this
+#              sidecar daemon (DOCKER_HOST=tcp://127.0.0.1:2375) and the
+#              engine runs as a nested container inside it — the same DinD
+#              pattern the ARC runners already run in this cluster.
+#   git-sync — keeps the Petal repo checked out at /git/repo so the dogfood
+#              `docker-image` pipeline (Petal builds Petal) has real source.
+#
+# Pod-level notes:
+#  - privileged: required for DinD (same as ARC runners / Jenkins agents)
+#  - vfs storage driver: /var/lib/docker lives on the host's overlayfs, and
+#    overlay2-on-overlay is rejected by dockerd. vfs is slower but universal.
+#  - strategy: Recreate — SQLite on RWO PVC means exactly one replica.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petal
+  namespace: petal
+  labels:
+    app: petal
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: petal
+  template:
+    metadata:
+      labels:
+        app: petal
+    spec:
+      containers:
+        - name: dind
+          image: docker:27-dind
+          args:
+            - --host=tcp://0.0.0.0:2375
+            - --host=unix:///var/run/docker.sock
+            - --storage-driver=vfs
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: "" # TLS off; port is loopback-only inside the pod
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          readinessProbe:
+            exec:
+              command: ["docker", "info"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: docker-lib
+              mountPath: /var/lib/docker
+
+        - name: petal
+          image: blacklotus89898/petal:v0.1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - -addr
+            - :8080
+            - -db
+            - /data/petal.db
+            - -executor
+            - dagger
+            - -workdir
+            - /git/repo
+            - -workers
+            - "2"
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: src
+              mountPath: /git
+
+        - name: git-sync
+          image: registry.k8s.io/git-sync/git-sync:v4.1.0
+          args:
+            - --repo=https://github.com/Blacklotus89898/Petal.git
+            - --ref=main
+            - --period=30
+            - --root=/git
+            - --dest=repo
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: src
+              mountPath: /git
+
+      initContainers:
+        # First pipeline run shouldn't fail just because dockerd wasn't up yet.
+        - name: wait-for-dind
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z 127.0.0.1 2375; do echo waiting for dind; sleep 2; done"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: petal-data
+        # Build context streamed to the engine per run; safe to lose.
+        - name: src
+          emptyDir:
+            sizeLimit: 1Gi
+        # Docker image layers + Dagger engine container live here.
+        - name: docker-lib
+          emptyDir:
+            sizeLimit: 8Gi

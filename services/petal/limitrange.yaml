@@ -1,0 +1,19 @@
+# Max sized for the DinD sidecar: engine + build layers inside it are what
+# pushed Jenkins/ARC limits up. Defaults stay small for any stray container.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: petal-limits
+  namespace: petal
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 250m
+        memory: 256Mi
+      defaultRequest:
+        cpu: 50m
+        memory: 64Mi
+      max:
+        cpu: "2"
+        memory: 3Gi
