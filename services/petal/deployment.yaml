@@ -123,19 +123,6 @@ spec:
             - name: src
               mountPath: /git
 
-      initContainers:
-        # First pipeline run shouldn't fail just because dockerd wasn't up yet.
-        - name: wait-for-dind
-          image: busybox:1.36
-          command: ["sh", "-c", "until nc -z 127.0.0.1 2375; do echo waiting for dind; sleep 2; done"]
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 50m
-              memory: 32Mi
-
       volumes:
         - name: data
           persistentVolumeClaim:
