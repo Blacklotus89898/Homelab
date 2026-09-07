@@ -150,9 +150,13 @@ spec:
         - name: src
           emptyDir:
             sizeLimit: 1Gi
-        # Docker image layers live here. PVC (not emptyDir) so the step-image
-        # layer cache survives pod restarts — no re-pulling the same base
-        # images on every pod rollout.
+        # Docker image layers live on the SMB share, NOT the root fs: the
+        # kubelet evicts on root-fs pressure, and a 15Gi build cache sharing
+        # the OS disk caused repeated disk-pressure incidents (see the
+        # k3s-disk-cleanup runbook). hostPath because only the worker runs
+        # petal, and virtiofs /mnt/smb_storage is fstab-mounted there.
+        # The cache is disposable — pod re-pulls images if the share is lost.
         - name: docker-lib
-          persistentVolumeClaim:
-            claimName: petal-docker-lib
+          hostPath:
+            path: /mnt/smb_storage/petal-docker-lib
+            type: DirectoryOrCreate

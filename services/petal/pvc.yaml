@@ -1,5 +1,8 @@
 # SQLite run registry — WAL mode, single writer, so the Deployment uses
 # strategy: Recreate and this PVC is the only durable state.
+# (The Docker build cache moved to the smb_storage hostPath — see
+# deployment.yaml docker-lib comment. The old petal-docker-lib PVC was
+# deleted 2026-09-07.)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,20 +15,3 @@ spec:
   resources:
     requests:
       storage: 2Gi
----
-# Docker data root for the DinD sidecar: engine image + build layers. Must
-# outlive pod restarts (see deployment.yaml docker-lib comment). 15Gi because
-# vfs duplicates every layer and containerd keeps blobs besides — the engine
-# image alone evicted an 8Gi emptyDir (2026-09-07).
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: petal-docker-lib
-  namespace: petal
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 15Gi
