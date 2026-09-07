@@ -23,6 +23,20 @@ backstage:
     limits:
       memory: 2Gi
 
+  # Cold node restarts (drain + reboot maintenance) make Backstage boot slower
+  # than the chart's default ~70s startup window — Postgres is also still
+  # coming up, so migrations block. The kubelet then SIGKILLs the container
+  # (exit 137 "failed startup probe") before it ever serves. Widen the window:
+  # ~310s before the first restart is allowed.
+  startupProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 30
+
   appConfig:
     app:
       title: Homelab Portal
