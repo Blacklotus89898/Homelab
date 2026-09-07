@@ -75,6 +75,13 @@ spec:
           volumeMounts:
             - name: docker-lib
               mountPath: /var/lib/docker
+            # Step containers are dind's children, so dind resolves bind-mount
+            # SOURCES in its own mount namespace. The step-runner passes
+            # /data/work/<run_id> as the /src source — that path must exist
+            # HERE too, hence the same PVC at the same path as the petal
+            # container. Without it: "bind source path does not exist".
+            - name: data
+              mountPath: /data
 
         - name: petal
           # :latest while Petal is under active development — every push to
