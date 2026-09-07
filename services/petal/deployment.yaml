@@ -12,8 +12,9 @@
 #
 # Pod-level notes:
 #  - privileged: required for DinD (same as ARC runners / Jenkins agents)
-#  - vfs storage driver: /var/lib/docker lives on the host's overlayfs, and
-#    overlay2-on-overlay is rejected by dockerd. vfs is slower but universal.
+#  - fuse-overlayfs storage driver via the custom petal-dind image: the host's
+#    overlayfs rejects overlay2-on-overlay, and the vfs fallback deep-copies
+#    every layer (646MB engine image → >8Gi on disk).
 #  - strategy: Recreate — SQLite on RWO PVC means exactly one replica.
 apiVersion: apps/v1
 kind: Deployment
@@ -36,11 +37,16 @@ spec:
     spec:
       containers:
         - name: dind
-          image: docker:27-dind
+          # Custom DinD with fuse-overlayfs (built by build-petal-dind.yaml) —
+          # stock dind falls back to vfs on an overlayfs host, which deep-copies
+          # every image layer (646MB engine → >8Gi) and extracts ~15x slower.
+          # Rollback: docker:27-dind + --storage-driver=vfs.
+          image: ghcr.io/blacklotus89898/petal-dind:27.5.1
+          imagePullPolicy: IfNotPresent
           args:
             - --host=tcp://0.0.0.0:2375
             - --host=unix:///var/run/docker.sock
-            - --storage-driver=vfs
+            - --storage-driver=fuse-overlayfs
           env:
             - name: DOCKER_TLS_CERTDIR
               value: "" # TLS off; port is loopback-only inside the pod
