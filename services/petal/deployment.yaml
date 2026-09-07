@@ -63,8 +63,11 @@ spec:
               mountPath: /var/lib/docker
 
         - name: petal
-          image: ghcr.io/blacklotus89898/petal:latest # built by Petal repo CI (build-petal.yaml); package must be public on ghcr
-          imagePullPolicy: Always
+          # Pinned to the CI-built image for Petal commit a98c79f (cron scheduler
+          # + build workflow). To upgrade: push Petal repo, wait for the
+          # build-petal.yaml run, then bump this to the new commit sha tag.
+          image: ghcr.io/blacklotus89898/petal:a98c79fd4cab1d3f66dccfb296b971ab36cea9e4
+          imagePullPolicy: IfNotPresent
           args:
             - -addr
             - :8080

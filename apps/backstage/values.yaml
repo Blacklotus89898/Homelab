@@ -2,8 +2,12 @@ backstage:
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
-    tag: "latest"
-    pullPolicy: Always
+    # Pinned to the CI-built image for commit ddf415b ("seal Jenkins API token,
+    # enable backend connection") — the newest functional build; later commits
+    # were docs-only. To upgrade: merge a backstage/** change, wait for the
+    # build-backstage.yaml run, then bump this to the new commit sha tag.
+    tag: "ddf415be3556fffb9774eae6e67cad8f95001efd"
+    pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
     - backstage-github-token

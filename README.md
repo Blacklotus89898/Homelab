@@ -221,7 +221,7 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 - Helm chart: `backstage/backstage` v2.8.2
 - Backstage platform: `1.53.0` (new declarative frontend system)
-- Custom image built via CI: `ghcr.io/blacklotus89898/backstage:latest`
+- Custom image built via CI: `ghcr.io/blacklotus89898/backstage:<commit-sha>` — deployments pin to immutable sha tags, never `:latest`. Bump the tag in `apps/backstage/values.yaml` after each CI build.
 - CSP fix required for plain HTTP: `backend.csp.upgrade-insecure-requests: false`
 - Auth: **GitHub OAuth only** — guest provider removed
 - Software catalog loaded from `catalog/all.yaml` + GitHub org auto-discovery (every 30 min)
@@ -257,7 +257,7 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 ### Upgrading Backstage
 
 1. Update `backstage.json` version and run `yarn install`
-2. Rebuild and push image via CI
+2. Rebuild and push image via CI, then pin the new commit-sha tag in `apps/backstage/values.yaml`
 3. **Must wipe PostgreSQL PVC** — Backstage runs forward-only migrations:
    ```bash
    kubectl delete pod -n backstage backstage-postgresql-0
@@ -298,7 +298,7 @@ flowchart LR
 
 ### Image builds (Petal repo CI)
 
-`build-petal.yaml` in the Petal repo mirrors `build-backstage.yaml`: go test → buildx → `ghcr.io/blacklotus89898/petal:{latest,<sha>}` → Trivy scan. The deployment tracks `:latest` with `imagePullPolicy: Always`.
+`build-petal.yaml` in the Petal repo mirrors `build-backstage.yaml`: go test → buildx → `ghcr.io/blacklotus89898/petal:{latest,<sha>}` → Trivy scan. The deployment pins an immutable `<sha>` tag (`imagePullPolicy: IfNotPresent`) — never `:latest`, so a bad push can't self-deploy and ArgoCD history maps to known images. Upgrade flow: push Petal → CI builds → bump the sha tag in `services/petal/deployment.yaml`.
 
 **One-time after the first CI run:** ghcr packages are created **private** — make the package public (GitHub → your profile → Packages → `petal` → Package settings → Change visibility), or pods fail with `ImagePullBackOff`. Same as the Backstage package.
 
