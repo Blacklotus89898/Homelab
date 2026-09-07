@@ -12,3 +12,18 @@ spec:
   resources:
     requests:
       storage: 2Gi
+---
+# Docker data root for the DinD sidecar: engine image + build layers. Must
+# outlive pod restarts (see deployment.yaml docker-lib comment).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: petal-docker-lib
+  namespace: petal
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 8Gi

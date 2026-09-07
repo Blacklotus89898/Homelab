@@ -46,6 +46,16 @@ spec:
               value: "" # TLS off; port is loopback-only inside the pod
           securityContext:
             privileged: true
+          lifecycle:
+            # Prime the engine image before any run needs it: the SDK aborts
+            # engine provisioning after ~5min, and pulling over vfs takes
+            # longer than that cold. Pin the version to the SDK's engine tag.
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - until docker info >/dev/null 2>&1; do sleep 2; done; docker pull registry.dagger.io/engine:v0.21.9 || true
           resources:
             requests:
               cpu: 250m
@@ -56,8 +66,15 @@ spec:
           readinessProbe:
             exec:
               command: ["docker", "info"]
-            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 10 # docker info is slow while vfs extracts layers
+            failureThreshold: 5
+          startupProbe:
+            exec:
+              command: ["docker", "info"]
             periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 60 # first boot can pull/extract the engine image for many minutes
           volumeMounts:
             - name: docker-lib
               mountPath: /var/lib/docker
@@ -131,7 +148,10 @@ spec:
         - name: src
           emptyDir:
             sizeLimit: 1Gi
-        # Docker image layers + Dagger engine container live here.
+        # Docker image layers + Dagger engine container live here. PVC (not
+        # emptyDir) so the engine image and build-layer cache survive pod
+        # restarts — re-pulling it over vfs takes >5min and exceeds the SDK's
+        # engine-connect deadline.
         - name: docker-lib
-          emptyDir:
-            sizeLimit: 8Gi
+          persistentVolumeClaim:
+            claimName: petal-docker-lib
