@@ -1,6 +1,6 @@
 # Homelab
 
-GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, OpenObserve, OTel, and Backstage.
+GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (custom IDP, replacing Backstage).
 
 ## Cluster
 
@@ -73,9 +73,9 @@ ArgoCD will now reconcile everything in `apps/` automatically.
 k3s 1.34 has a port-forward bug — use NodePort instead:
 
 ```bash
-# Get the NodePort (should be 30080 after ArgoCD self-manages)
+# NodePort is fixed at 31991 in apps/argocd/values.yaml
 kubectl get svc -n argocd argocd-server
-# Access at http://192.168.0.108:30080
+# Access at http://192.168.0.108:31991
 # Login: admin / $(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d)
 ```
 
@@ -103,9 +103,10 @@ Then seal the GitHub PAT secret and push it (see **Self-hosted runners** section
 ```
 bootstrap/          # Manual one-time apply — root app-of-apps
 apps/               # ArgoCD Application manifests (one subdir per service)
-  argocd/           # Self-managing ArgoCD
+  argocd/           # Self-managing ArgoCD (NodePort 31991)
   cert-manager/
   sealed-secrets/
+  gateway-api/      # Gateway API CRDs
   istio/
   istio-gateway/
   otel-operator/
@@ -122,6 +123,7 @@ apps/               # ArgoCD Application manifests (one subdir per service)
   jenkins/          # Jenkins Helm chart (multi-source with git values)
   kavita/
   linkding/
+  namespaces/       # Wave -5 app applying infrastructure/namespaces/
 services/           # Plain Kubernetes manifests for non-Helm services
   audiobookshelf/   # Deployment + Service (NodePort 30030)
   kavita/           # Deployment + Service (hostPath /mnt/smb_storage)
@@ -137,9 +139,12 @@ infrastructure/     # Raw Kubernetes manifests
   backstage-k8s-rbac/  # RBAC + SealedSecrets for Backstage integrations
 platform/           # Shared platform config
   observability/    # OTel collector CR
+  gateways/         # (empty) Istio Gateway / HTTPRoute rules — pending
 catalog/            # Backstage software catalog entities
   all.yaml          # Root location (loaded by Backstage)
   homelab-system.yaml
+  users.yaml
+  apis.yaml         # API entities (OpenObserve, ArgoCD, Jenkins)
   components/       # One file per service
 ```
 
@@ -155,7 +160,7 @@ catalog/            # Backstage software catalog entities
 | -3  | Istio (ambient umbrella chart) |
 | -2  | OTel operator, Istio ingress gateway, ARC controller |
 | -1  | OpenObserve, ARC runner infra (SealedSecret), pod-cleanup |
-|  0  | OTel collector, platform observability, ARC runner scale set, backstage-k8s-rbac, audiobookshelf, jenkins-infra, kavita, linkding |
+|  0  | OTel collector, platform observability, ARC runner scale set, backstage-k8s-rbac, audiobookshelf, jenkins-infra, kavita, linkding, petal |
 |  1  | Backstage, Jenkins |
 
 ---
@@ -181,9 +186,16 @@ ssh k3s-worker-01 "sudo cp /opt/cni/bin/istio-cni /var/lib/rancher/k3s/data/cni/
 - `monitoring` — OTel collector
 - `openobserve`
 - `homelab`
+- `kavita`
+- `linkding`
+- `audiobookshelf`
 
 **Namespaces NOT in the mesh (intentional):**
 - `backstage` — NodePort access requires plain HTTP; ambient intercepts and drops unencrypted traffic
+- `jenkins` — NodePort access
+- `petal` — NodePort access + DinD sidecar (mesh interference with Docker builds)
+- `arc-systems` — webhook TLS conflicts with ztunnel
+- `arc-runners` — DinD conflicts with Istio ambient
 
 ---
 
@@ -249,6 +261,53 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
    kubectl delete pod -n backstage backstage-postgresql-0
    kubectl delete pvc data-backstage-postgresql-0 -n backstage
    ```
+
+---
+
+## Petal
+
+**Petal** (`github.com/Blacklotus89898/Petal`) is the custom internal developer platform built to replace Backstage: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs, with [Dagger](https://dagger.io) as the execution engine. Architecture and decision log live in the Petal repo (`docs/adr/0001-architecture.md`).
+
+> **Migration status:** Petal is deployed alongside Backstage. Once Petal covers catalog + notifications (Phases C/D), Backstage will be decommissioned — including its PostgreSQL PVC.
+
+### Deployment (this repo)
+
+- Manifests: `services/petal/` (deployment, service, PVC, LimitRange) + `apps/petal/application.yaml`; namespace `petal` (excluded from Istio ambient)
+- URL: http://192.168.0.108:30990
+- One pod, three containers:
+
+```mermaid
+flowchart LR
+  subgraph pod["pod: petal"]
+    P["petal<br/>API + UI + scheduler<br/>+ SQLite on PVC"]
+    D["docker:27-dind<br/>privileged sidecar<br/>(vfs storage driver)"]
+    G["git-sync<br/>Petal repo to /git/repo"]
+    E["dagger engine<br/>(nested container inside DinD)"]
+  end
+  P -- "DOCKER_HOST=tcp://127.0.0.1:2375" --> D
+  D --- E
+  G --> P
+```
+
+- The Dagger engine is **fully self-hosted**: the SDK cannot provision an engine from inside a plain container (no docker driver there), so petal talks to the DinD sidecar daemon and the engine runs nested inside it — the same DinD pattern as the ARC runners. No Dagger Cloud.
+- `--storage-driver=vfs`: dockerd rejects overlay2-on-overlay, and `/var/lib/docker` sits on the host's overlayfs. Slower but universal.
+- `strategy: Recreate` — SQLite on an RWO PVC means exactly one replica.
+- LimitRange max 2 CPU / 3Gi — sized for the DinD sidecar's build layers.
+
+### Image builds (Petal repo CI)
+
+`build-petal.yaml` in the Petal repo mirrors `build-backstage.yaml`: go test → buildx → `ghcr.io/blacklotus89898/petal:{latest,<sha>}` → Trivy scan. The deployment tracks `:latest` with `imagePullPolicy: Always`.
+
+**One-time after the first CI run:** ghcr packages are created **private** — make the package public (GitHub → your profile → Packages → `petal` → Package settings → Change visibility), or pods fail with `ImagePullBackOff`. Same as the Backstage package.
+
+### First-run verification
+
+```bash
+kubectl -n petal logs deploy/petal -c petal --tail=5
+kubectl -n petal exec deploy/petal -c dind -- docker ps   # engine container appears after first pipeline run
+```
+
+Then open the UI and trigger the `docker-image` pipeline — the dogfood build (Petal builds Petal) running on the cluster's own engine.
 
 ---
 
@@ -442,8 +501,10 @@ kubectl create secret generic my-secret -n my-namespace \
 | Istio CNI binary not in k3s path | Copy binary manually; fixed in `cniBinDir` values |
 | OpenObserve Helm chart requires CloudNativePG | Use plain StatefulSet with `ZO_META_STORE=sqlite` |
 | Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config (required for plain HTTP NodePort) |
-| NodePort conflicts | Check `kubectl get svc -A` before assigning; authentik uses 30080, linkding uses 30090, ArgoCD uses 31991 |
+| NodePort conflicts | Check `kubectl get svc -A` before assigning. In use: 30030 audiobookshelf, 30050 kavita, 30080 authentik, 30090 linkding, 30443 ArgoCD https, 30500 OpenObserve, 30808 Jenkins, 30900 Backstage, 30990 Petal, 31991 ArgoCD http |
 | Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
+| Petal pod `ImagePullBackOff` | ghcr package still private — make `ghcr.io/blacklotus89898/petal` public (see Petal section) |
+| Petal image builds slow | DinD uses the `vfs` storage driver (overlay2-on-overlay is rejected) — expected, not a bug |
 
 ---
 

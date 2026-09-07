@@ -63,8 +63,8 @@ spec:
               mountPath: /var/lib/docker
 
         - name: petal
-          image: blacklotus89898/petal:v0.1.0
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/blacklotus89898/petal:latest # built by Petal repo CI (build-petal.yaml); package must be public on ghcr
+          imagePullPolicy: Always
           args:
             - -addr
             - :8080
