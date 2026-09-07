@@ -14,7 +14,9 @@ spec:
       storage: 2Gi
 ---
 # Docker data root for the DinD sidecar: engine image + build layers. Must
-# outlive pod restarts (see deployment.yaml docker-lib comment).
+# outlive pod restarts (see deployment.yaml docker-lib comment). 15Gi because
+# vfs duplicates every layer and containerd keeps blobs besides — the engine
+# image alone evicted an 8Gi emptyDir (2026-09-07).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -26,4 +28,4 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 8Gi
+      storage: 15Gi
