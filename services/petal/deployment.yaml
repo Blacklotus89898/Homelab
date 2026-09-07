@@ -109,9 +109,9 @@ spec:
           args:
             - --repo=https://github.com/Blacklotus89898/Petal.git
             - --ref=main
-            - --period=30
+            - --period=30s
             - --root=/git
-            - --dest=repo
+            - --link=repo
           resources:
             requests:
               cpu: 20m
