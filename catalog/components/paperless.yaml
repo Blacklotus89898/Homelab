@@ -2,9 +2,9 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: paperless
-  description: Document management system
+  description: Document management system (disabled 2026-09-28 — scaled to zero, data retained on PVCs)
 spec:
   type: service
-  lifecycle: production
+  lifecycle: deprecated
   owner: user:blacklotus89898
   system: homelab
