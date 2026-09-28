@@ -1,3 +1,5 @@
 .env
 *.env
 todo.md
+.claude/settings.local.json
+.claude/worktrees/
