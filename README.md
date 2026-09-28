@@ -8,8 +8,8 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 
 | Node | Role | IP |
 |---|---|---|
-| debian | control-plane (SchedulingDisabled) | 192.168.0.108 |
-| k3s-worker-01 | worker | 192.168.0.x |
+| debian | control-plane (SchedulingDisabled) | 192.168.0.112 |
+| k3s-worker-01 | worker | 192.168.0.108 |
 
 - k3s v1.34.5+k3s1
 - StorageClass: `local-path`
