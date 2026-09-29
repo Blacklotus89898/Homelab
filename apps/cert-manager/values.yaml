@@ -1,5 +1,3 @@
-revisionHistoryLimit: 3
-
 crds:
   enabled: true
 
@@ -24,4 +22,4 @@ cainjector:
       cpu: 10m
       memory: 32Mi
     limits:
-      memory: 64Mi
+      memory: 128Mi
