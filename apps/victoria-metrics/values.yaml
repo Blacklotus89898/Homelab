@@ -1,0 +1,40 @@
+# VictoriaMetrics k8s-stack — full monitoring, disk-budgeted (roadmap Phase 1).
+# Decision 2026-09-28: single-binary VM instead of kube-prometheus-stack (disk constraint).
+# Disk target: <2G actual all-in. Caps below bound the worst case:
+#   vmsingle PVC ceiling 8Gi (expected actual ~1-2G at this cluster's scale),
+#   grafana PVC 2Gi, everything else ephemeral.
+#
+# Chart defaults kept deliberately (vmagent scrapes via its VMServiceScrape/
+# VMNodeScrape CRs, vmalert evaluates defaultRules, alertmanager runs with the
+# chart's default config — blackhole receiver until ntfy wiring, which is the
+# next roadmap item). Only deltas from defaults below.
+
+defaultRules:
+  enabled: true # recording + alerting rules for k8s components
+
+defaultDashboards:
+  enabled: true # Grafana dashboards via ConfigMap sidecar
+
+vmsingle:
+  spec:
+    retentionPeriod: "30d" # bounded retention (default is 1 month; explicit beats implicit)
+    storage:
+      resources:
+        requests:
+          storage: 8Gi # hard ceiling on the local-path volume
+    resources:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        memory: 768Mi
+
+grafana:
+  admin:
+    existingSecret: grafana-admin-credentials # SealedSecret in infrastructure/victoria-metrics/
+  persistence:
+    enabled: true
+    size: 2Gi
+  service:
+    type: NodePort
+    nodePort: 30300 # http://192.168.0.108:30300
