@@ -34,6 +34,15 @@ vmsingle:
         memory: 512Mi # ns LimitRange (monitoring-limits) caps containers at 512Mi
 
 grafana:
+  # Explicit resources: without them the ns LimitRange default (256Mi limit) OOMKills
+  # grafana 13 during startup provisioning.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   admin:
     existingSecret: grafana-admin-credentials # SealedSecret in infrastructure/victoria-metrics/
   persistence:
