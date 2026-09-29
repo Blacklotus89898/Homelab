@@ -5,9 +5,8 @@
 #   grafana PVC 2Gi, everything else ephemeral.
 #
 # Chart defaults kept deliberately (vmagent scrapes via its VMServiceScrape/
-# VMNodeScrape CRs, vmalert evaluates defaultRules, alertmanager runs with the
-# chart's default config — blackhole receiver until ntfy wiring, which is the
-# next roadmap item). Only deltas from defaults below.
+# VMNodeScrape CRs, vmalert evaluates defaultRules). Only deltas from defaults
+# below — alertmanager config is overridden to route everything to ntfy.
 
 # Short fullname: the VM operator builds pod labels from CR names — the default
 # "victoria-metrics-victoria-metrics-k8s-stack-*" exceeds k8s' 63-char label limit.
@@ -32,6 +31,26 @@ vmsingle:
         memory: 200Mi
       limits:
         memory: 512Mi # ns LimitRange (monitoring-limits) caps containers at 512Mi
+
+alertmanager:
+  # Route all firing alerts to the ntfy push relay (infrastructure/ntfy, NodePort 30310).
+  # v1 is a raw webhook: the JSON payload body becomes the ntfy message (no bridge
+  # deployed — disk/minimalism first). max_alerts bounds the blob; a formatter bridge
+  # is a Phase 2 refinement. Subscribe from a phone: topic "homelab-alerts" on
+  # http://192.168.0.108:30310.
+  config:
+    route:
+      receiver: ntfy
+      group_by: ["alertname", "namespace"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: ntfy
+        webhook_configs:
+          - url: "http://ntfy.monitoring.svc/homelab-alerts?title=Homelab+alert"
+            send_resolved: true
+            max_alerts: 3
 
 grafana:
   # Explicit resources: without them the ns LimitRange default (256Mi limit) OOMKills

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntfy-config
+  namespace: monitoring
+data:
+  server.yml: |
+    # ntfy server config — push-notification relay for Alertmanager (roadmap Phase 1).
+    # No auth-file configured: topics are open to the cluster and LAN (NodePort 30310).
+    # Acceptable on the home LAN; revisit if this is ever exposed past 192.168.0.0/24.
+    base-url: "http://192.168.0.108:30310"
+    listen-http: ":80"
+    # Message cache is ephemeral (emptyDir): pod restarts lose cached history, which
+    # only affects "read missed messages since last poll" — instant delivery unaffected.
+    cache-file: "/var/cache/ntfy/cache.db"
+    cache-duration: "12h"
