@@ -32,6 +32,14 @@ vmsingle:
       limits:
         memory: 512Mi # ns LimitRange (monitoring-limits) caps containers at 512Mi
 
+# k3s embeds scheduler + controller-manager in the control-plane binary — the
+# chart's standalone-pod scrapes/rules can never find targets here and would
+# false-positive (KubeSchedulerDown / KubeControllerManagerDown / no-data rules).
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+
 alertmanager:
   # Route all firing alerts to the ntfy push relay (infrastructure/ntfy, NodePort 30310).
   # v1 is a raw webhook: the JSON payload body becomes the ntfy message (no bridge
@@ -45,7 +53,20 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
+      routes:
+        - receiver: blackhole
+          matchers:
+            - alertname = "Watchdog" # always-firing heartbeat; would page every 4h
+        - receiver: blackhole
+          matchers:
+            - severity = "none" # InfoInhibitor + Watchdog are inhibition meta-alerts, not pages
+        - receiver: blackhole
+          matchers:
+            # structural on this cluster (requests overcommit by design on a full
+            # homelab); visible in Grafana, not worth a 4-hourly push
+            - alertname = "KubeMemoryOvercommit"
     receivers:
+      - name: blackhole # no integrations = drop
       - name: ntfy
         webhook_configs:
           - url: "http://ntfy.monitoring.svc/homelab-alerts?title=Homelab+alert"
