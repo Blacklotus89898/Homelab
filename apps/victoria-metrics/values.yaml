@@ -62,9 +62,17 @@ alertmanager:
             - severity = "none" # InfoInhibitor + Watchdog are inhibition meta-alerts, not pages
         - receiver: blackhole
           matchers:
+            - severity = "info" # push channel is for warning+; info stays in Grafana
+        - receiver: blackhole
+          matchers:
             # structural on this cluster (requests overcommit by design on a full
             # homelab); visible in Grafana, not worth a 4-hourly push
             - alertname = "KubeMemoryOvercommit"
+        - receiver: blackhole
+          matchers:
+            # arc-controller app Suspended by user decision 2026-09-28 → its
+            # deployment is chronically mismatched; paging would repeat every 4h
+            - namespace = "arc-systems"
     receivers:
       - name: blackhole # no integrations = drop
       - name: ntfy
