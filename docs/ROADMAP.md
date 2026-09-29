@@ -34,7 +34,10 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - victoria-metrics-k8s-stack 0.95.0 (app v1.153.0) into `monitoring` ns; fullname `vmstack` (default fullname breaks k8s 63-char label limit on operator CRs). 22/22 targets up, ~6.8k rows/s, worker 66%→71% (~2G incl. images).
     - Grafana: NodePort 30300, admin creds via SealedSecret `grafana-admin-credentials` (retrieve: `kubectl -n monitoring get secret grafana-admin-credentials -o jsonpath='{.data.admin-password}' | base64 -d`).
     - 30d retention, vmsingle PVC cap 8Gi, grafana PVC 2Gi. ns LimitRange (max 512Mi/container) — charts without explicit resources get 256Mi default and OOMKill (hit grafana).
-  - [ ] Alertmanager (or vmalert) → ntfy; every alert annotation links a KB runbook path
+  - [x] Alertmanager (or vmalert) → ntfy; every alert annotation links a KB runbook path ✅ DONE 2026-09-29 (commits 5f2b68c, 334fe3a, 0fc7da5)
+    - ntfy v2.28.0 (pinned, `binwiederhier/ntfy`) as plain-manifest app in `monitoring`, NodePort 30310, emptyDir cache (no PVC — disk), no auth (LAN-accepted; revisit if ever exposed past 192.168.0.0/24). Phone: ntfy app → http://192.168.0.108:30310 → topic `homelab-alerts`.
+    - vmalertmanager routes: default → ntfy webhook (raw JSON body as message, v1; formatting bridge = Phase 2), max_alerts 3, send_resolved. Blackhole: Watchdog, severity=none/info, KubeMemoryOvercommit (structural), namespace=arc-systems (app deliberately Suspended). k3s: kubeScheduler/kubeControllerManager rules disabled (embedded in k3s → Kube*Down false-positive forever).
+    - E2E verified: synthetic `ClaudeWiringTest` POSTed to alertmanager /api/v2/alerts arrived on the topic with title "Homelab alert". Runbook links: VM defaultRules carry runbook_url → prometheus-operator runbooks; OUR-KB links become the standard for custom rules (ongoing, applies as custom rules get written). KB: solutions/ntfy-alert-pipeline.md.
   - [ ] Uptime-Kuma probing ingresses externally (image already on worker)
   - [ ] Velero backups + **restore drill with evidence** (target for backups still needs deciding — probably NFS/export on Proxmox or a dir on debian; disk-budget it first)
   - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class)
