@@ -21,7 +21,14 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
   - [x] Disk reclaim: worker 73%→65% (image prune ~3.9G), debian journal 207M
   - [ ] debian reboot (186d uptime; `sudo systemctl reboot` permitted — needs user window)
   - [ ] worker reboot (no sudo there — user must run it)
-  - [ ] Proxmox host disk audit (user gave creds 2026-09-29; audit via plink; **ask before deleting anything**)
+  - [x] Proxmox host disk audit (2026-09-29, read-only; tools/plink-headless-password-ssh.md) — findings:
+    - **`hard_drive` (1.9T, 94%) is the crisis; it's user data, not cruft**: `smb_data` 1.61T (media/downloads served by CT 112 smb, consumed by jellyfin 114 + qbittorrent 113 via qb-data CIFS = same disk), `images` 152G (VMs 100/103/104), `template` 13G. Zero ISOs/dumps/snapshots. Reclaim = user curation or a new disk.
+    - **local-lvm pool fine** (794G, 41% actual). But 4 CT rootfs nearly FULL (will break): jellyfin 114 @99.8%/16G, npm 120 @96.6%/8G, immich 134 @93.5%/30G, qbittorrent 113 @92.5%/20G → resize via `pct resize <ct> rootfs +8G` (**pending user OK**).
+    - Stopped VMs holding space: ai-agent 59.5G actual (lvm), win 21.7G, rover ~100G (on hard_drive images) — **user decision**.
+    - ubuntu22 VM: 256G thin / 134G used, running.
+    - **No VM/CT backups at all** (pbs-container stopped, dump dirs empty) — resilience gap; see Phase 1.
+    - pve journal 719M on root (28%) — low priority.
+    - Actions pending user: CT resizes, stopped-VM deletions, smb_data curation. NOTHING deleted without explicit OK.
 - [ ] **Phase 1 — reliability foundation** ← NEXT
   - [ ] VictoriaMetrics single-binary + vmagent + Grafana (NOT kube-prometheus-stack — disk). Disk target: <2G all-in.
   - [ ] Alertmanager (or vmalert) → ntfy; every alert annotation links a KB runbook path
