@@ -41,6 +41,10 @@ The `knowledge` MCP tools are connected at user scope; their full usage rules li
 - Scripts and one-liners go in `tools/<name>.md` (retrieved via `get_tool`), runbooks in `runbooks/`, environment facts in `environment/`.
 - Never store todos or speculation — they pollute retrieval.
 
+## Roadmap — start here for improvement work
+
+**`docs/ROADMAP.md`** is the canonical, living plan (phases, status, standing constraints, decision log). For any "improve the homelab / what's next" work: read it first, take the next unchecked item, and when done update the file (status, decision log) and commit — that file is the project's memory across sessions. Disk space is the first-class constraint; see the roadmap's "Standing constraints".
+
 ## Useful commands
 
 - `/status` — cluster + GitOps health one-pager
