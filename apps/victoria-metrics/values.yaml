@@ -9,6 +9,10 @@
 # chart's default config — blackhole receiver until ntfy wiring, which is the
 # next roadmap item). Only deltas from defaults below.
 
+# Short fullname: the VM operator builds pod labels from CR names — the default
+# "victoria-metrics-victoria-metrics-k8s-stack-*" exceeds k8s' 63-char label limit.
+fullnameOverride: vmstack
+
 defaultRules:
   enabled: true # recording + alerting rules for k8s components
 
@@ -27,7 +31,7 @@ vmsingle:
         cpu: 50m
         memory: 200Mi
       limits:
-        memory: 768Mi
+        memory: 512Mi # ns LimitRange (monitoring-limits) caps containers at 512Mi
 
 grafana:
   admin:
