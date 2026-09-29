@@ -28,8 +28,8 @@ spec:
   ignoreDifferences:
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
-      jqPathExpressions:
-        - .webhooks[].clientConfig.caBundle
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
   syncPolicy:
     automated:
       prune: true
