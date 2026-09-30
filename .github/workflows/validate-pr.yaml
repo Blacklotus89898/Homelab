@@ -146,9 +146,10 @@ jobs:
       - name: Check for duplicate NodePorts
         run: |
           echo "Scanning for NodePort assignments..."
-          # extract only the value after `nodePort:` — the line's comment often
-          # repeats the port in a URL, which the old bare-number grep double-counted
-          dups=$(grep -rhE 'nodePort: *[0-9]+' services/ infrastructure/ apps/ --include='*.yaml' \
+          # extract only the `nodePort: <value>` fragment — the line's comment
+          # often repeats the port (and the node IP) in a URL, which plain
+          # number-greps on the whole line double-count
+          dups=$(grep -rhoE 'nodePort: *[0-9]+' services/ infrastructure/ apps/ --include='*.yaml' \
             | grep -oE '[0-9]+' \
             | sort | uniq -d)
           if [ -n "$dups" ]; then
