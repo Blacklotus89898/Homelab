@@ -38,7 +38,10 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - ntfy v2.28.0 (pinned, `binwiederhier/ntfy`) as plain-manifest app in `monitoring`, NodePort 30310, emptyDir cache (no PVC — disk), no auth (LAN-accepted; revisit if ever exposed past 192.168.0.0/24). Phone: ntfy app → http://192.168.0.108:30310 → topic `homelab-alerts`.
     - vmalertmanager routes: default → ntfy webhook (raw JSON body as message, v1; formatting bridge = Phase 2), max_alerts 3, send_resolved. Blackhole: Watchdog, severity=none/info, KubeMemoryOvercommit (structural), namespace=arc-systems (app deliberately Suspended). k3s: kubeScheduler/kubeControllerManager rules disabled (embedded in k3s → Kube*Down false-positive forever).
     - E2E verified: synthetic `ClaudeWiringTest` POSTed to alertmanager /api/v2/alerts arrived on the topic with title "Homelab alert". Runbook links: VM defaultRules carry runbook_url → prometheus-operator runbooks; OUR-KB links become the standard for custom rules (ongoing, applies as custom rules get written). KB: solutions/ntfy-alert-pipeline.md.
-  - [ ] Uptime-Kuma probing ingresses externally (image already on worker)
+  - [x] Uptime-Kuma probing ingresses externally ✅ DONE 2026-09-29 (commits f4a151b, 0a9b80d)
+    - 2.1.2 pinned (2.x maintained; 1.x EOL) — roadmap's "image already on worker" was stale; fresh pull. Plain-manifest app in `monitoring`, STS + 1Gi local-path PVC (real use ~100Mi), 50m/128Mi→500m/512Mi (ns LimitRange). UI: http://192.168.0.108:30320 (verified 200 from LAN).
+    - First-run admin + monitor list + native ntfy provider wiring = UI tasks (suggested list in KB). Known gap → Phase 2: whole alert path is in-cluster; cluster-down pages nobody (external dead-man switch candidate).
+    - Gotcha solved: ArgoCD ignoreDifferences does NOT honor `*` wildcards — STS stuck OutOfSync until pointers matched openobserve's numeric-index style. KB: solutions/uptime-kuma.md.
   - [ ] Velero backups + **restore drill with evidence** (target for backups still needs deciding — probably NFS/export on Proxmox or a dir on debian; disk-budget it first)
   - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class)
 - [ ] **Phase 2 — delivery hardening**
