@@ -30,10 +30,12 @@ spec:
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
-    # openobserve pattern: SSA + STS volumeClaimTemplates quirk
+    # SSA + STS volumeClaimTemplates quirk; numeric-index pointers copied verbatim
+    # from apps/openobserve (proven Synced) — `*` wildcards are NOT honored by this
+    # ArgoCD version and leave the app permanently OutOfSync
     - group: apps
       kind: StatefulSet
       jsonPointers:
-        - /spec/updateStrategy
-        - /spec/volumeClaimTemplates/*/apiVersion
-        - /spec/volumeClaimTemplates/*/kind
+        - /spec/updateStrategy/type
+        - /spec/volumeClaimTemplates/0/apiVersion
+        - /spec/volumeClaimTemplates/0/kind
