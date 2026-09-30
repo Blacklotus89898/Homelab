@@ -1,0 +1,16 @@
+# Non-secret configuration shared by the authentik stack (adopted 2026-09-30
+# from a hand-rolled Portainer deployment; values preserved verbatim).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-config
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  AUTHENTIK_REDIS__HOST: "authentik-redis"
+  AUTHENTIK_POSTGRESQL__HOST: "authentik-postgres"
+  AUTHENTIK_POSTGRESQL__NAME: "authentik"
+  AUTHENTIK_POSTGRESQL__USER: "authentik"
+  POSTGRES_DB: "authentik"
+  POSTGRES_USER: "authentik"
