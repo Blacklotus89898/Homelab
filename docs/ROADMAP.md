@@ -42,7 +42,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - 2.1.2 pinned (2.x maintained; 1.x EOL) — roadmap's "image already on worker" was stale; fresh pull. Plain-manifest app in `monitoring`, STS + 1Gi local-path PVC (real use ~100Mi), 50m/128Mi→500m/512Mi (ns LimitRange). UI: http://192.168.0.108:30320 (verified 200 from LAN).
     - First-run admin + monitor list + native ntfy provider wiring = UI tasks (suggested list in KB). Known gap → Phase 2: whole alert path is in-cluster; cluster-down pages nobody (external dead-man switch candidate).
     - Gotcha solved: ArgoCD ignoreDifferences does NOT honor `*` wildcards — STS stuck OutOfSync until pointers matched openobserve's numeric-index style. KB: solutions/uptime-kuma.md.
-  - [ ] Velero backups + **restore drill with evidence** (target for backups still needs deciding — probably NFS/export on Proxmox or a dir on debian; disk-budget it first)
+  - [x] ~~Velero backups + restore drill~~ ✅ DECLINED by user 2026-09-29 ("no backup") — DR posture = this git repo is the source of truth; PV contents accepted as non-recoverable. Do not re-propose without user asking. (For the record, disk survey that informed it: debian root 11.1G free, worker root 12.0G, /mnt/smb_storage 116.4G on the 94%-full Proxmox disk.)
   - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class)
 - [ ] **Phase 2 — delivery hardening**
   - [ ] PR CI: yamllint + kubeconform + Kyverno policy check + `argocd app diff` preview; branch protection
