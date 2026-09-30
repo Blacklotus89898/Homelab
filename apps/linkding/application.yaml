@@ -38,4 +38,3 @@ spec:
         - /metadata/annotations/volume.beta.kubernetes.io~1storage-provisioner
         - /metadata/annotations/volume.kubernetes.io~1selected-node
         - /metadata/annotations/volume.kubernetes.io~1storage-provisioner
-

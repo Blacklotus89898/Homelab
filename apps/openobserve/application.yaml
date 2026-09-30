@@ -36,4 +36,3 @@ spec:
         - /spec/updateStrategy/type
         - /spec/volumeClaimTemplates/0/apiVersion
         - /spec/volumeClaimTemplates/0/kind
-

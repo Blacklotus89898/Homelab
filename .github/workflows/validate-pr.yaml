@@ -56,9 +56,10 @@ jobs:
 
       - name: Install kyverno CLI
         run: |
-          # pinned so CI is reproducible; Renovate bumps this URL's version
+          # pinned so CI is reproducible; Renovate bumps this URL's version.
+          # Archive member is `kyverno` (per krew-index manifest for v1.19.1).
           curl -sSfL https://github.com/kyverno/kyverno/releases/download/v1.19.1/kyverno-cli_v1.19.1_linux_x86_64.tar.gz \
-            | tar xz -C /usr/local/bin kubectl-kyverno
+            | tar xz -C /usr/local/bin kyverno
 
       # Renders the repo the way ArgoCD consumes it: kustomize dirs rendered,
       # bare directories (services/*, pod-cleanup, etc.) copied flat. The
@@ -84,7 +85,8 @@ jobs:
 
       - name: Apply policies
         run: |
-          kubectl-kyverno apply policies/ -r /tmp/rendered/
+          # explicit file list: no ambiguity about -r directory handling
+          ls /tmp/rendered/*.yaml | xargs kyverno apply policies/ -r
 
   validate-helm:
     name: Helm templates
@@ -144,13 +146,16 @@ jobs:
       - name: Check for duplicate NodePorts
         run: |
           echo "Scanning for NodePort assignments..."
-          grep -r 'nodePort:' services/ infrastructure/ apps/ --include='*.yaml' -h \
-            | grep -o '[0-9]\{5\}' \
-            | sort | uniq -d \
-            | while read port; do
-                echo "ERROR: NodePort $port is assigned more than once"
-                exit 1
-              done
+          # extract only the value after `nodePort:` — the line's comment often
+          # repeats the port in a URL, which the old bare-number grep double-counted
+          dups=$(grep -rhE 'nodePort: *[0-9]+' services/ infrastructure/ apps/ --include='*.yaml' \
+            | grep -oE '[0-9]+' \
+            | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "ERROR: NodePorts assigned more than once:"
+            echo "$dups"
+            exit 1
+          fi
           echo "No NodePort conflicts found"
 
   trivy-iac:
