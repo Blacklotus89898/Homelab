@@ -1,0 +1,73 @@
+# House rule: every container declares resources. The cluster's LimitRanges
+# (monitoring, arc-runners, jenkins namespaces) depend on explicit requests to
+# schedule sanely, and the paperless OOM incident (runbooks/) showed what
+# floats do. CI-enforced via `kyverno apply` on rendered manifests.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-container-resources
+  annotations:
+    policies.kyverno.io/title: Require container resources
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: pods-require-resources
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Containers must set resources.requests and .limits (cpu + memory)."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+    - name: controllers-require-resources
+      match:
+        any:
+          - resources:
+              kinds: [Deployment, StatefulSet, DaemonSet]
+      validate:
+        message: "Containers must set resources.requests and .limits (cpu + memory)."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
+    - name: cronjobs-require-resources
+      match:
+        any:
+          - resources:
+              kinds: [CronJob]
+      validate:
+        message: "Containers must set resources.requests and .limits (cpu + memory)."
+        pattern:
+          spec:
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - resources:
+                          requests:
+                            cpu: "?*"
+                            memory: "?*"
+                          limits:
+                            cpu: "?*"
+                            memory: "?*"

@@ -1,0 +1,48 @@
+# House rule: long-running workloads declare readiness + liveness probes
+# (any type — httpGet, exec, tcpSocket all satisfy this). Batch (CronJob/Job)
+# is exempt: short-lived by design.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require readiness and liveness probes
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: pods-require-probes
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Containers must declare readinessProbe and livenessProbe."
+        pattern:
+          spec:
+            containers:
+              - readinessProbe: {}
+                livenessProbe: {}
+    - name: controllers-require-probes
+      match:
+        any:
+          - resources:
+              kinds: [Deployment, StatefulSet, DaemonSet]
+      exclude:
+        any:
+          - resources:
+              # petal's git-sync sidecar is deliberately unprobed — dev playground,
+              # same rationale as its :latest float (disallow-latest-tag)
+              namespaces: [petal]
+              names: ["petal"]
+      validate:
+        message: "Containers must declare readinessProbe and livenessProbe."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - readinessProbe: {}
+                    livenessProbe: {}

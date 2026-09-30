@@ -1,0 +1,17 @@
+# Relaxed to match house style while still catching real breakage:
+# syntax errors, duplicate keys, stray tabs/trailing spaces.
+---
+extends: default
+rules:
+  line-length: disable # long explanatory comments are house style
+  document-start: disable # no --- headers in manifests
+  truthy: disable # k8s keys like "on:" trip the default
+  comments:
+    min-spaces-from-content: 1 # single-space inline comments are house style
+  comments-indentation: disable
+  indentation:
+    indent-sequences: consistent # 2-space, but don't fight existing files
+  braces:
+    max-spaces-inside: 1
+  brackets:
+    max-spaces-inside: 1

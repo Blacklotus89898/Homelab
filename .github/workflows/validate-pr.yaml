@@ -3,25 +3,24 @@ name: Validate PR
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   validate-yaml:
-    name: YAML syntax
+    name: YAML lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check YAML syntax
+      # yamllint replaces the old safe_load syntax check (strict superset:
+      # parse errors + duplicate keys + tabs/trailing spaces). Relaxed ruleset
+      # lives in .yamllint, tuned to house style.
+      - name: yamllint
         run: |
-          find . \( -name '*.yaml' -o -name '*.yml' \) \
-            ! -path './.github/*' \
-            ! -path './templates/*/skeleton/*' \
-            -print0 | xargs -0 -I{} python3 -c "
-          import yaml, sys
-          with open('{}') as f:
-              list(yaml.safe_load_all(f))
-          print('OK: {}')
-          "
+          python3 -m pip install --user yamllint
+          yamllint -c .yamllint .
 
   validate-k8s:
     name: Kubernetes manifests
@@ -31,7 +30,8 @@ jobs:
 
       - name: Install kubeconform
         run: |
-          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+          # pinned so CI is reproducible; Renovate bumps this URL's version
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz \
             | tar xz -C /usr/local/bin kubeconform
 
       - name: Validate manifests
@@ -47,6 +47,44 @@ jobs:
                 -ignore-missing-schemas \
                 -schema-location default \
                 -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+
+  validate-policies:
+    name: Kyverno policies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kyverno CLI
+        run: |
+          # pinned so CI is reproducible; Renovate bumps this URL's version
+          curl -sSfL https://github.com/kyverno/kyverno/releases/download/v1.19.1/kyverno-cli_v1.19.1_linux_x86_64.tar.gz \
+            | tar xz -C /usr/local/bin kubectl-kyverno
+
+      # Renders the repo the way ArgoCD consumes it: kustomize dirs rendered,
+      # bare directories (services/*, pod-cleanup, etc.) copied flat. The
+      # gateway-api render is upstream content — kubeconform covers its shape,
+      # our house policies don't apply to it.
+      - name: Render manifests
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rendered
+          for k in $(git ls-files '*kustomization.yaml' \
+              | xargs -r -n1 dirname | sort -u \
+              | grep -v '^infrastructure/gateway-api$'); do
+            kubectl kustomize "$k" > "/tmp/rendered/$(echo "$k" | tr '/' '_').yaml"
+          done
+          for f in $(git ls-files 'services/*.yaml' \
+              'infrastructure/pod-cleanup/*.yaml' \
+              'infrastructure/backstage-k8s-rbac/*.yaml' \
+              'infrastructure/victoria-metrics/*.yaml'); do
+            cp "$f" "/tmp/rendered/$(echo "$f" | tr '/' '_')"
+          done
+          echo "--- rendered files ---"
+          ls -1 /tmp/rendered
+
+      - name: Apply policies
+        run: |
+          kubectl-kyverno apply policies/ -r /tmp/rendered/
 
   validate-helm:
     name: Helm templates
@@ -149,6 +187,7 @@ jobs:
     needs:
       - validate-yaml
       - validate-k8s
+      - validate-policies
       - validate-helm
       - validate-techdocs
       - check-nodeport-conflicts
@@ -164,11 +203,11 @@ jobs:
           |---|---|
           | YAML syntax | $(icon "${{ needs.validate-yaml.result }}") \`${{ needs.validate-yaml.result }}\` |
           | Kubernetes manifests | $(icon "${{ needs.validate-k8s.result }}") \`${{ needs.validate-k8s.result }}\` |
+          | Kyverno policies | $(icon "${{ needs.validate-policies.result }}") \`${{ needs.validate-policies.result }}\` |
           | Helm templates | $(icon "${{ needs.validate-helm.result }}") \`${{ needs.validate-helm.result }}\` |
           | TechDocs | $(icon "${{ needs.validate-techdocs.result }}") \`${{ needs.validate-techdocs.result }}\` |
           | NodePort conflicts | $(icon "${{ needs.check-nodeport-conflicts.result }}") \`${{ needs.check-nodeport-conflicts.result }}\` |
           | Trivy IaC scan | $(icon "${{ needs.trivy-iac.result }}") \`${{ needs.trivy-iac.result }}\` |
 
-          **PR:** #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}
-          **Author:** ${{ github.actor }} · **Base:** \`${{ github.base_ref }}\` ← \`${{ github.head_ref }}\`
+          **Run:** \`${{ github.event_name }}\` by ${{ github.actor }} on \`${{ github.sha }}\`
           EOF

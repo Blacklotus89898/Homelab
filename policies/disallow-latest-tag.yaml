@@ -1,0 +1,74 @@
+# House rule: image tags are pinned; Renovate PRs the bumps
+# (solutions/renovate-image-updates.md). Enforced in CI (.github/workflows/ci.yaml)
+# via `kyverno apply` on rendered manifests.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow :latest image tag
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: pods-require-pinned-image
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      validate:
+        message: "Image tags must be pinned — ':latest' is not allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+    - name: controllers-require-pinned-image
+      match:
+        any:
+          - resources:
+              kinds: [Deployment, StatefulSet, DaemonSet]
+      exclude:
+        any:
+          - resources:
+              # petal floats :latest DELIBERATELY while under active development
+              # (services/petal/deployment.yaml comment); Renovate excludes it too
+              namespaces: [petal]
+              names: ["petal"]
+      validate:
+        message: "Image tags must be pinned — ':latest' is not allowed."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - image: "!*:latest"
+    - name: cronjobs-require-pinned-image
+      match:
+        any:
+          - resources:
+              kinds: [CronJob]
+      validate:
+        message: "Image tags must be pinned — ':latest' is not allowed."
+        pattern:
+          spec:
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - image: "!*:latest"
+    - name: jobs-require-pinned-image
+      match:
+        any:
+          - resources:
+              kinds: [Job]
+      validate:
+        message: "Image tags must be pinned — ':latest' is not allowed."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - image: "!*:latest"
