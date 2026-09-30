@@ -1,0 +1,34 @@
+{
+  // Renovate via the Mend-hosted GitHub App (free for public repos): zero cluster
+  // footprint, zero CI minutes, no credentials in this repo. Enable once at
+  // https://github.com/apps/renovate for Blacklotus89898/Homelab and PRs appear
+  // on the weekly schedule below. Merges stay manual (git-only rule); ArgoCD
+  // applies whatever lands on main.
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "assignees": ["Blacklotus89898"],
+  "schedule": ["before 5am on Monday"],
+  // First run backlogs hard with this many manifests — trickle the PRs
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "labels": ["renovate"],
+  "packageRules": [
+    {
+      // petal floats :latest DELIBERATELY while under active development
+      // (see services/petal/deployment.yaml) — never PR it
+      "matchFileNames": ["services/petal/**"],
+      "enabled": false
+    },
+    {
+      // arc-controller Suspended by user decision; chart/image bumps for the
+      // suspended app are noise until it is revived
+      "matchFileNames": ["apps/arc-controller/**", "apps/arc-runners*/**"],
+      "enabled": false
+    },
+    {
+      // majors (k8s API surface, chart breaking changes) deserve human eyes
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["major"]
+    }
+  ]
+}

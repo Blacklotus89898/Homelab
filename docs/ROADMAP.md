@@ -43,7 +43,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - First-run admin + monitor list + native ntfy provider wiring = UI tasks (suggested list in KB). Known gap → Phase 2: whole alert path is in-cluster; cluster-down pages nobody (external dead-man switch candidate).
     - Gotcha solved: ArgoCD ignoreDifferences does NOT honor `*` wildcards — STS stuck OutOfSync until pointers matched openobserve's numeric-index style. KB: solutions/uptime-kuma.md.
   - [x] ~~Velero backups + restore drill~~ ✅ DECLINED by user 2026-09-29 ("no backup") — DR posture = this git repo is the source of truth; PV contents accepted as non-recoverable. Do not re-propose without user asking. (For the record, disk survey that informed it: debian root 11.1G free, worker root 12.0G, /mnt/smb_storage 116.4G on the 94%-full Proxmox disk.)
-  - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class)
+  - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class) — **config pushed 2026-09-29** (`.github/renovate.json5`, hosted GitHub App, weekly, PRs-not-automerge; petal + arc excluded by rule); remaining `:latest` pins pushed same day (kavita 0.9.1, linkding 1.46.2, audiobookshelf digest-only — running image predates all version tags, pod-cleanup → official `registry.k8s.io/kubectl:v1.34.5` replacing bitnami float). **Pending: user installs the Renovate app** → https://github.com/apps/renovate → first PR run completes this item.
 - [ ] **Phase 2 — delivery hardening**
   - [ ] PR CI: yamllint + kubeconform + Kyverno policy check + `argocd app diff` preview; branch protection
   - [ ] Kyverno policies: no `:latest`, resources required, probes required
