@@ -10,7 +10,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - Node disk ops: journal vacuum on debian (sudoers); image prune via the privileged-pod trick (`get_tool "prune unreferenced container images"`).
 - Proxmox host: `ssh root@proxmox.home` — **password auth only, held by the user** (ask them; no standing key installed by policy 2026-09-29). Run remote commands via `plink -m <file>` (PS 5.1 shreds multiline argv).
 
-## Status (updated 2026-09-29)
+## Status (updated 2026-09-30)
 
 - [x] **Phase 0 — clear the backlog** ✅ DONE 2026-09-28/29 (commits 4705da3, 160c6d7, 9bfb1f9, cc8c3ef)
   - [x] cert-manager sync Unknown → removed schema-invalid `revisionHistoryLimit` (runbooks/cert-manager-sync-unknown.md)
@@ -45,8 +45,11 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
   - [x] ~~Velero backups + restore drill~~ ✅ DECLINED by user 2026-09-29 ("no backup") — DR posture = this git repo is the source of truth; PV contents accepted as non-recoverable. Do not re-propose without user asking. (For the record, disk survey that informed it: debian root 11.1G free, worker root 12.0G, /mnt/smb_storage 116.4G on the 94%-full Proxmox disk.)
   - [ ] Renovate on Homelab repo (auto-PR chart/image bumps; kills the `:latest` incident class) — **config pushed 2026-09-29** (`.github/renovate.json5`, hosted GitHub App, weekly, PRs-not-automerge; petal + arc excluded by rule); remaining `:latest` pins pushed same day (kavita 0.9.1, linkding 1.46.2, audiobookshelf digest-only — running image predates all version tags, pod-cleanup → official `registry.k8s.io/kubectl:v1.34.5` replacing bitnami float). **Pending: user installs the Renovate app** → https://github.com/apps/renovate → first PR run completes this item.
 - [ ] **Phase 2 — delivery hardening**
-  - [ ] PR CI: yamllint + kubeconform + Kyverno policy check + `argocd app diff` preview; branch protection
-  - [ ] Kyverno policies: no `:latest`, resources required, probes required
+  - [x] PR CI: yamllint + kubeconform + Kyverno policy check; branch protection ✅ DONE 2026-09-30 (commits 08361c3, b4a8eb7, d150752)
+    - `Validate PR` = 8 jobs, all-green on push/PR/dispatch: yamllint (relaxed `.yamllint`), kubeconform v0.8.0 pinned, kyverno CLI v1.19.1 `apply` over an ArgoCD-shaped render (kustomize dirs rendered, bare dirs flat; gateway-api excluded), + existing Helm/TechDocs/NodePort/Trivy. KB: solutions/ci-validation.md (incl. anonymous check-run-annotations diagnostics, krew-index trick, watch-by-workflow-name).
+    - `argocd app diff` preview **deferred** — needs cluster creds in CI (secret) + argocd CLI re-auth locally; revisit on request. Branch protection = **user UI step** (gh CLI unauthenticated here): require `Validate PR` on main at Settings → Branches; also decide whether direct pushes to main should move to PRs.
+  - [x] Kyverno policies: no `:latest`, resources required, probes required ✅ DONE 2026-09-30 (commit 08361c3)
+    - `policies/`: disallow-latest-tag, require-container-resources, require-probes — Enforce rules, explicit per-kind container paths (no autogen), petal excluded on latest+probes (dev float + unprobed git-sync sidecar). **CI-applied, NOT installed in-cluster** (disk: no kyverno controller pods; the git-only change rule makes the PR-time gate equivalent to admission here). pod-cleanup got a resources block to comply.
   - [ ] ArgoCD behind authentik OIDC + RBAC (retire admin-password login)
   - [ ] ArgoCD notifications on sync failure / degraded health
 - [ ] **Phase 3 — SRE depth**
@@ -76,3 +79,5 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 | 2026-09-28 | VictoriaMetrics over kube-prometheus-stack | disk constraint |
 | 2026-09-29 | Keep arc-controller | user decision; runners in use |
 | 2026-09-29 | No standing SSH key on Proxmox root | safety classifier; password auth per audit only |
+| 2026-09-30 | Kyverno policies CI-applied, not in-cluster | disk-first; git-only change rule makes PR-time gate equivalent to admission |
+| 2026-09-30 | root app ignores `metadata/finalizers` on child Applications | stale pre-delete finalizers kept root OutOfSync; git never intents ArgoCD-internal finalizers (fa3e78e, runbooks/argocd-root-finalizer-drift.md) |
