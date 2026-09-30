@@ -7,6 +7,15 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
+  # Child Applications carry controller-managed finalizers ArgoCD adds/tunes
+  # at runtime (e.g. stale pre-delete-finalizers on victoria-metrics); diffing
+  # them against git keeps root permanently OutOfSync. Standard app-of-apps
+  # remedy: ignore metadata/finalizers on children — git never intents them.
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Application
+      jsonPointers:
+        - /metadata/finalizers
   source:
     repoURL: git@github.com:Blacklotus89898/Homelab.git
     targetRevision: HEAD
