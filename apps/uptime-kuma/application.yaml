@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: uptime-kuma
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: infrastructure/uptime-kuma
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring # external uptime probing belongs with the monitoring stack
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    # openobserve pattern: SSA + STS volumeClaimTemplates quirk
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/updateStrategy
+        - /spec/volumeClaimTemplates/*/apiVersion
+        - /spec/volumeClaimTemplates/*/kind

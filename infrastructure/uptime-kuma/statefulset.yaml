@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: uptime-kuma
+  namespace: monitoring
+  labels:
+    app: uptime-kuma
+spec:
+  serviceName: uptime-kuma
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: uptime-kuma
+  template:
+    metadata:
+      labels:
+        app: uptime-kuma
+    spec:
+      containers:
+        - name: uptime-kuma
+          image: louislam/uptime-kuma:2.1.2 # pinned; 2.x is the maintained line (1.x EOL Oct 2025)
+          ports:
+            - containerPort: 3001
+              name: http
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          resources:
+            # Explicit: monitoring ns LimitRange caps at 512Mi/container
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http # login page returns 200 when the app is up
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 30
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 1Gi # SQLite + heartbeat history; actual expected ~100Mi
