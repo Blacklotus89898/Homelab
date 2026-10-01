@@ -19,7 +19,9 @@ metadata:
   name: authentik-postgres
   namespace: default
 spec:
-  replicas: 1
+  # TEMP (2026-10-01): scaled to 0 to free the RWO PVC for a one-shot
+  # pg_resetwal recovery pod; restored in the next commit.
+  replicas: 0
   selector:
     matchLabels:
       app: authentik-postgres
@@ -61,15 +63,18 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            # tcpSocket, NOT pg_isready: the postmaster binds 5432 BEFORE
+            # WAL replay, so this stays green during crash recovery.
+            # pg_isready ("accepting connections" — false mid-replay) killed
+            # the container during recovery and corrupted the WAL
+            # (2026-10-01 incident). Readiness below keeps pg_isready —
+            # readiness never kills, so strict is safe there.
+            tcpSocket:
+              port: 5432
             initialDelaySeconds: 30
             periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 5
+            timeoutSeconds: 5
+            failureThreshold: 6
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-data
