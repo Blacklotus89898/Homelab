@@ -22,7 +22,14 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=false
-      - ServerSideApply=true
+      # One-shot cutover — revert to ServerSideApply=true after first Synced.
+      # The adopted Portainer deployments carry inline env `value:` creds; SSA
+      # merges env by name, so they combine with git's `valueFrom:` refs into
+      # an entry the API server rejects forever. Replace=PUT swaps the
+      # deployments wholesale. ApplyOutOfSyncOnly keeps already-Synced
+      # Services/PVCs out of the PUT path (Service PUT sans clusterIP fails).
+      - Replace=true
+      - ApplyOutOfSyncOnly=true
     retry:
       limit: 5
       backoff:
