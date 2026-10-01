@@ -13,7 +13,10 @@ spec:
           serviceAccountName: pod-cleanup
           restartPolicy: Never
           containers:
-            - name: cleanup
+            # registry.k8s.io/kubectl has NO shell — kubectl is invoked
+            # directly per phase (field selectors don't support OR).
+            # --ignore-not-found replaces the old `|| true 2>/dev/null`.
+            - name: cleanup-succeeded
               image: registry.k8s.io/kubectl:v1.34.5 # official image, pinned to cluster's k8s version; bitnami/kubectl no longer publishes version tags (2025 catalog change)
               resources: # required by policies/require-resources.yaml (CI-enforced)
                 requests:
@@ -22,13 +25,42 @@ spec:
                 limits:
                   cpu: 100m
                   memory: 128Mi
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  kubectl delete pods --all-namespaces \
-                    --field-selector 'status.phase=Succeeded' 2>/dev/null || true
-                  kubectl delete pods --all-namespaces \
-                    --field-selector 'status.phase=Failed' 2>/dev/null || true
-                  kubectl delete pods --all-namespaces \
-                    --field-selector 'status.phase=Unknown' 2>/dev/null || true
+              command: ["/kubectl"]
+              args:
+                - delete
+                - pods
+                - --all-namespaces
+                - --field-selector=status.phase=Succeeded
+                - --ignore-not-found
+            - name: cleanup-failed
+              image: registry.k8s.io/kubectl:v1.34.5
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              command: ["/kubectl"]
+              args:
+                - delete
+                - pods
+                - --all-namespaces
+                - --field-selector=status.phase=Failed
+                - --ignore-not-found
+            - name: cleanup-unknown
+              image: registry.k8s.io/kubectl:v1.34.5
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              command: ["/kubectl"]
+              args:
+                - delete
+                - pods
+                - --all-namespaces
+                - --field-selector=status.phase=Unknown
+                - --ignore-not-found
