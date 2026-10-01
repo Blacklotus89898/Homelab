@@ -54,14 +54,18 @@ notifications:
         - name: Content-Type
           value: application/json
   triggers:
+    # each trigger value is a LIST of conditions (argocd-notifications
+    # unmarshals []triggers.Condition); `for:` is a sibling of `when:`,
+    # not part of the expression.
     trigger.on-sync-failed: |
-      when: app.status.operationState.phase in ['Failed', 'Error']
-      oncePer: app.status.operationState.syncResult.revision
-      send: [ntfy-sync-failed]
+      - when: app.status.operationState.phase in ['Failed', 'Error']
+        oncePer: app.status.operationState.syncResult.revision
+        send: [ntfy-sync-failed]
     trigger.on-health-degraded: |
-      when: app.status.health.status == 'Degraded' for 5m
-      oncePer: app.status.sync.revision
-      send: [ntfy-health-degraded]
+      - when: app.status.health.status == 'Degraded'
+        for: 5m
+        oncePer: app.status.sync.revision
+        send: [ntfy-health-degraded]
   templates:
     template.ntfy-sync-failed: |
       webhook:
