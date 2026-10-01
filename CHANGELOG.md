@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.2.0](https://github.com/Blacklotus89898/Homelab/compare/v1.1.0...v1.2.0) (2026-10-01)
+
+
+### Features
+
+* add headless daily cluster audit script ([816cd98](https://github.com/Blacklotus89898/Homelab/commit/816cd980d0233e078699750f33fae11b79228d27))
+* add Petal IDP deployment with self-hosted Dagger engine (DinD sidecar) ([8fed8e5](https://github.com/Blacklotus89898/Homelab/commit/8fed8e5c41a3f6d97f7558b779dd8c9fa0b2e466))
+* **argocd:** notifications to ntfy on sync failure + degraded health ([13f4373](https://github.com/Blacklotus89898/Homelab/commit/13f4373b44fe12293eaa7d37c3f5f4c87508f946))
+* **authentik:** adopt into GitOps ([e8df1f6](https://github.com/Blacklotus89898/Homelab/commit/e8df1f657116427f1d9d0de0f2771eb187cfde91))
+* **ci:** yamllint + pinned kubeconform + Kyverno policy checks ([08361c3](https://github.com/Blacklotus89898/Homelab/commit/08361c3ede0049e9362b5e54f0dd4fe5378aa830))
+* deploy ntfy and wire Alertmanager alerts to it ([5f2b68c](https://github.com/Blacklotus89898/Homelab/commit/5f2b68cd3933900bd664d6eb3fa385bf21fcd1f0))
+* deploy Uptime-Kuma for external uptime probing ([f4a151b](https://github.com/Blacklotus89898/Homelab/commit/f4a151b30375fca6716b8089154201aecdf8fd19))
+* deploy VictoriaMetrics k8s-stack (Phase 1 monitoring) ([3076603](https://github.com/Blacklotus89898/Homelab/commit/30766037324ba0aa6cb838efe4f311d17e32ee23))
+* fuse-overlayfs DinD image for petal — vfs multiplied the 646MB engine to &gt;8Gi ([c670e1d](https://github.com/Blacklotus89898/Homelab/commit/c670e1d0cea89ea612c2f991afcbd2463a8ddd44))
+* **petal:** move DinD build cache from root-fs PVC to smb_storage hostPath ([d28f0e4](https://github.com/Blacklotus89898/Homelab/commit/d28f0e49e741d32d64cead070e88335dddf19b67))
+* **petal:** switch deployment to step-runner executor, drop Dagger engine pre-pull ([830494a](https://github.com/Blacklotus89898/Homelab/commit/830494a80215894ad9c9feb94c4d590de590c968))
+* Renovate config + pin remaining :latest images ([37d9a76](https://github.com/Blacklotus89898/Homelab/commit/37d9a768d91d74d5c43428dd5424ad6460320eb8))
+
+
+### Bug Fixes
+
+* **argocd:** notifications triggers must be condition lists ([82f4645](https://github.com/Blacklotus89898/Homelab/commit/82f4645baadc26ed8a7e3024b228fe5652a3f412))
+* **argocd:** root ignores controller-managed finalizers on child apps ([fa3e78e](https://github.com/Blacklotus89898/Homelab/commit/fa3e78e2088b023c1f2703ebde2afe6172b72d67))
+* **authentik:** one-shot Replace cutover [#2](https://github.com/Blacklotus89898/Homelab/issues/2) for postgres probe swap ([3daf132](https://github.com/Blacklotus89898/Homelab/commit/3daf13293b0f05b917260e51ff38b621c30a1b32))
+* **authentik:** replace-mode cutover for inline env creds ([102439f](https://github.com/Blacklotus89898/Homelab/commit/102439f245a31a0af81721b2242b99a6bb3745ed))
+* **authentik:** safe postgres liveness + scale to 0 for WAL recovery ([4e97e56](https://github.com/Blacklotus89898/Homelab/commit/4e97e56da90a8c33f6c1292b4c1fac4ce1bc3c08))
+* **backstage:** use numeric port 7007 in startup probe ([162cfa1](https://github.com/Blacklotus89898/Homelab/commit/162cfa10427ba5600c4ff2b63e984d7f105b70e4))
+* **backstage:** widen startup probe window for cold node restarts ([eae5041](https://github.com/Blacklotus89898/Homelab/commit/eae504145fbc14c50121c300e2cb010539f09236))
+* **cert-manager:** remove unsupported revisionHistoryLimit, raise cainjector memory ([4705da3](https://github.com/Blacklotus89898/Homelab/commit/4705da369279d98038486fce90d82633d27afa86))
+* **ci:** kyverno binary name, NodePort grep, YAML EOF hygiene ([b4a8eb7](https://github.com/Blacklotus89898/Homelab/commit/b4a8eb750ce700e45b47169bcd3cc2871feb08c0))
+* **ci:** NodePort check still swallowed comment numbers (-o on first grep) ([d150752](https://github.com/Blacklotus89898/Homelab/commit/d15075274364cd01b0329db9fb98c5d4f0398331))
+* explicit grafana resources (LimitRange default 256Mi OOMKilled it) ([9ddbe32](https://github.com/Blacklotus89898/Homelab/commit/9ddbe32504a1136bfbbf7431bec3cffddc2a3fec))
+* git-sync v4 flags — period needs duration unit, dest renamed to link ([77253ca](https://github.com/Blacklotus89898/Homelab/commit/77253ca2d3f4ac6ac0217d224849d9bc7f730498))
+* **istio:** also ignore failurePolicy drift on webhook configs ([cc8c3ef](https://github.com/Blacklotus89898/Homelab/commit/cc8c3ef7c07c827493df9ed4435c977124dd59c4))
+* **istio:** ignore caBundle drift on istio webhook configs ([160c6d7](https://github.com/Blacklotus89898/Homelab/commit/160c6d76871f7100bc56e5d3ab3bc815be05ebae))
+* **istio:** use jsonPointers for caBundle ignoreDifferences ([9bfb1f9](https://github.com/Blacklotus89898/Homelab/commit/9bfb1f938926f2bbf1fe52ee36e094dc6bc91873))
+* persist docker-lib on PVC, pre-pull dagger engine at dind start, loosen readiness probe ([aa5040f](https://github.com/Blacklotus89898/Homelab/commit/aa5040fd3c47c1adddc8d0e3fb51d02d5f983b91))
+* **petal:** mount data PVC into dind so step bind sources resolve ([5e6ef9c](https://github.com/Blacklotus89898/Homelab/commit/5e6ef9c48816945eac31539f9a7b7776cfe1147d))
+* pin backstage and petal images to immutable sha tags instead of latest ([83f69f5](https://github.com/Blacklotus89898/Homelab/commit/83f69f57a3533da5c6b6620e4bc0e784cfa62254))
+* **pod-cleanup:** invoke kubectl directly — image has no shell ([c1a0270](https://github.com/Blacklotus89898/Homelab/commit/c1a027000321cdd5ba035914787caf12c7ba9f98))
+* proxy Jenkins API through Backstage backend to resolve CORS on Try-it-out ([bb673e6](https://github.com/Blacklotus89898/Homelab/commit/bb673e6ff55525cc4b4cd3e5e4f53cab1d640b2e))
+* remove wait-for-dind init container — init containers gate app containers, causing deadlock ([feba352](https://github.com/Blacklotus89898/Homelab/commit/feba352a4a708743dfe9694bf7236566d102e1e6))
+* scope ntfy paging to actionable alerts ([0fc7da5](https://github.com/Blacklotus89898/Homelab/commit/0fc7da53f2ae8ae63232dd654beb61b13e479b25))
+* size petal-docker-lib to 15Gi — engine pull exceeded 8Gi on vfs ([90163fb](https://github.com/Blacklotus89898/Homelab/commit/90163fb790afb0cc14462d565651b9f4b4f0ad0e))
+* trim false-positive and structural alerts from ntfy paging ([334fe3a](https://github.com/Blacklotus89898/Homelab/commit/334fe3aad05b31b7668af78b5fd1b982b2b74f0a))
+* use numeric-index STS ignoreDifferences pointers for uptime-kuma ([0a9b80d](https://github.com/Blacklotus89898/Homelab/commit/0a9b80d90d87fbc07b493ad6762c5bb1a6369d11))
+* vmstack fullname + 512Mi cap for VictoriaMetrics deploy ([75dcf3b](https://github.com/Blacklotus89898/Homelab/commit/75dcf3b734ee0705a9db42be26ce904fb21dfdf6))
+
 ## [1.1.0](https://github.com/Blacklotus89898/Homelab/compare/v1.0.0...v1.1.0) (2026-08-04)
 
 
