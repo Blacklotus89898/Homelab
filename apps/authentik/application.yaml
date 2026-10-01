@@ -22,11 +22,15 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=false
-      # Steady-state SSA. (Cutover history: adopted Portainer deployments had
-      # inline env value: creds that SSA merges with git's valueFrom: refs into
-      # invalid entries; one-shot Replace=true + ApplyOutOfSyncOnly=true PUT
-      # the deployments per git — commits 102439f + ca69f00, 2026-10-01.)
-      - ServerSideApply=true
+      # TEMP one-shot Replace cutover #2 (2026-10-01): the live postgres
+      # deployment still carries the old exec-handler liveness fields owned
+      # by a prior field manager; SSA merges them with the new tcpSocket
+      # handler ("may not specify more than 1 handler type"). Replace PUTs
+      # the OutOfSync Deployment wholesale; ApplyOutOfSyncOnly shields the
+      # already-Synced objects. Revert to SSA once Synced.
+      - Replace=true
+      - ApplyOutOfSyncOnly=true
+      # - ServerSideApply=true
     retry:
       limit: 5
       backoff:
