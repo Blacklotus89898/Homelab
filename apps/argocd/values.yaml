@@ -38,7 +38,54 @@ applicationSet:
   revisionHistoryLimit: 3
 
 notifications:
-  enabled: false  # Enable later with notification secrets in Sealed Secrets
+  enabled: true  # ntfy webhook is LAN-local, no credentials — no SealedSecret needed
+  argocdUrl: "http://192.168.0.108:31991"  # how we actually browse ArgoCD; feeds template context
+  resources:  # keep the controller small (disk-first constraint)
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  notifiers:
+    service.webhook.ntfy: |
+      url: http://ntfy.monitoring.svc.cluster.local
+      headers:
+        - name: Content-Type
+          value: application/json
+  triggers:
+    trigger.on-sync-failed: |
+      when: app.status.operationState.phase in ['Failed', 'Error']
+      oncePer: app.status.operationState.syncResult.revision
+      send: [ntfy-sync-failed]
+    trigger.on-health-degraded: |
+      when: app.status.health.status == 'Degraded' for 5m
+      oncePer: app.status.sync.revision
+      send: [ntfy-health-degraded]
+  templates:
+    template.ntfy-sync-failed: |
+      webhook:
+        ntfy:
+          method: POST
+          path: /
+          body: |
+            {"topic":"homelab-alerts","title":"ArgoCD sync failed: {{.app.metadata.name}}","message":"operation {{.app.status.operationState.phase}}, sync {{.app.status.sync.status}}, rev {{.app.status.sync.revision}}","tags":["warning","argocd"],"click":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"}
+    template.ntfy-health-degraded: |
+      webhook:
+        ntfy:
+          method: POST
+          path: /
+          body: |
+            {"topic":"homelab-alerts","title":"ArgoCD degraded: {{.app.metadata.name}}","message":"health {{.app.status.health.status}}, sync {{.app.status.sync.status}}, rev {{.app.status.sync.revision}}","tags":["rotating_light","argocd"],"click":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"}
+  subscriptions:  # global — applies to every app, no per-app annotations
+    - trigger:
+        - on-sync-failed
+      destinations:
+        - webhook.ntfy
+    - trigger:
+        - on-health-degraded
+      destinations:
+        - webhook.ntfy
 
 redis:
   enabled: true
