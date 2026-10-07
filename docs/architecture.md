@@ -48,6 +48,9 @@ flowchart TB
     end
     subgraph monitoring["namespace: monitoring (ambient)"]
       OTEL["OTel collector<br/>logs + kubeletstats"]
+      VMS["VictoriaMetrics stack (2026-09-29)<br/>vmagent · vmsingle · vmalert<br/>vmalertmanager · Grafana :30300"]
+      NTFY["ntfy :30310<br/>topic homelab-alerts"]
+      KUMA["uptime-kuma :30320"]
     end
     subgraph oo["namespace: openobserve (ambient)"]
       OO["OpenObserve<br/>SQLite single-node<br/>20Gi PVC · NodePort 30500"]
@@ -78,7 +81,7 @@ flowchart TB
     LP["StorageClass: local-path<br/>PVCs live here"]
   end
 
-  AUTH["authentik :30080<br/>(existing, not GitOps)"]
+  AUTH["authentik :30080<br/>(GitOps-adopted 2026-10-01)"]
 
   USER --> ARGO & BACK & JENK & OO & LINK & KAV & ABS & PP
   PP --- PDIND --- PSTEP
@@ -210,30 +213,40 @@ DinD pattern the ARC runners use. No engine, no SDK, no docker CLI.
 
 ## Observability
 
-Logs and metrics flow through the OTel collector into OpenObserve. Traces
-(Petal Phase C) are the next leg.
+Two stacks, split by disk cost (see `docs/ROADMAP.md` standing constraints):
+
+- **Logs**: OTel collector → OpenObserve (SQLite single-node, 20Gi PVC, 30-day compaction, `:30500`). Traces (Petal Phase C) are the next leg.
+- **Metrics + alerting** (2026-09-29, VictoriaMetrics single-binary — NOT kube-prometheus-stack): vmagent scrapes → vmsingle (PVC capped 8Gi, 30d retention) → Grafana `:30300`. vmalert rules (OOMKill, disk >80%, node NotReady etc.) fire via vmalertmanager → **ntfy** `:30310`, topic `homelab-alerts` (max 3 per alert, send_resolved; structural false-positives blackholed). E2E-verified.
+
+Two more paging paths land on the same topic: **uptime-kuma** `:30320` (external prober for NodePorts + control-plane TCP 6443) and **ArgoCD notifications** (on-sync-failed / on-health-degraded, global subscription) — one phone subscription covers everything. Known gap: the whole alert path is in-cluster; a cluster-down dead-man switch is a Phase 2 candidate. The vmalertmanager message body is raw JSON — a formatting bridge is a Phase 2 roadmap item.
 
 ```mermaid
 flowchart LR
   subgraph sources["Cluster"]
-    PODS["pod logs<br/>(all namespaces)"]
-    KUBE["kubeletstats<br/>node/pod/container metrics"]
-    FUTURE["OTel traces<br/>(Petal runs — planned)"]
+    PODS["pod logs"]
+    KUBE["kubeletstats + node_exporter metrics"]
   end
   subgraph mon["namespace: monitoring"]
     COLL["OTel collector"]
+    VMA["vmagent"] --> VMS["vmsingle<br/>8Gi cap · 30d"]
+    VMS --> GRAF["Grafana :30300"]
+    VMAL["vmalert rules"] --> VMM["vmalertmanager"]
   end
   subgraph oons["namespace: openobserve (ambient)"]
-    OO["OpenObserve<br/>SQLite single-node · 20Gi PVC<br/>30-day compaction"]
+    OO["OpenObserve<br/>20Gi PVC · :30500"]
   end
-  USER2["Dashboards / alerts UI<br/>:30500"]
-  PODS & KUBE -->|"fluent-forward / OTLP<br/>basic auth YWRtaW4..."| COLL
-  COLL --> OO
-  FUTURE -.-> COLL
-  OO --> USER2
+  NTFY["ntfy :30310<br/>topic homelab-alerts"]
+  KUMA["uptime-kuma :30320<br/>(external prober)"]
+  ARGN["ArgoCD notifications<br/>sync-failed / degraded"]
+  PHONE["Phone (ntfy app)"]
+  PODS --> COLL --> OO
+  KUBE --> VMA
+  VMM --> NTFY
+  KUMA --> NTFY
+  ARGN --> NTFY
+  NTFY --> PHONE
+  GRAF --> PHONE
 ```
-
-Alert rules (OOMKill, disk >80%, node NotReady) are still TODO — see `todo.md`.
 
 ---
 
@@ -247,10 +260,14 @@ Gateway/HTTPRoute + cert-manager work.
 ```mermaid
 flowchart LR
   IN["LAN clients"] --> NP["NodePorts on k3s-worker-01"]
-  NP --> P30080[":30080 authentik<br/>(not GitOps)"]
+  NP --> P30070[":30070 paperless (scaled to 0)"]
+  NP --> P30080[":30080 authentik"]
   NP --> P30030[":30030 audiobookshelf"]
   NP --> P30050[":30050 kavita"]
   NP --> P30090[":30090 linkding"]
+  NP --> P30300[":30300 Grafana"]
+  NP --> P30310[":30310 ntfy"]
+  NP --> P30320[":30320 uptime-kuma"]
   NP --> P30500[":30500 OpenObserve"]
   NP --> P30808[":30808 Jenkins"]
   NP --> P30900[":30900 Backstage"]
