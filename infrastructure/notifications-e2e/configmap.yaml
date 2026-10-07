@@ -6,6 +6,6 @@ metadata:
   name: notifications-e2e
   namespace: notifications-e2e # does not exist on purpose
   labels:
-    e2e-attempt: "2" # bump per retry: fresh revision => fresh sync operation
+    e2e-attempt: "3" # bump per retry: fresh revision => fresh sync operation
 data:
   purpose: alert-path-test

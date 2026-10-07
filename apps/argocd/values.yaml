@@ -82,15 +82,18 @@ notifications:
           path: /
           body: |
             {"topic":"homelab-alerts","title":"ArgoCD degraded: {{.app.metadata.name}}","message":"health {{.app.status.health.status}}, sync {{.app.status.sync.status}}, rev {{.app.status.sync.revision}}","tags":["rotating_light","argocd"],"click":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"}
-  subscriptions:  # global — applies to every app, no per-app annotations
-    - trigger:
+  # Global subscriptions (every app, no per-app annotations). The engine's
+  # global-cm format predates the `destinations:` style used in app
+  # annotations: DefaultSubscription unmarshals only recipients/triggers/
+  # selector, so `destinations:` is silently dropped and NOTHING is sent.
+  # Recipient strings are `service:recipient`; our service name is
+  # webhook.ntfy (no recipient concept for webhooks).
+  subscriptions:
+    - recipients:
+        - webhook.ntfy
+      triggers:
         - on-sync-failed
-      destinations:
-        - webhook.ntfy
-    - trigger:
         - on-health-degraded
-      destinations:
-        - webhook.ntfy
 
 redis:
   enabled: true
