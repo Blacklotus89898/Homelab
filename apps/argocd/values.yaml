@@ -86,11 +86,13 @@ notifications:
   # global-cm format predates the `destinations:` style used in app
   # annotations: DefaultSubscription unmarshals only recipients/triggers/
   # selector, so `destinations:` is silently dropped and NOTHING is sent.
-  # Recipient strings are `service:recipient`; our service name is
-  # webhook.ntfy (no recipient concept for webhooks).
+  # Recipient strings are `service:recipient`. And ParseConfig splits the
+  # cm key `service.webhook.ntfy` into type=webhook + NAME=ntfy — the
+  # destination is just `ntfy`, never `webhook.ntfy` (registry miss =>
+  # "notification service 'webhook.ntfy' is not supported").
   subscriptions:
     - recipients:
-        - webhook.ntfy
+        - ntfy
       triggers:
         - on-sync-failed
         - on-health-degraded
