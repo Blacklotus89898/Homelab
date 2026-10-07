@@ -13,8 +13,10 @@ spec:
           serviceAccountName: pod-cleanup
           restartPolicy: Never
           containers:
-            # registry.k8s.io/kubectl has NO shell — kubectl is invoked
-            # directly per phase (field selectors don't support OR).
+            # registry.k8s.io/kubectl has NO shell and NO /bin/sh, and its
+            # kubectl binary lives at /bin/kubectl (the image ENTRYPOINT —
+            # verified from the v1.34.5 image config; /kubectl does NOT
+            # exist). One container per phase: field selectors have no OR.
             # --ignore-not-found replaces the old `|| true 2>/dev/null`.
             - name: cleanup-succeeded
               image: registry.k8s.io/kubectl:v1.34.5 # official image, pinned to cluster's k8s version; bitnami/kubectl no longer publishes version tags (2025 catalog change)
@@ -25,7 +27,7 @@ spec:
                 limits:
                   cpu: 100m
                   memory: 128Mi
-              command: ["/kubectl"]
+              command: ["/bin/kubectl"]
               args:
                 - delete
                 - pods
@@ -41,7 +43,7 @@ spec:
                 limits:
                   cpu: 100m
                   memory: 128Mi
-              command: ["/kubectl"]
+              command: ["/bin/kubectl"]
               args:
                 - delete
                 - pods
@@ -57,7 +59,7 @@ spec:
                 limits:
                   cpu: 100m
                   memory: 128Mi
-              command: ["/kubectl"]
+              command: ["/bin/kubectl"]
               args:
                 - delete
                 - pods
