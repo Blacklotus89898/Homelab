@@ -40,6 +40,7 @@ applicationSet:
 notifications:
   enabled: true  # ntfy webhook is LAN-local, no credentials — no SealedSecret needed
   argocdUrl: "http://192.168.0.108:31991"  # how we actually browse ArgoCD; feeds template context
+  logLevel: debug  # TEMP diagnostic: trigger evaluates true yet no notification sends
   resources:  # keep the controller small (disk-first constraint)
     requests:
       cpu: 50m
