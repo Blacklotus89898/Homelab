@@ -1,0 +1,70 @@
+# SLO: front-door availability — 99% of HTTP probes succeed over 30 days.
+# Alerting uses the Google SRE multiwindow burn-rate pattern: the error budget is
+# 1% (0.01); fast burn = >14.4x budget consumption (1h AND 5m windows agree, page),
+# slow burn = >6x (6h AND 30m agree, ticket). At 14.4x sustained the 30d budget is
+# gone in ~2 days; at 6x, ~5 days.
+# Latency objective: p99 probe duration < 1s.
+# severity critical/warning both route to ntfy (only none/info are blackholed).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: front-door-slo
+  namespace: monitoring
+spec:
+  groups:
+    - name: slo-front-door-recording
+      interval: 30s
+      rules:
+        # Fraction of failed probes per front door (instance label = target URL).
+        # probe_success is a gauge (1/0), so avg_over_time = success ratio.
+        - record: slo:frontdoor:error_ratio_rate5m
+          expr: 1 - avg by (instance) (avg_over_time(probe_success[5m]))
+        - record: slo:frontdoor:error_ratio_rate30m
+          expr: 1 - avg by (instance) (avg_over_time(probe_success[30m]))
+        - record: slo:frontdoor:error_ratio_rate1h
+          expr: 1 - avg by (instance) (avg_over_time(probe_success[1h]))
+        - record: slo:frontdoor:error_ratio_rate6h
+          expr: 1 - avg by (instance) (avg_over_time(probe_success[6h]))
+    - name: slo-front-door-alerts
+      rules:
+        - alert: SloFrontDoorDown
+          expr: min_over_time(probe_success[2m]) == 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Front door DOWN: {{ $labels.instance }}"
+            description: "probe_success is 0 across the last 2 minutes — the service is not answering HTTP at all. kubectl -n <ns> get pods for the service behind this target; a hard-down door should also be firing in uptime-kuma if it exposes a NodePort."
+            runbook_url: "kb://solutions/slo-front-door.md"
+        - alert: SloFrontDoorFastBurn
+          expr: |
+            (slo:frontdoor:error_ratio_rate1h > 14.4 * 0.01)
+              and
+            (slo:frontdoor:error_ratio_rate5m > 14.4 * 0.01)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "SLO fast burn: {{ $labels.instance }} at >14x budget"
+            description: "1h and 5m error ratios both exceed 14.4x the 1% budget — actively failing right now. Sustained, the 30d budget is gone in ~2 days. Triage immediately."
+            runbook_url: "kb://solutions/slo-front-door.md"
+        - alert: SloFrontDoorSlowBurn
+          expr: |
+            (slo:frontdoor:error_ratio_rate6h > 6 * 0.01)
+              and
+            (slo:frontdoor:error_ratio_rate30m > 6 * 0.01)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "SLO slow burn: {{ $labels.instance }} at >6x budget"
+            description: "6h and 30m error ratios both exceed 6x the 1% budget — sustained degradation, budget empties in ~5 days at this rate. Worth a look today, not a page at 3am."
+            runbook_url: "kb://solutions/slo-front-door.md"
+        - alert: SloFrontDoorLatencyHigh
+          expr: quantile_over_time(0.99, probe_duration_seconds[10m]) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Front door slow: {{ $labels.instance }} p99 > 1s"
+            description: "p99 probe duration over 10 minutes exceeds the 1s objective. Compare with probe_dns_lookup_time_seconds to split cluster-DNS vs app latency."
+            runbook_url: "kb://solutions/slo-front-door.md"

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    app: blackbox-exporter
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      containers:
+        - name: blackbox-exporter
+          image: quay.io/prometheus/blackbox-exporter:v0.28.0 # pinned (repo rule: no :latest)
+          args:
+            - --config.file=/etc/blackbox_exporter/config.yml
+          ports:
+            - containerPort: 9115
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox_exporter/config.yml
+              subPath: config.yml
+          resources:
+            # Explicit: monitoring ns LimitRange would otherwise default us to 256Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-exporter-config
