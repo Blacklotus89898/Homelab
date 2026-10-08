@@ -1,0 +1,105 @@
+# Dead-man switch, GitHub side. Runs on GitHub-hosted runners so it keeps
+# working when the entire cluster is down. Checks the freshness of the
+# orphan `heartbeat` branch (pushed 2x/hour by arc-runners/cluster-heartbeat);
+# stale past the threshold opens an issue — GitHub notifications are then the
+# only surviving page. Dispatch with test_alert to verify the paging path.
+name: Heartbeat watchdog
+
+on:
+  schedule:
+    - cron: "23 * * * *" # hourly, off the :00 mark; GitHub adds jitter
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "Open (and auto-close) a labeled TEST issue to verify paging — heartbeat is NOT treated as stale"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  STALE_SECONDS: "7200" # 2h = 4 missed beats at the 2x/hour cadence
+
+jobs:
+  check:
+    name: Cluster heartbeat freshness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Measure heartbeat age
+        id: hb
+        run: |
+          git clone --quiet --depth 1 -b heartbeat "https://github.com/${GITHUB_REPOSITORY}.git" hb
+          cd hb
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          age=$(( now - last ))
+          stale=false
+          if [ "$age" -gt "$STALE_SECONDS" ]; then stale=true; fi
+          {
+            echo "age_seconds=$age"
+            echo "age_minutes=$(( age / 60 ))"
+            echo "last_beat=$(date -u "-d@${last}" +%FT%TZ)"
+            echo "stale=$stale"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Heartbeat watchdog"
+            echo "- last beat: $(date -u "-d@${last}" +%FT%TZ) UTC"
+            echo "- age: $(( age / 60 )) min (page threshold $(( STALE_SECONDS / 60 )) min)"
+            echo "- verdict: $stale"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open page issue
+        if: steps.hb.outputs.stale == 'true' || inputs.test_alert == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AGE_MIN: ${{ steps.hb.outputs.age_minutes }}
+          LAST_BEAT: ${{ steps.hb.outputs.last_beat }}
+          TEST_MODE: ${{ inputs.test_alert }}
+        run: |
+          title="Cluster dark? heartbeat stale ${AGE_MIN}m"
+          if [ "$TEST_MODE" = "true" ]; then
+            title="TEST (auto-closing) — watchdog paging path verified"
+          fi
+
+          # A real page never stacks duplicates: comment on the open one instead.
+          if [ "$TEST_MODE" != "true" ]; then
+            existing=$(gh issue list --state open --json number,title \
+              --jq '.[] | select(.title | startswith("Cluster dark")) | .number' | head -1)
+            if [ -n "$existing" ]; then
+              echo "Open page issue #${existing} already exists — commenting."
+              gh issue comment "$existing" --body "Still dark: age ${AGE_MIN} min as of $(date -u +%FT%TZ)."
+              exit 0
+            fi
+          fi
+
+          cat > /tmp/body.md <<EOF
+          Last heartbeat commit on the heartbeat branch: **${LAST_BEAT}** UTC (age ${AGE_MIN} min).
+
+          Opened by the GitHub-side watchdog because the cluster-side heartbeat
+          CronJob (arc-runners / cluster-heartbeat, 2x/hour) has not pushed.
+
+          Triage order:
+          1. Cluster or host actually down — check worker node 192.168.0.108, the
+             Proxmox host, power. If the cluster is up, the in-cluster ntfy
+             alerts will have been firing too.
+          2. Cluster up but heartbeat failing — run
+             kubectl -n arc-runners get jobs,pods
+             A local ntfy alert titled "Heartbeat push FAILED (cluster is up)"
+             means the PAT in arc-runner-secret likely expired or GitHub was
+             unreachable from the cluster.
+          3. GitHub Actions degraded — check this workflow's run history for
+             missed schedules (cron jitter up to ~30 min is normal; the page
+             threshold already allows for it).
+          EOF
+
+          url=$(gh issue create --title "$title" --body-file /tmp/body.md)
+          echo "issue=$url" >> "$GITHUB_STEP_SUMMARY"
+
+          # Self-test issues close themselves: the notification already proved
+          # the page reached the human.
+          if [ "$TEST_MODE" = "true" ]; then
+            sleep 5
+            gh issue close "$url" --comment "Self-test complete — the paging path (watchdog -> issue -> your GitHub notifications) works. Safe to ignore."
+          fi

@@ -1,0 +1,65 @@
+# Dead-man switch, cluster side: push a heartbeat commit to the orphan
+# `heartbeat` branch twice an hour. The GitHub-side watchdog workflow
+# (.github/workflows/heartbeat-watchdog.yml) runs on GitHub's infra —
+# outside the cluster — and opens an issue if the branch goes stale.
+# This is the ONLY alert path that survives the whole cluster being down
+# (vmalertmanager, uptime-kuma and ArgoCD notifications are all in-cluster).
+# Lives in arc-runners ns to reuse the existing arc-runner-secret PAT
+# (SealedSecrets are namespace-scoped; no second copy of the token).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cluster-heartbeat
+  namespace: arc-runners
+spec:
+  schedule: "7,37 * * * *" # 2x/hour, off the :00/:30 marks
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600 # keep last evidence an hour for debugging
+      template:
+        metadata:
+          labels:
+            app: cluster-heartbeat
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: heartbeat
+              image: alpine/git:2.54.0 # pinned; renovate bumps
+              resources: # required by policies/require-container-resources (CI-enforced)
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              env:
+                - name: GH_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: arc-runner-secret
+                      key: github_token
+              command: ["/bin/sh", "-eu"]
+              args:
+                - |
+                  git config --global user.name "homelab-heartbeat"
+                  git config --global user.email "heartbeat@homelab.local"
+                  # credential helper keeps the token out of remote URLs and error output
+                  git config --global credential.helper '!f() { printf "username=x-access-token\npassword=%s\n" "$GH_TOKEN"; }; f'
+                  git clone --quiet --depth 1 -b heartbeat https://github.com/Blacklotus89898/Homelab.git /hb
+                  cd /hb
+                  printf '%s\n' "$(date -u +%s) $(date -u +%FT%TZ)" > heartbeat.txt
+                  git add heartbeat.txt
+                  git commit --quiet -m "heartbeat $(date -u +%FT%TZ)"
+                  if ! git push --quiet origin heartbeat; then
+                    # Cluster is UP but the beat can't get out (PAT expired?
+                    # GitHub unreachable?). Say so locally before the watchdog
+                    # pages "cluster dark" — busybox wget, alpine/git has no curl.
+                    wget -qO- --header "Title: Heartbeat push FAILED (cluster is up)" \
+                      --header "Tags: warning" \
+                      --post-data="Heartbeat CronJob could not push to GitHub. If this keeps failing the GitHub watchdog will page 'cluster dark'. Check the PAT in arc-runner-secret and: kubectl -n arc-runners get jobs" \
+                      http://ntfy.monitoring.svc.cluster.local/homelab-alerts || true
+                    exit 1
+                  fi
