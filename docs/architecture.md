@@ -217,6 +217,7 @@ Two stacks, split by disk cost (see `docs/ROADMAP.md` standing constraints):
 
 - **Logs**: OTel collector → OpenObserve (SQLite single-node, 20Gi PVC, 30-day compaction, `:30500`). Traces (Petal Phase C) are the next leg.
 - **Metrics + alerting** (2026-09-29, VictoriaMetrics single-binary — NOT kube-prometheus-stack): vmagent scrapes → vmsingle (PVC capped 8Gi, 30d retention) → Grafana `:30300`. vmalert rules (OOMKill, disk >80%, node NotReady etc.) fire via vmalertmanager → **ntfy** `:30310`, topic `homelab-alerts` (max 3 per alert, send_resolved; structural false-positives blackholed). E2E-verified.
+- **Front-door SLOs** (2026-10-08): blackbox-exporter probes the six in-cluster service endpoints (petal, backstage, kavita, linkding, argocd, grafana) every 30s via a VMProbe — no gateway exists yet, so the services themselves are the front doors; external reachability stays uptime-kuma's job. `VmRule front-door-slo` tracks a 99%/30d availability objective plus p99 latency <1s, and pages multiwindow burn-rate alerts (14.4× fast-burn critical, 6× slow-burn warning, hard-down critical) on the same ntfy topic. vmalert/vmagent pick up any-namespace VM CRs automatically (`selectAllByDefault`).
 
 Two more paging paths land on the same topic: **uptime-kuma** `:30320` (external prober for NodePorts + control-plane TCP 6443) and **ArgoCD notifications** (on-sync-failed / on-health-degraded, global subscription) — one phone subscription covers everything. The cluster-down gap is being closed by a **dead-man switch** (built 2026-10-07; **not yet E2E-verified** — cluster-side pushes fail on an expired PAT, and the watchdog's page step had a bug fixed 2026-10-08): the `cluster-heartbeat` CronJob (arc-runners, 2×/h) pushes to the orphan `heartbeat` branch on GitHub, and a GitHub Actions watchdog (hourly) opens a "Cluster dark?" issue if the branch goes >2h stale — the only page path that survives the whole cluster being down. The vmalertmanager message body is raw JSON — a formatting bridge is a Phase 2 roadmap item.
 
@@ -229,7 +230,8 @@ flowchart LR
   end
   subgraph mon["namespace: monitoring"]
     COLL["OTel collector"]
-    VMA["vmagent"] --> VMS["vmsingle<br/>8Gi cap · 30d"]
+    BBX["blackbox-exporter<br/>6 front doors · 30s"]
+    BBX --> VMA["vmagent"] --> VMS["vmsingle<br/>8Gi cap · 30d"]
     VMS --> GRAF["Grafana :30300"]
     VMAL["vmalert rules"] --> VMM["vmalertmanager"]
   end

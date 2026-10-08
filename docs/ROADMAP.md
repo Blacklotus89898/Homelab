@@ -10,7 +10,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - Node disk ops: journal vacuum on debian (sudoers); image prune via the privileged-pod trick (`get_tool "prune unreferenced container images"`).
 - Proxmox host: `ssh root@proxmox.home` — **password auth only, held by the user** (ask them; no standing key installed by policy 2026-09-29). Run remote commands via `plink -m <file>` (PS 5.1 shreds multiline argv).
 
-## Status (updated 2026-10-07)
+## Status (updated 2026-10-08)
 
 - [x] **Phase 0 — clear the backlog** ✅ DONE 2026-09-28/29 (commits 4705da3, 160c6d7, 9bfb1f9, cc8c3ef)
   - [x] cert-manager sync Unknown → removed schema-invalid `revisionHistoryLimit` (runbooks/cert-manager-sync-unknown.md)
@@ -60,7 +60,11 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - Bugs found while commissioning: `command: ["/bin/sh","-eu"]` without `-c` makes sh treat the script arg as a filename (runbooks/heartbeat-sh-filename-too-long.md); root app-of-apps health-gate wedge from a zombie child op (runbooks/argocd-app-of-apps-wedge.md).
     - **2026-10-08 correction — marked [x] prematurely; no beat has ever landed.** Two defects: (1) cluster side reaches `git push` but the arc-runner PAT (sealed 2026-08-02) is expired — every push fails auth (user rotates + reseals, README §PAT); (2) the watchdog's "Open page issue" step failed on **all** scheduled runs — gh has no checkout step to infer the repo from, so every gh call exits 1; fix = `GH_REPO: ${{ github.repository }}` env (2026-10-08). Detection half is verified (runs measured age and declared stale correctly). Verification checklist to close this item: beat lands on the branch → `workflow_dispatch` test_alert → test issue opened+closed → ROADMAP/architecture re-marked verified.
 - [ ] **Phase 3 — SRE depth**
-  - [ ] SLOs + error budgets on the front door (gateway-api availability/latency) with burn-rate alerts
+  - [x] SLOs + error budgets on the front door with burn-rate alerts ✅ DONE 2026-10-08 (commits dba7544, f562051, 2acb572), verified live
+    - blackbox-exporter v0.28.0 (pinned, ClusterIP-only, 10m/32Mi) + `VMProbe front-doors`: 6 in-cluster service endpoints (petal, backstage, kavita, linkding, argocd, grafana) at 30s — no gateway-api exists yet, so the services ARE the front doors (see decision log); external reachability stays uptime-kuma's job. authentik (postgres parked) + audiobookshelf (Suspended) excluded until they serve again.
+    - `VmRule front-door-slo`: 99%/30d availability objective — recordings `slo:frontdoor:error_ratio_rate{5m,30m,1h,6h}` + multiwindow burn alerts: fast 14.4×→critical, slow 6×→warning, hard-down (`min_over_time(probe_success[2m])==0`)→critical, p99 latency >1s→warning. All route to ntfy via the default alertmanager route.
+    - Verified live: app Synced/Healthy; vmagent + vmalert `ConfigParsedAndApplied` (selectAllByDefault=true picks up any-namespace VM CRs — verified before writing); 6× `probe_success=1` and 6× recording series (error_ratio=0) in vmsingle. Alert fire path reuses the E2E-proven vmalert→vmalertmanager→ntfy pipeline (2026-09-29).
+    - CI lesson: the datreeio CRDs-catalog carries REAL operator.victoriametrics.com schemas, so `-ignore-missing-schemas` does NOT skip VM CRs — kubeconform caught `vmProberSpec` (not vmProber), `interval` (not scrapeInterval), and `staticConfig` (catalog is older than the live CRD; it rejects the newer `static` alias). Local replica of the CI kubeconform command: 85/85 valid.
   - [ ] Canary via Argo Rollouts for petal/backstage
   - [ ] OpenCost capacity view
   - [ ] Quarterly drills: restore, kube-bench; blameless postmortems filed in the KB
@@ -90,3 +94,4 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 | 2026-09-30 | root app ignores `metadata/finalizers` on child Applications | stale pre-delete finalizers kept root OutOfSync; git never intents ArgoCD-internal finalizers (fa3e78e, runbooks/argocd-root-finalizer-drift.md) |
 | 2026-10-07 | ArgoCD notifications ride the existing ntfy topic; no new notifier infra | disk-first; one phone subscription (homelab-alerts) already covers vmalertmanager + uptime-kuma; global subscription (no per-app annotations) so new apps alert by default |
 | 2026-10-07 | Dead-man switch = cluster PUSHES a heartbeat to GitHub; GitHub Actions watchdog pages via issue | push-not-pull: no external prober to host/creds; GitHub's infra survives cluster death; reuses the arc-runner PAT + free hosted Actions (public repo) |
+| 2026-10-08 | Front-door SLOs probe in-cluster service DNS, not gateway-api routes | `platform/gateways/` is still empty — the services themselves are the front doors; external reachability stays uptime-kuma's job; re-target the VMProbe at HTTPRoutes when a gateway lands |
