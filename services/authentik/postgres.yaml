@@ -19,9 +19,10 @@ metadata:
   name: authentik-postgres
   namespace: default
 spec:
-  # TEMP (2026-10-01): scaled to 0 to free the RWO PVC for a one-shot
-  # pg_resetwal recovery pod; restored in the next commit.
-  replicas: 0
+  # 2026-10-01: briefly scaled to 0 (WAL crashloop era, old pg_isready
+  # liveness). Restored 2026-10-08: pg_controldata showed a clean "shut
+  # down" state — postgres restarts normally, no pg_resetwal needed.
+  replicas: 1
   selector:
     matchLabels:
       app: authentik-postgres
