@@ -13,9 +13,10 @@ New-Item -ItemType Directory -Force $LogDir | Out-Null
 
 $prompt = @'
 You are the daily auditor for this homelab k3s cluster. You are strictly READ-ONLY: create, modify, and delete nothing.
+Run shell commands with the Bash tool, not PowerShell - Windows PowerShell fails on long command lines.
 Run these checks:
 1) kubectl get nodes -o wide
-2) kubectl -n argocd get applications
+2) kubectl get applications.argoproj.io -n argocd
 3) kubectl get pods -A (flag anything not Running/Completed and any restart count over 10)
 4) kubectl get events -A --sort-by=.lastTimestamp | Select-Object -Last 25
 5) kubectl top nodes; kubectl top pods -A --sort-by=memory | Select-Object -First 15
