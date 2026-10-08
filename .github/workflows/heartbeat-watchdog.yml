@@ -54,6 +54,9 @@ jobs:
         if: steps.hb.outputs.stale == 'true' || inputs.test_alert == true
         env:
           GH_TOKEN: ${{ github.token }}
+          # No checkout step above (step 1 clones into ./hb) — gh can't infer
+          # the repo from a git remote and every gh call exits 1. Pin it:
+          GH_REPO: ${{ github.repository }}
           AGE_MIN: ${{ steps.hb.outputs.age_minutes }}
           LAST_BEAT: ${{ steps.hb.outputs.last_beat }}
           TEST_MODE: ${{ inputs.test_alert }}
