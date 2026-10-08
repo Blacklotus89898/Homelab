@@ -15,7 +15,7 @@ spec:
     scheme: http
   module: http_2xx
   targets:
-    static: # single StaticConfig object wrapping a targets array (not a bare list)
+    staticConfig: # not `static` — live CRD accepts both, but the CI schema catalog only knows staticConfig
       targets:
         # The cluster has no Ingress/gateway yet (architecture.md) — the front doors ARE
         # the in-cluster service endpoints. Names/ports verified live 2026-10-08.
