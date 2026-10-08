@@ -9,20 +9,21 @@ metadata:
   namespace: monitoring
 spec:
   jobName: front-doors
-  scrapeInterval: 30s # 10 samples per 5m burn window — enough resolution for the SLO math
-  vmProber:
+  interval: 30s # 10 samples per 5m burn window — enough resolution for the SLO math
+  vmProberSpec: # NOT vmProber — VM operator's field name (kubeconform CI caught this; live CRD agrees)
     url: blackbox-exporter.monitoring.svc:9115
     scheme: http
   module: http_2xx
   targets:
-    static:
-      # The cluster has no Ingress/gateway yet (architecture.md) — the front doors ARE
-      # the in-cluster service endpoints. Names/ports verified live 2026-10-08.
-      - http://petal.petal.svc.cluster.local
-      - http://backstage.backstage.svc.cluster.local:7007
-      - http://kavita-service.kavita.svc.cluster.local:5000
-      - http://linkding-svc.linkding.svc.cluster.local:9090
-      - http://argocd-server.argocd.svc.cluster.local
-      - http://victoria-metrics-grafana.monitoring.svc.cluster.local
-      # Excluded by design: authentik (postgres parked at replicas=0, WAL recovery
-      # pending), audiobookshelf (app Suspended). Add back when they serve again.
+    static: # single StaticConfig object wrapping a targets array (not a bare list)
+      targets:
+        # The cluster has no Ingress/gateway yet (architecture.md) — the front doors ARE
+        # the in-cluster service endpoints. Names/ports verified live 2026-10-08.
+        - http://petal.petal.svc.cluster.local
+        - http://backstage.backstage.svc.cluster.local:7007
+        - http://kavita-service.kavita.svc.cluster.local:5000
+        - http://linkding-svc.linkding.svc.cluster.local:9090
+        - http://argocd-server.argocd.svc.cluster.local
+        - http://victoria-metrics-grafana.monitoring.svc.cluster.local
+        # Excluded by design: authentik (postgres parked at replicas=0, WAL recovery
+        # pending), audiobookshelf (app Suspended). Add back when they serve again.
