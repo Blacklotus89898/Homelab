@@ -41,7 +41,7 @@ spec:
                     secretKeyRef:
                       name: arc-runner-secret
                       key: github_token
-              command: ["/bin/sh", "-eu"]
+              command: ["/bin/sh", "-eu", "-c"] # -c or sh treats the script arg as a filename
               args:
                 - |
                   git config --global user.name "homelab-heartbeat"
