@@ -3,6 +3,11 @@ kind: Application
 metadata:
   name: heartbeat
   namespace: argocd
+  annotations:
+    # Wave -1 = root applies this child BEFORE the wave-0 apps. The root
+    # operation health-gates on child apps in order; while authentik is
+    # degraded (WAL recovery parked) a wave-0 slot would never be reached.
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   project: default
   source:
