@@ -17,53 +17,29 @@ spec:
         releaseName: backstage
         valueFiles:
           - $values/apps/backstage/values.yaml
-        postRenderer:
-          kustomize:
-            patches:
-              # Convert the chart's Deployment into an Argo Rollouts canary
-              # Rollout. `add` (not `replace`): the chart only renders
-              # spec.strategy when backstage.strategy is set — keep it unset in
-              # values.yaml or this patch breaks.
-              - target:
-                  group: apps
-                  version: v1
-                  kind: Deployment
-                  name: backstage
-                patch: |
-                  - op: replace
-                    path: /apiVersion
-                    value: argoproj.io/v1alpha1
-                  - op: replace
-                    path: /kind
-                    value: Rollout
-                  - op: add
-                    path: /spec/strategy
-                    value:
-                      canary:
-                        maxSurge: 1
-                        maxUnavailable: 0
-                        analysis: # background run: judges the whole rollout, aborts = auto-rollback
-                          templates:
-                            - templateName: front-door-success-rate
-                          args:
-                            - name: target
-                              value: http://backstage.backstage.svc.cluster.local:7007
-                        steps:
-                          - setWeight: 50 # no mesh: traffic splits by replica ratio (1 of 2)
-                          - pause:
-                              duration: 5m
-                  - op: add
-                    path: /spec/progressDeadlineSeconds
-                    value: 1800
-                  - op: add
-                    path: /spec/progressDeadlineAbort
-                    value: true
     - repoURL: git@github.com:Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
+    # Plain manifests alongside the chart: the canary Rollout. ArgoCD has no
+    # helm post-renderer (argoproj/argo-cd#3698, still open), so the chart's
+    # Deployment can't be patched in-render — the Rollout adopts it instead
+    # via workloadRef (see manifests/rollout.yaml).
+    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+      targetRevision: HEAD
+      path: apps/backstage/manifests
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
+  # The rollouts controller scales the chart's Deployment to 0 once this
+  # Rollout is healthy (workloadRef scaleDown) — keep ArgoCD selfHeal out of
+  # that fight: git stays the source of truth for the pod TEMPLATE, the
+  # controller owns the handover replica counts.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: backstage
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true

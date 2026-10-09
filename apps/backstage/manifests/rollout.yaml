@@ -1,0 +1,50 @@
+# Backstage canary Rollout. ArgoCD has no helm post-renderer
+# (argoproj/argo-cd#3698, still open), so the chart's Deployment cannot be
+# converted in-render — this Rollout ADOPTS it via workloadRef instead
+# (the documented Deployment→Rollout migration path).
+#
+# Division of labor:
+#   - The chart stays the single place pod-template changes are made
+#     (image tag, env, probes, resources). A template change bumps the
+#     Deployment's generation; the Rollout picks it up
+#     (status.workloadObservedGeneration tracks convergence) and runs the
+#     canary dance below.
+#   - The controller scales the Deployment to 0 once this Rollout is
+#     healthy (scaleDown: onsuccess). application.yaml ignores
+#     /spec/replicas on the Deployment so ArgoCD selfHeal doesn't fight it.
+#   - Selector/labels are the chart's own (bitnami common) labels, so the
+#     chart-managed Service fronts the Rollout's pods unchanged.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: backstage
+  namespace: backstage
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3 # disk-conscious: RS/Revision history is pod-template copies
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backstage
+      app.kubernetes.io/instance: backstage
+      app.kubernetes.io/name: backstage
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backstage
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis: # background run: judges the whole rollout, abort = auto-rollback
+        templates:
+          - templateName: front-door-success-rate
+        args:
+          - name: target
+            value: http://backstage.backstage.svc.cluster.local:7007
+      steps:
+        - setWeight: 50 # no mesh: traffic splits by replica ratio (1 of 2)
+        - pause:
+            duration: 5m
+  progressDeadlineSeconds: 1800 # 30m: startupProbe alone allows ~5m per pod
+  progressDeadlineAbort: true # failed progress => abort back to stable, not stuck Degraded
