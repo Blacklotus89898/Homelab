@@ -39,6 +39,7 @@ spec:
       analysis: # background run: judges the whole rollout, abort = auto-rollback
         templates:
           - templateName: front-door-success-rate
+            clusterScope: true # template lives in infrastructure/argo-rollouts as a ClusterAnalysisTemplate
         args:
           - name: target
             value: http://backstage.backstage.svc.cluster.local:7007
