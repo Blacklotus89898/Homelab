@@ -8,6 +8,13 @@ backstage:
   # /spec/replicas.
   replicas: 2
 
+  # E2E proof of the canary pipeline: a pod-template-only change is the exact
+  # signal the workloadRef Rollout tracks (workloadObservedGeneration). Expected
+  # dance: setWeight 50 (1 old + 1 new pod) -> background analysis against the
+  # front-door success-rate -> 5m pause -> promote to 100%.
+  podAnnotations:
+    rollouts-e2e-proof: "2026-10-08"
+
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
