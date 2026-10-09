@@ -1,0 +1,23 @@
+# Canary analysis, reusable by any Rollout that fronts one of our probed services
+# (see solutions/slo-front-door.md). Judges the canary with the front-door SLO
+# pipeline: blackbox-exporter probes → vmsingle. The probe hits the SERVICE, so
+# during a canary it measures the stable+canary blend — pod-level failures are
+# caught separately by readiness gates and the Rollout progress deadline.
+# vmsingle exposes a Prometheus-compatible /api/v1/query.
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: front-door-success-rate
+spec:
+  args:
+    - name: target # the probe_success `instance` label = the probed service URL
+  metrics:
+    - name: success-rate
+      count: 6 # 6 x 30s = 3m of measurements per analysis run
+      interval: 30s
+      successCondition: result[0] >= 0.9 # fail closed: no series / query error = failed run = abort
+      provider:
+        prometheus:
+          address: http://vmsingle-vmstack.monitoring.svc:8428
+          query: |
+            avg_over_time(probe_success{instance="{{args.target}}"}[2m])

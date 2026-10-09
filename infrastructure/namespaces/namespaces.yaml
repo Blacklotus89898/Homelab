@@ -110,3 +110,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: petal
+
+---
+# Argo Rollouts controller — no mesh label needed; talks to the API server only
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo-rollouts

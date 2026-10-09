@@ -1,0 +1,12 @@
+# argo-rollouts chart 2.43.6 (controller v1.10.0).
+# Disk-conscious: dashboard stays disabled (chart default) — one small controller pod.
+installCRDs: true # CRDs render from templates/crds/, NOT helm's crds/ dir (ArgoCD never applies that one)
+keepCRDs: true # keep CRDs if this Application is ever deleted — every Rollout depends on them
+controller:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
