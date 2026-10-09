@@ -20,13 +20,15 @@ spec:
     - repoURL: git@github.com:Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
-    # Plain manifests alongside the chart: the canary Rollout. ArgoCD has no
-    # helm post-renderer (argoproj/argo-cd#3698, still open), so the chart's
-    # Deployment can't be patched in-render — the Rollout adopts it instead
-    # via workloadRef (see manifests/rollout.yaml).
+    # Plain manifests alongside the chart: the canary Rollout, adopted via
+    # workloadRef. ArgoCD has no helm post-renderer (argoproj/argo-cd#3698,
+    # still open), so the chart's Deployment can't be patched in-render.
+    # NOTE: the manifest lives in services/backstage/ — NOT under apps/ —
+    # because the root app-of-apps watches all of apps/ recursively and
+    # would claim the Rollout itself (and deadlock its sync on its health).
     - repoURL: git@github.com:Blacklotus89898/Homelab.git
       targetRevision: HEAD
-      path: apps/backstage/manifests
+      path: services/backstage
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage

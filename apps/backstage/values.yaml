@@ -1,10 +1,11 @@
 backstage:
   # 2 replicas: canary-capable (Argo Rollouts splits traffic by replica ratio —
-  # see manifests/rollout.yaml: the Rollout adopts this chart Deployment via
-  # workloadRef and runs the canary dance on every pod-template change).
-  # Migrations stay safe: only same-version pods boot concurrently and knex's
-  # migrations table dedupes them. After the one-time handover the controller
-  # holds this Deployment at 0 — application.yaml ignores /spec/replicas.
+  # see services/backstage/rollout.yaml: the Rollout adopts this chart
+  # Deployment via workloadRef and runs the canary dance on every pod-template
+  # change). Migrations stay safe: only same-version pods boot concurrently
+  # and knex's migrations table dedupes them. After the one-time handover the
+  # controller holds this Deployment at 0 — application.yaml ignores
+  # /spec/replicas.
   replicas: 2
 
   image:
