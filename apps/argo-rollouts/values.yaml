@@ -3,6 +3,7 @@
 installCRDs: true # CRDs render from templates/crds/, NOT helm's crds/ dir (ArgoCD never applies that one)
 keepCRDs: true # keep CRDs if this Application is ever deleted — every Rollout depends on them
 controller:
+  replicas: 1 # chart default 2 = pointless HA on our single worker node
   resources:
     requests:
       cpu: 50m

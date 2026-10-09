@@ -1,4 +1,11 @@
 backstage:
+  # 2 replicas: canary-capable (Argo Rollouts splits traffic by replica ratio —
+  # see the postRenderer patch in application.yaml). Migrations stay safe:
+  # only same-version pods boot concurrently and knex's migrations table
+  # dedupes them. Do NOT set backstage.strategy here — the Deployment→Rollout
+  # patch relies on spec.strategy being absent from the chart render.
+  replicas: 2
+
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
