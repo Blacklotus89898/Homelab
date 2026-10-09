@@ -49,6 +49,11 @@ spec:
     syncOptions:
       - CreateNamespace=false
       - ServerSideApply=true
+      # ignoreDifferences alone only affects DIFFING — the sync would still
+      # APPLY spec.replicas=2 from the chart render, scaling the referenced
+      # Deployment back up mid-canary. This option makes ArgoCD send the LIVE
+      # value for ignored fields instead.
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
