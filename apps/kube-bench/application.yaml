@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-bench
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: infrastructure/kube-bench
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system # node-level system job, same home as pod-cleanup
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false # kube-system is built-in
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

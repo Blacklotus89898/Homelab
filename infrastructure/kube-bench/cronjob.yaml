@@ -1,0 +1,73 @@
+# kube-bench — quarterly CIS-benchmark drill (roadmap Phase 3 item 4).
+# Pinned to the CONTROL-PLANE node: the k3s server hosts apiserver/scheduler/
+# controller-manager/etcd/kubelet/proxy, so `--targets master,node` there covers
+# essentially every control (the worker's kubelet uses the same k3s defaults).
+# nodeName + an unschedulable toleration bypass the cordon (the documented
+# one-shot-pod trick, made permanent). Host paths mount READ-ONLY at their real
+# paths (kube-bench's k3s config uses absolute /var/lib/rancher/k3s paths);
+# hostPID lets it read k3s process args via ps.
+# Self-reports the summary line to ntfy (busybox wget — the image has no curl);
+# the full report stays in the Job pod logs (kubectl -n kube-system logs job/<name>).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kube-bench
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: kube-bench
+spec:
+  schedule: "23 4 14 1,4,7,10 *" # quarterly: 04:23 UTC, 14th of Jan/Apr/Jul/Oct
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1 # disk-first: keep only the latest artifacts
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: kube-bench
+        spec:
+          restartPolicy: Never
+          nodeName: debian
+          tolerations:
+            - key: node.kubernetes.io/unschedulable
+              operator: Exists
+              effect: NoSchedule
+          hostPID: true
+          containers:
+            - name: kube-bench
+              image: docker.io/aquasec/kube-bench:v0.16.0@sha256:75506f222d1eb6ce2a751a5533bdc0a3b54c898e2e49e7751d0ee22cfb862679
+              command: ["/bin/sh", "-eu"]
+              args:
+                - -c
+                - |
+                  kube-bench --benchmark k3s-cis-1.11 --targets master,node > /tmp/report.txt 2>&1 || {
+                    echo "kube-bench exited non-zero — last 20 lines:"; tail -20 /tmp/report.txt; exit 1;
+                  }
+                  SUM=$(awk '/== Summary total ==/{f=1;next} f&&NF{printf "%s; ", $0}' /tmp/report.txt | sed 's/; $//')
+                  echo "--- kube-bench quarterly drill summary: ${SUM}"
+                  wget -qO- --header "Title: CIS drill: kube-bench (k3s-cis-1.11)" \
+                    --post-data "Quarterly CIS drill on debian (k3s v1.34.5). ${SUM} Full report: kubectl -n kube-system logs job/$HOSTNAME" \
+                    http://ntfy.monitoring.svc.cluster.local/homelab-alerts || echo "(ntfy publish failed — report still above)"
+                  cat /tmp/report.txt
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - { name: rancher-k3s, mountPath: /var/lib/rancher/k3s, readOnly: true }
+                - { name: etc-systemd, mountPath: /etc/systemd, readOnly: true }
+                - { name: lib-systemd, mountPath: /lib/systemd, readOnly: true }
+                - { name: usr-bin, mountPath: /usr/local/mount-from-host/bin, readOnly: true }
+          volumes:
+            - name: rancher-k3s
+              hostPath: { path: /var/lib/rancher/k3s }
+            - name: etc-systemd
+              hostPath: { path: /etc/systemd }
+            - name: lib-systemd
+              hostPath: { path: /lib/systemd }
+            - name: usr-bin
+              hostPath: { path: /usr/bin } # upstream convention: binaries visible at the mount-from-host path
