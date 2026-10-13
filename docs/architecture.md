@@ -49,6 +49,7 @@ flowchart TB
     subgraph monitoring["namespace: monitoring (ambient)"]
       OTEL["OTel collector<br/>logs + kubeletstats"]
       VMS["VictoriaMetrics stack (2026-09-29)<br/>vmagent · vmsingle · vmalert<br/>vmalertmanager · Grafana :30300"]
+      OC["OpenCost :30330<br/>cost/capacity view<br/>(queries vmsingle)"]
       NTFY["ntfy :30310<br/>topic homelab-alerts"]
       KUMA["uptime-kuma :30320"]
     end
@@ -218,6 +219,7 @@ Two stacks, split by disk cost (see `docs/ROADMAP.md` standing constraints):
 - **Logs**: OTel collector → OpenObserve (SQLite single-node, 20Gi PVC, 30-day compaction, `:30500`). Traces (Petal Phase C) are the next leg.
 - **Metrics + alerting** (2026-09-29, VictoriaMetrics single-binary — NOT kube-prometheus-stack): vmagent scrapes → vmsingle (PVC capped 8Gi, 30d retention) → Grafana `:30300`. vmalert rules (OOMKill, disk >80%, node NotReady etc.) fire via vmalertmanager → **ntfy** `:30310`, topic `homelab-alerts` (max 3 per alert, send_resolved; structural false-positives blackholed). E2E-verified.
 - **Front-door SLOs** (2026-10-08): blackbox-exporter probes the six in-cluster service endpoints (petal, backstage, kavita, linkding, argocd, grafana) every 30s via a VMProbe — no gateway exists yet, so the services themselves are the front doors; external reachability stays uptime-kuma's job. `VmRule front-door-slo` tracks a 99%/30d availability objective plus p99 latency <1s, and pages multiwindow burn-rate alerts (14.4× fast-burn critical, 6× slow-burn warning, hard-down critical) on the same ntfy topic. vmalert/vmagent pick up any-namespace VM CRs automatically (`selectAllByDefault`). The same `probe_success` is also the **canary gate** for Backstage (see below) — SLOs and progressive delivery share one measurement system.
+- **Cost/capacity view** (2026-10-13, OpenCost): one pod in `monitoring` (exporter + UI containers) queries **vmsingle directly** as its Prometheus datasource — no second TSDB, no PVC, ~1G of images. Shadow-cloud pricing lives in git (`customPricing.costModel`) so the numbers survive restarts: the frame is "what would this cluster cost on public cloud" (~$5.5/day at on-demand rates). UI on `:30330`; API + MCP ports are auto-assigned NodePorts. Known benign log noise: the exporter looks for Kubecost's network-egress metrics, which we don't collect (egress priced $0) — it logs a warn and continues.
 - **Backstage canary** (2026-10-13, Argo Rollouts — workloadRef, no mesh): ArgoCD has no helm post-renderer, so `services/backstage/rollout.yaml` *adopts* the chart's Deployment instead of replacing it — the chart stays the single pod-template source (bump the image/env/probes there), the Rollout owns the pods and runs the dance on every template change: `setWeight 50` (1:1 replica-ratio split behind the existing Service), background AnalysisRun against `front-door-success-rate` (avg probe_success ≥ 0.9, abort = auto-rollback), 5m pause, promote. The chart Deployment itself is pinned at `replicas: 0` — a pod-less template shell (git-enforced; serving replicas live on the Rollout alone). petal is excluded: single SQLite writer on RWO PVC.
 
 Two more paging paths land on the same topic: **uptime-kuma** `:30320` (external prober for NodePorts + control-plane TCP 6443) and **ArgoCD notifications** (on-sync-failed / on-health-degraded, global subscription) — one phone subscription covers everything. The cluster-down gap is being closed by a **dead-man switch** (built 2026-10-07; **not yet E2E-verified** — cluster-side pushes fail on an expired PAT, and the watchdog's page step had a bug fixed 2026-10-08): the `cluster-heartbeat` CronJob (arc-runners, 2×/h) pushes to the orphan `heartbeat` branch on GitHub, and a GitHub Actions watchdog (hourly) opens a "Cluster dark?" issue if the branch goes >2h stale — the only page path that survives the whole cluster being down. The vmalertmanager message body is raw JSON — a formatting bridge is a Phase 2 roadmap item.
@@ -234,6 +236,7 @@ flowchart LR
     BBX["blackbox-exporter<br/>6 front doors · 30s"]
     BBX --> VMA["vmagent"] --> VMS["vmsingle<br/>8Gi cap · 30d"]
     VMS --> GRAF["Grafana :30300"]
+    VMS --> OCST["OpenCost :30330<br/>cost view"]
     VMAL["vmalert rules"] --> VMM["vmalertmanager"]
   end
   subgraph oons["namespace: openobserve (ambient)"]
@@ -280,6 +283,7 @@ flowchart LR
   NP --> P30300[":30300 Grafana"]
   NP --> P30310[":30310 ntfy"]
   NP --> P30320[":30320 uptime-kuma"]
+  NP --> P30330[":30330 OpenCost UI"]
   NP --> P30500[":30500 OpenObserve"]
   NP --> P30808[":30808 Jenkins"]
   NP --> P30900[":30900 Backstage"]
