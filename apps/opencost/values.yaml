@@ -1,0 +1,60 @@
+# OpenCost — capacity/cost allocation view (Phase 3 roadmap item).
+# Queries the EXISTING VictoriaMetrics stack as its Prometheus datasource
+# (no bundled Prometheus, no PVC — disk-first). One exporter pod + one UI pod,
+# both sized to the monitoring-ns LimitRange (max 512Mi/container) — the chart
+# defaults of 1Gi would be rejected at admission.
+opencost:
+  exporter:
+    defaultClusterId: homelab
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+
+  prometheus:
+    # vmsingle serves the Prometheus query API at its root (the same URL the
+    # Grafana datasource uses). OpenCost needs kube-state-metrics + node-exporter
+    # series, both already scraped by vmagent. (Chart enforces exactly ONE of
+    # internal/external/amp — enabling external requires disabling internal.)
+    external:
+      enabled: true
+      url: http://vmsingle-vmstack.monitoring.svc.cluster.local:8428
+    internal:
+      enabled: false
+
+  customPricing:
+    # Bare-metal cluster — no cloud billing API to read. Shadow-cloud pricing:
+    # "what would this workload cost on public cloud", declared here in git so
+    # it survives restarts (UI-side pricing edits are in-memory only).
+    # Units: CPU $/core-hour · RAM $/GB-hour · GPU $/unit-hour ·
+    # storage $/GB-month · egress $/GB. Tune to taste.
+    enabled: true
+    provider: custom
+    costModel:
+      description: Homelab shadow-cloud pricing (on-demand-ish rates)
+      CPU: 0.032
+      spotCPU: 0.010
+      RAM: 0.0045
+      spotRAM: 0.0014
+      GPU: 0.0
+      storage: 0.01
+      zoneNetworkEgress: 0.0
+      regionNetworkEgress: 0.0
+      internetNetworkEgress: 0.0
+
+  ui:
+    enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+service:
+  type: NodePort
+  # UI on 9090 → http://192.168.0.108:30330 (http-ui port carries the explicit
+  # nodePort; the API port 9003 gets an auto-assigned one)
+  nodePort: 30330
