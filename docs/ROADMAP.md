@@ -10,7 +10,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - Node disk ops: journal vacuum on debian (sudoers); image prune via the privileged-pod trick (`get_tool "prune unreferenced container images"`).
 - Proxmox host: `ssh root@proxmox.home` — **password auth only, held by the user** (ask them; no standing key installed by policy 2026-09-29). Run remote commands via `plink -m <file>` (PS 5.1 shreds multiline argv).
 
-## Status (updated 2026-10-08)
+## Status (updated 2026-10-13)
 
 - [x] **Phase 0 — clear the backlog** ✅ DONE 2026-09-28/29 (commits 4705da3, 160c6d7, 9bfb1f9, cc8c3ef)
   - [x] cert-manager sync Unknown → removed schema-invalid `revisionHistoryLimit` (runbooks/cert-manager-sync-unknown.md)
@@ -65,7 +65,14 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - `VmRule front-door-slo`: 99%/30d availability objective — recordings `slo:frontdoor:error_ratio_rate{5m,30m,1h,6h}` + multiwindow burn alerts: fast 14.4×→critical, slow 6×→warning, hard-down (`min_over_time(probe_success[2m])==0`)→critical, p99 latency >1s→warning. All route to ntfy via the default alertmanager route.
     - Verified live: app Synced/Healthy; vmagent + vmalert `ConfigParsedAndApplied` (selectAllByDefault=true picks up any-namespace VM CRs — verified before writing); 6× `probe_success=1` and 6× recording series (error_ratio=0) in vmsingle. Alert fire path reuses the E2E-proven vmalert→vmalertmanager→ntfy pipeline (2026-09-29).
     - CI lesson: the datreeio CRDs-catalog carries REAL operator.victoriametrics.com schemas, so `-ignore-missing-schemas` does NOT skip VM CRs — kubeconform caught `vmProberSpec` (not vmProber), `interval` (not scrapeInterval), and `staticConfig` (catalog is older than the live CRD; it rejects the newer `static` alias). Local replica of the CI kubeconform command: 85/85 valid.
-  - [ ] Canary via Argo Rollouts for petal/backstage
+  - [x] Canary via Argo Rollouts for petal/backstage ✅ DONE 2026-10-13 (backstage only — petal ineligible), commits 8fac2ef→148ffb6, verified live E2E
+    - **petal ineligible**: single SQLite replica on an RWO PVC with a Recreate strategy — canary needs ≥2 independent pods; revisit only if petal moves off single-writer storage.
+    - **ArgoCD has no helm post-renderer** (argoproj/argo-cd#3698, still open; unknown CRD fields are silently pruned on apply): the chart's Deployment can't be converted in-render. Used the documented migration path instead — a plain `services/backstage/rollout.yaml` **adopts** the chart Deployment via `workloadRef` (scaleDown: onsuccess). Chart stays the single pod-template source; the Rollout tracks `workloadObservedGeneration` and runs the canary on every template change.
+    - **No mesh → traffic splits by replica ratio**: `setWeight: 50` with 2 replicas = 1 old + 1 new pod behind the chart's own Service; maxSurge 1 / maxUnavailable 0; 5m pause; `progressDeadlineAbort: true` (failed progress auto-rolls-back, no stuck Degraded).
+    - **The canary gate is the front-door SLO**: background `analysis:` runs ClusterAnalysisTemplate `front-door-success-rate` (avg probe_success ≥ 0.9 from vmsingle, 6×30s) — abort = auto-rollback. Phase-3 SLOs and canaries compose instead of being separate systems.
+    - **Root-app hazard found**: root (`path: apps`, `directory.recurse: true`) claims EVERY yaml under apps/ — app-specific manifests must live under `services/` (root pruned its stray copy; an ArgoCD op health-waiting on a Degraded child blocks all later auto-syncs — terminate via `DELETE /api/v1/applications/root/operation`).
+    - **Two ArgoCD traps fixed**: (1) `ignoreDifferences` only affects diffing — syncs still APPLIED `spec.replicas: 2`, re-scaling the adopted Deployment mid-canary (needs `RespectIgnoreDifferences`); (2) `scaleDown: onsuccess` fires once at adoption and never re-triggers on external scale-ups. Final structure avoids both: chart `replicas: 0` — the Deployment is a pod-less template shell, serving replicas live on the Rollout alone (148ffb6).
+    - **E2E verified live**: pod-template change → `setWeight 50` (true 1:1 pod split, stable 2→1) → AnalysisRun `Successful` 6/6 → 5m pause → promote → stable=new RS; portal HTTP 200 throughout, zero dropped requests; post-fix state: Deployment 0 replicas, 2 Rollout pods, root+backstage apps Synced/Healthy.
   - [ ] OpenCost capacity view
   - [ ] Quarterly drills: restore, kube-bench; blameless postmortems filed in the KB
 - [ ] **Phase 4 — platform engineering**
@@ -95,3 +102,8 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 | 2026-10-07 | ArgoCD notifications ride the existing ntfy topic; no new notifier infra | disk-first; one phone subscription (homelab-alerts) already covers vmalertmanager + uptime-kuma; global subscription (no per-app annotations) so new apps alert by default |
 | 2026-10-07 | Dead-man switch = cluster PUSHES a heartbeat to GitHub; GitHub Actions watchdog pages via issue | push-not-pull: no external prober to host/creds; GitHub's infra survives cluster death; reuses the arc-runner PAT + free hosted Actions (public repo) |
 | 2026-10-08 | Front-door SLOs probe in-cluster service DNS, not gateway-api routes | `platform/gateways/` is still empty — the services themselves are the front doors; external reachability stays uptime-kuma's job; re-target the VMProbe at HTTPRoutes when a gateway lands |
+| 2026-10-13 | Backstage canary = workloadRef adoption, not chart conversion | ArgoCD has no helm post-renderer (#3698); Rollout adopts the chart Deployment — chart keeps owning the pod template, Rollout owns pods + canary |
+| 2026-10-13 | Canary traffic split by replica ratio, no mesh added | setWeight 50 with 2 replicas = 1:1 pod split behind the existing Service; a mesh just for canary would violate the disk-first constraint |
+| 2026-10-13 | Canary gate = front-door SLO AnalysisTemplate | the Phase-3 SLO probe judges the canary (abort = auto-rollback) — one measurement system, not two |
+| 2026-10-13 | Chart Deployment pinned at replicas 0 (template shell) | `scaleDown: onsuccess` never re-triggers on external scale-ups and `ignoreDifferences` doesn't stop APPLYs — git-owned 0 makes syncs enforce the shell pod-less; serving replicas live on the Rollout alone |
+| 2026-10-13 | petal excluded from canary | single SQLite writer on RWO PVC + Recreate — canary needs ≥2 independent pods |
