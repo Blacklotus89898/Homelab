@@ -1,19 +1,10 @@
 backstage:
-  # 2 replicas: canary-capable (Argo Rollouts splits traffic by replica ratio —
-  # see services/backstage/rollout.yaml: the Rollout adopts this chart
-  # Deployment via workloadRef and runs the canary dance on every pod-template
-  # change). Migrations stay safe: only same-version pods boot concurrently
-  # and knex's migrations table dedupes them. After the one-time handover the
-  # controller holds this Deployment at 0 — application.yaml ignores
-  # /spec/replicas.
-  replicas: 2
-
-  # E2E proof of the canary pipeline: a pod-template-only change is the exact
-  # signal the workloadRef Rollout tracks (workloadObservedGeneration). Expected
-  # dance: setWeight 50 (1 old + 1 new pod) -> background analysis against the
-  # front-door success-rate -> 5m pause -> promote to 100%.
-  podAnnotations:
-    rollouts-e2e-proof: "2026-10-08"
+  # Post-workloadRef-migration, this chart Deployment is only a TEMPLATE shell:
+  # services/backstage/rollout.yaml adopts it and runs every pod. Serving
+  # replicas live on the Rollout's own spec.replicas (= 2, canary-capable by
+  # replica ratio). 0 here + ArgoCD enforcement (no ignoreDifferences) keeps
+  # the shell pod-less forever — syncs can never scale it back up mid-canary.
+  replicas: 0
 
   image:
     registry: ghcr.io

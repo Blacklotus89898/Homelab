@@ -32,16 +32,6 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
-  # The rollouts controller scales the chart's Deployment to 0 once this
-  # Rollout is healthy (workloadRef scaleDown) — keep ArgoCD selfHeal out of
-  # that fight: git stays the source of truth for the pod TEMPLATE, the
-  # controller owns the handover replica counts.
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      name: backstage
-      jsonPointers:
-        - /spec/replicas
   syncPolicy:
     automated:
       prune: true
@@ -49,11 +39,6 @@ spec:
     syncOptions:
       - CreateNamespace=false
       - ServerSideApply=true
-      # ignoreDifferences alone only affects DIFFING — the sync would still
-      # APPLY spec.replicas=2 from the chart render, scaling the referenced
-      # Deployment back up mid-canary. This option makes ArgoCD send the LIVE
-      # value for ignored fields instead.
-      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
