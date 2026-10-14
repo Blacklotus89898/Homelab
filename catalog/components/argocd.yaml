@@ -8,6 +8,10 @@ metadata:
       title: ArgoCD UI
   annotations:
     argocd/app-name: argocd
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/argocd
+    homelab.io/image-pinned: "chart"
+    homelab.io/has-slo: "true"
+    homelab.io/recovery: git
 spec:
   type: service
   lifecycle: production

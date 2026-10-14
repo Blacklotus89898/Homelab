@@ -10,6 +10,10 @@ metadata:
     argocd/app-name: openobserve
     backstage.io/kubernetes-namespace: openobserve
     backstage.io/kubernetes-label-selector: 'app=openobserve'
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/openobserve
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
 spec:
   type: service
   lifecycle: production

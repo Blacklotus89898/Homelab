@@ -3,6 +3,11 @@ kind: Component
 metadata:
   name: paperless
   description: Document management system (disabled 2026-09-28 — scaled to zero, data retained on PVCs)
+  annotations:
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/paperless
+    homelab.io/image-pinned: "false"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
 spec:
   type: service
   lifecycle: deprecated

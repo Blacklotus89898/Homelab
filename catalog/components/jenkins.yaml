@@ -10,6 +10,10 @@ metadata:
       title: Homelab Pipeline
   annotations:
     argocd/app-name: jenkins
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/jenkins
+    homelab.io/image-pinned: "false"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
 spec:
   type: service
   lifecycle: production
@@ -31,6 +35,7 @@ metadata:
   annotations:
     github.com/project-slug: Blacklotus89898/Homelab
     jenkins.io/job-full-name: homelab/main
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/homelab-platform
 spec:
   type: service
   lifecycle: production

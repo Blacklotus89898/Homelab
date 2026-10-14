@@ -1,13 +1,21 @@
 # audiobookshelf
 
-Self-hosted audiobook and podcast server
+Self-hosted audiobook and podcast server.
+
+## Scorecard
+
+| Check | Status | Notes |
+|---|---|---|
+| Image pinned | yes | Digest-only pin (running image predates all current version tags); Renovate will PR the versioned upgrade (`services/audiobookshelf/deployment.yaml`) |
+| SLO | no | Application Suspended by design - media server, no probe |
+| Recovery | git | Manifests in `services/audiobookshelf/`, Application `audiobookshelf`; media PVC = accepted loss |
 
 ## Overview
 
 | Field | Value |
 |---|---|
 | Namespace | `audiobookshelf` |
-| Image | `ghcr.io/advplyr/audiobookshelf:latest` |
+| Image | `ghcr.io/advplyr/audiobookshelf@sha256:180acad3...` (digest-only) |
 | URL | http://192.168.0.108:30030 |
 
 ## Operations

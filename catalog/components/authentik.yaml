@@ -6,6 +6,12 @@ metadata:
   links:
     - url: http://192.168.0.108:30080
       title: Authentik UI
+  annotations:
+    argocd/app-name: authentik
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/authentik
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
 spec:
   type: service
   lifecycle: production

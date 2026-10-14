@@ -11,6 +11,9 @@ metadata:
     backstage.io/kubernetes-namespace: audiobookshelf
     backstage.io/kubernetes-label-selector: 'app=audiobookshelf'
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/audiobookshelf
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
   tags:
     - media
     - self-hosted

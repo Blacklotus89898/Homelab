@@ -1,0 +1,5 @@
+site_name: petal
+site_description: Jenkins CI executor - custom DinD + git-sync image
+docs_dir: docs
+plugins:
+  - techdocs-core

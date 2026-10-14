@@ -1,0 +1,5 @@
+site_name: argocd
+site_description: GitOps continuous delivery controller
+docs_dir: docs
+plugins:
+  - techdocs-core

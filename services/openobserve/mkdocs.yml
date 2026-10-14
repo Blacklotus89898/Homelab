@@ -1,0 +1,5 @@
+site_name: openobserve
+site_description: Unified logs, metrics, and traces
+docs_dir: docs
+plugins:
+  - techdocs-core

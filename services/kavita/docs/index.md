@@ -1,13 +1,21 @@
 # kavita
 
-Self-hosted manga and comic reader
+Self-hosted manga and comic reader.
+
+## Scorecard
+
+| Check | Status | Notes |
+|---|---|---|
+| Image pinned | yes | `0.9.1@sha256:31181a32...` - pinned to running digest 2026-09-29; Renovate PRs the bumps |
+| SLO | yes | Blackbox probe on :30050 (`infrastructure/blackbox-exporter/vmprobe.yaml`) |
+| Recovery | git | Manifests in `services/kavita/`, Application `kavita`; library PVC = accepted loss |
 
 ## Overview
 
 | Field | Value |
 |---|---|
 | Namespace | `kavita` |
-| Image | `jvmilazz0/kavita:latest` |
+| Image | `jvmilazz0/kavita:0.9.1@sha256:31181a32...` |
 | URL | http://192.168.0.108:30050 |
 
 ## Operations

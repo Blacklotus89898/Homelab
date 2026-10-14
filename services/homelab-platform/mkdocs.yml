@@ -1,0 +1,5 @@
+site_name: homelab-platform
+site_description: Homelab platform repo - fleet scorecard rollup
+docs_dir: docs
+plugins:
+  - techdocs-core

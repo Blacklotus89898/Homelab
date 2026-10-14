@@ -1,0 +1,5 @@
+site_name: authentik
+site_description: Identity provider and SSO
+docs_dir: docs
+plugins:
+  - techdocs-core

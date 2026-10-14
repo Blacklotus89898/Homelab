@@ -1,0 +1,5 @@
+site_name: paperless
+site_description: Document management (deprecated - scaled to zero)
+docs_dir: docs
+plugins:
+  - techdocs-core
