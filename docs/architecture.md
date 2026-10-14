@@ -182,6 +182,16 @@ computed from repo facts. The umbrella `homelab-platform` component's doc
 holds the fleet-wide rollup table; CI strict-builds every mkdocs site on
 push to main.
 
+The upgrade golden path is the staging rehearsal lane:
+`apps/staging/applicationset.yaml` (list generator) stamps the kustomize
+overlays under `environments/staging/<app>/` into side namespaces — stateless
+(PVC stripped, emptyDir stands in), ClusterIP-only, probed by a separate
+`staging-front-doors` VMProbe so a rehearsal can't burn the prod SLO budget.
+A candidate's digest goes into the overlay's `images:` block first; promotion
+copies the same reference into the base deployment. First full cycle:
+linkding 1.46.2 → 1.47.0 (2026-10-14). CI renders and kubeconform-validates
+every overlay. KB: `solutions/staging-rehearsal.md`.
+
 ---
 
 ## Petal pipeline run
