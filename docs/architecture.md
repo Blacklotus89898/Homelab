@@ -175,6 +175,13 @@ static wildcard location (`catalog/components/*.yaml` — a github provider was
 tried and rejected; see KB `solutions/backstage-golden-path.md`). Security and
 SLO defaults are baked into the skeleton, not opt-in.
 
+Every service in the catalog also carries a TechDocs set
+(`services/<name>/mkdocs.yml` + `docs/`) and three scorecard annotations —
+`homelab.io/image-pinned`, `homelab.io/has-slo`, `homelab.io/recovery` —
+computed from repo facts. The umbrella `homelab-platform` component's doc
+holds the fleet-wide rollup table; CI strict-builds every mkdocs site on
+push to main.
+
 ---
 
 ## Petal pipeline run
