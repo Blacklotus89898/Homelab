@@ -42,7 +42,9 @@ spec:
               args:
                 - -c
                 - |
-                  kube-bench --benchmark k3s-cis-1.11 --targets master,node > /tmp/report.txt 2>&1 || {
+                  # v0.16.0 CLI: --targets lives on the `run` subcommand (-s); top-level rejects it.
+                  # --exit-code 0: a completed scan WITH findings is a successful drill (findings are data).
+                  kube-bench run --benchmark k3s-cis-1.11 --targets master,node --exit-code 0 > /tmp/report.txt 2>&1 || {
                     echo "kube-bench exited non-zero — last 20 lines:"; tail -20 /tmp/report.txt; exit 1;
                   }
                   SUM=$(awk '/== Summary total ==/{f=1;next} f&&NF{printf "%s; ", $0}' /tmp/report.txt | sed 's/; $//')
