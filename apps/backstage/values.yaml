@@ -69,6 +69,10 @@ backstage:
       reading:
         allow:
           - host: raw.githubusercontent.com
+          # Cluster NodePort host: lets apis.yaml $text placeholders fetch
+          # swagger specs from in-cluster services (previously a warn per API
+          # entity on every refresh).
+          - host: 192.168.0.108
       csp:
         upgrade-insecure-requests: false
         connect-src: ["'self'", 'http:', 'https:']
@@ -132,25 +136,18 @@ backstage:
     catalog:
       rules:
         - allow: [Component, System, API, Resource, Location, Template, User, Group]
-      providers:
-        github:
-          homelab:
-            organization: 'Blacklotus89898'
-            # Glob the components dir so scaffolded services appear in the
-            # catalog WITHOUT anyone hand-editing catalog/all.yaml (the golden
-            # path's catalog-entry step). all.yaml stays a transitional
-            # fallback until the glob is verified live.
-            catalogPath: '/catalog/components/*.yaml'
-            filters:
-              branch: 'main'
-            schedule:
-              frequency:
-                minutes: 30
-              timeout:
-                minutes: 3
+      # NO github provider here, deliberately: 'Blacklotus89898' is a USER,
+      # not an org — the provider's org scan swept in 60+ collaborator repos
+      # as junk Location entities, and its catalogPath glob emitted literal
+      # '*' targets that never resolved (verified live 2026-10-14, see KB
+      # solutions/backstage-golden-path.md). The static wildcard location
+      # below is the supported primitive: the last path segment may be '*'
+      # (GitHub tree read). A scaffolded service drops a file in
+      # catalog/components/ and the catalog picks it up on its next refresh —
+      # no hand-editing of any registry file.
       locations:
         - type: url
-          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/all.yaml
+          target: https://github.com/Blacklotus89898/Homelab/blob/main/catalog/components/*.yaml
         - type: url
           target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/homelab-system.yaml
         - type: url
