@@ -1,7 +1,9 @@
 # kube-bench — quarterly CIS-benchmark drill (roadmap Phase 3 item 4).
 # Pinned to the CONTROL-PLANE node: the k3s server hosts apiserver/scheduler/
-# controller-manager/etcd/kubelet/proxy, so `--targets master,node` there covers
-# essentially every control (the worker's kubelet uses the same k3s defaults).
+# controller-manager/etcd/kubelet/proxy, so the default all-targets scan there
+# covers essentially every control (the worker's kubelet uses the same k3s
+# defaults). Benchmark = k3s-cis-1.9: the newest k3s cfg SHIPPED in image
+# v0.16.0 (the 1.10/1.11 cfgs exist only on unreleased GitHub master).
 # nodeName + an unschedulable toleration bypass the cordon (the documented
 # one-shot-pod trick, made permanent). Host paths mount READ-ONLY at their real
 # paths (kube-bench's k3s config uses absolute /var/lib/rancher/k3s paths);
@@ -42,15 +44,18 @@ spec:
               args:
                 - -c
                 - |
-                  # v0.16.0 CLI: --targets lives on the `run` subcommand (-s); top-level rejects it.
-                  # --exit-code 0: a completed scan WITH findings is a successful drill (findings are data).
-                  kube-bench run --benchmark k3s-cis-1.11 --targets master,node --exit-code 0 > /tmp/report.txt 2>&1 || {
+                  # v0.16.0 facts (verified inside the image): --targets lives on the `run`
+                  # subcommand, but we omit it — default = ALL files in cfg/<version>/ = the
+                  # full control-plane scan. k3s-cis-1.10/1.11 exist only on unreleased
+                  # GitHub master; the newest k3s benchmark SHIPPED in v0.16.0 is k3s-cis-1.9.
+                  # --exit-code 0: a completed scan WITH findings is a successful drill.
+                  kube-bench run --benchmark k3s-cis-1.9 --exit-code 0 > /tmp/report.txt 2>&1 || {
                     echo "kube-bench exited non-zero — last 20 lines:"; tail -20 /tmp/report.txt; exit 1;
                   }
                   SUM=$(awk '/== Summary total ==/{f=1;next} f&&NF{printf "%s; ", $0}' /tmp/report.txt | sed 's/; $//')
                   echo "--- kube-bench quarterly drill summary: ${SUM}"
-                  wget -qO- --header "Title: CIS drill: kube-bench (k3s-cis-1.11)" \
-                    --post-data "Quarterly CIS drill on debian (k3s v1.34.5). ${SUM} Full report: kubectl -n kube-system logs job/$HOSTNAME" \
+                  wget -qO- --header "Title: CIS drill: kube-bench (k3s-cis-1.9)" \
+                    --post-data "Quarterly CIS drill on debian (k3s v1.34.5, benchmark k3s-cis-1.9 = newest shipped). ${SUM} Full report: kubectl -n kube-system logs job/$HOSTNAME" \
                     http://ntfy.monitoring.svc.cluster.local/homelab-alerts || echo "(ntfy publish failed — report still above)"
                   cat /tmp/report.txt
               resources:
