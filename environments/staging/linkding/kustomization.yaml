@@ -20,8 +20,8 @@ namespace: staging-linkding
 
 images:
   - name: sissbruecker/linkding
-    newTag: "1.46.2"
-    digest: sha256:0c0a9a04c7ebd644293c37f98710872fe7cdff0ea1ff7fd9be4d235e4c4678d2
+    newTag: "1.47.0"
+    digest: sha256:e35cb50e0581178f245125ffaa909c565416c94c9f22ace305a7d234a4345522
 
 patches:
   # Drop the PVC entirely (see header) — the base file stays for prod.
