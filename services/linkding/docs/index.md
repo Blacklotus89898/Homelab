@@ -6,7 +6,7 @@ Self-hosted bookmark manager.
 
 | Check | Status | Notes |
 |---|---|---|
-| Image pinned | yes | `1.46.2@sha256:0c0a9a04...` - pinned to running digest 2026-09-29; Renovate PRs the bumps |
+| Image pinned | yes | `1.47.0@sha256:e35cb50e...` - promoted after staging rehearsal 2026-10-14; Renovate PRs the bumps |
 | SLO | yes | Blackbox probe on :30090 (`infrastructure/blackbox-exporter/vmprobe.yaml`) |
 | Recovery | git | Manifests in `services/linkding/`, Application `linkding`; bookmarks PVC = accepted loss |
 
@@ -15,7 +15,7 @@ Self-hosted bookmark manager.
 | Field | Value |
 |---|---|
 | Namespace | `linkding` |
-| Image | `sissbruecker/linkding:1.46.2@sha256:0c0a9a04...` |
+| Image | `sissbruecker/linkding:1.47.0@sha256:e35cb50e...` |
 | URL | http://192.168.0.108:30090 |
 
 ## Operations
