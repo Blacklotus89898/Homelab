@@ -10,7 +10,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - Node disk ops: journal vacuum on debian (sudoers); image prune via the privileged-pod trick (`get_tool "prune unreferenced container images"`).
 - Proxmox host: `ssh root@proxmox.home` — **password auth only, held by the user** (ask them; no standing key installed by policy 2026-09-29). Run remote commands via `plink -m <file>` (PS 5.1 shreds multiline argv).
 
-## Status (updated 2026-10-13)
+## Status (updated 2026-10-14)
 
 - [x] **Phase 0 — clear the backlog** ✅ DONE 2026-09-28/29 (commits 4705da3, 160c6d7, 9bfb1f9, cc8c3ef)
   - [x] cert-manager sync Unknown → removed schema-invalid `revisionHistoryLimit` (runbooks/cert-manager-sync-unknown.md)
@@ -85,7 +85,9 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - **Restore leg (reframed — Velero declined 2026-09-29)**: DR posture = this repo is the source of truth → drill = git-rebuild rehearsal + completeness audit. 2026-10-13 audit: git↔live **1:1 parity** (32 apps/ dirs = 31 live Applications + kube-bench converging), drift PASS (arc-controller Suspended, audiobookshelf Suspended, authentik Progressing — all by design), 5 floaters characterized (juice-shop, guestbook-ui, simple-rust-api, old uptime-kuma deployment, portainer-agent — adopt-or-delete pending user intent). **Critical gap = sealed-secrets master key** (user-held backup; without it a rebuild cannot decrypt any SealedSecret) → quarterly check in the runbook, USER ACTION. KB: runbooks/cluster-rebuild-from-git.md.
     - **Postmortem leg**: blameless template + first filing (2026-10-01 authentik torn-WAL, Sev2 — 6-day app-of-apps freeze, ~152MB core dumps per restart; postgres parked replicas 0; resetwal Job staged pending user approval; detection-gap alert rules noted as candidates). KB: runbooks/postmortem-template.md, runbooks/postmortem-2026-10-01-authentik-wal.md.
 - [ ] **Phase 4 — platform engineering**
-  - [ ] Backstage golden path: scaffolder template → namespace + Application + catalog entry + CI
+  - [x] Backstage golden path: scaffolder template → namespace + Application + catalog entry + CI ✅ DONE 2026-10-14 (commits fe440e3, 8ec8478)
+    - Template `templates/homelab-service/` scaffolds a full service: namespace+LimitRange, sealed-secrets-ready ArgoCD Application, Deployment+Service+VMProbe+SLO boilerplate, catalog component, TechDocs stub — security/slo defaults baked in, not opt-in. Dry-run E2E (throwaway branch): kubeconform 2 valid + Application skipped (same as CI), YAML 136 files, no NodePort dups; golden-path commits on main all-CI-green (fe440e3 9/9).
+    - Catalog ingestion redesigned after live failure: github provider (user-not-org scan + literal-glob targets → 63 junk Locations, 0 Components — DB-evidenced) dropped for ONE static wildcard location `catalog/components/*.yaml`; a scaffold drops a file there and the next refresh ingests it, no registry hand-editing. Plus `reading.allow: 192.168.0.108` (apis.yaml $text). Verified via rollout canary promote + `backstage_plugin_catalog` DB. First real scaffold via Backstage UI Create = the CI-on-PR leg. KB: solutions/backstage-golden-path.md.
   - [ ] TechDocs per service; scorecards (pinned image? has SLO? backed up?)
   - [ ] Staging overlay via ApplicationSet (rehearse upgrades)
 
@@ -123,3 +125,6 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 | 2026-10-13 | kube-bench benchmark = k3s-cis-1.9 (not 1.10/1.11) | the v0.16.0 image's cfg lags GitHub master — 1.10/1.11 are unreleased; always verify cfg dirs inside the pinned image, not on GitHub |
 | 2026-10-13 | Restore drill reframed as git-rebuild rehearsal + completeness audit (no Velero) | user declined backups 2026-09-29; the meaningful drill against "repo is the source of truth" is proving git↔live parity and walking the rebuild path on paper — not testing a backup product we don't run |
 | 2026-10-13 | CIS FAIL findings triaged, not chased | ~17 are k3s embedded-flag false-positives (kube-bench audits `ps` args; k3s sets defaults in code) — spot-checked anonymous-auth (zero RBAC reach); 3 node-perm fixes and 4 RBAC-hygiene items recorded as user-action/backlog so the drill stays a measurement, not a remediation project |
+| 2026-10-14 | Golden-path catalog ingestion = static wildcard location (`catalog/components/*.yaml`), NOT the github provider | provider on a USER does a 62-repo member sweep (63 junk Locations) and its `catalogPath` glob is never expanded (literal `*`, 0 Components) — the wildcard tree-read is the supported primitive; scaffold → drop file → auto-ingest |
+| 2026-10-14 | Dry-run E2E on a throwaway branch, validated locally | `Validate PR` triggers only on PR→main/push→main/dispatch — a bare branch push makes 0 check-runs; local kubeconform+Jenkins-equivalents + main-commits-green is the honest proof; first real scaffold PR = the CI-on-PR leg |
+| 2026-10-14 | `reading.allow: 192.168.0.108` | apis.yaml `$text` swagger fetches hit in-cluster NodePorts — without the host every refresh warned NotAllowedError |

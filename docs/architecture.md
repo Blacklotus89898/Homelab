@@ -164,6 +164,17 @@ flowchart TB
   GHCRP --> PETALDEPLOY["Petal deploy (ArgoCD)"]
 ```
 
+### Golden path (Backstage scaffolder → running service)
+
+`templates/homelab-service/` turns "new service" into one Create action in the
+portal: it publishes `apps/<name>/` (ArgoCD Application + ns + LimitRange),
+`services/<name>/` (Deployment + Service + probes + SLO boilerplate) and
+`catalog/components/<name>.yaml` as a PR. CI (`Validate PR`) gates the PR; the
+merge triggers ArgoCD convergence; the catalog ingests the component via one
+static wildcard location (`catalog/components/*.yaml` — a github provider was
+tried and rejected; see KB `solutions/backstage-golden-path.md`). Security and
+SLO defaults are baked into the skeleton, not opt-in.
+
 ---
 
 ## Petal pipeline run
