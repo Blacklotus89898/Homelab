@@ -136,7 +136,11 @@ backstage:
         github:
           homelab:
             organization: 'Blacklotus89898'
-            catalogPath: '/catalog-info.yaml'
+            # Glob the components dir so scaffolded services appear in the
+            # catalog WITHOUT anyone hand-editing catalog/all.yaml (the golden
+            # path's catalog-entry step). all.yaml stays a transitional
+            # fallback until the glob is verified live.
+            catalogPath: '/catalog/components/*.yaml'
             filters:
               branch: 'main'
             schedule:
@@ -147,6 +151,12 @@ backstage:
       locations:
         - type: url
           target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/all.yaml
+        - type: url
+          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/homelab-system.yaml
+        - type: url
+          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/users.yaml
+        - type: url
+          target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/apis.yaml
         - type: url
           target: https://github.com/Blacklotus89898/Homelab/blob/main/templates/homelab-service/template.yaml
 

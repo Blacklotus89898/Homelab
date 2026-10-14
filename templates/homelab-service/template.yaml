@@ -34,12 +34,13 @@ spec:
         namespace:
           title: Namespace
           type: string
-          description: Kubernetes namespace for this service
+          description: Kubernetes namespace for this service — one namespace per service is the house pattern (e.g. the service name itself)
           default: default
         image:
           title: Container Image
           type: string
-          description: Docker image to run (e.g. nginx:latest)
+          description: Docker image to run, PINNED to a version tag or digest (e.g. nginx:1.27 or nginx@sha256:…) — `:latest` is rejected by CI policy (Kyverno disallow-latest-tag)
+          pattern: '^.+[:@].+$'
         containerPort:
           title: Container Port
           type: integer
