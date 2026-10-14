@@ -36,7 +36,7 @@ jobs:
 
       - name: Validate manifests
         run: |
-          files=$(find services/ infrastructure/ platform/ -name '*.yaml' 2>/dev/null)
+          files=$(find services/ infrastructure/ platform/ environments/ -name '*.yaml' 2>/dev/null)
           if [ -z "$files" ]; then
             echo "No YAML files found, skipping"
             exit 0
@@ -47,6 +47,28 @@ jobs:
                 -ignore-missing-schemas \
                 -schema-location default \
                 -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+
+      - name: Render + validate kustomize overlays
+        run: |
+          # overlays compose prod bases — validate what they'd actually deploy,
+          # not just the raw kustomization docs checked above
+          found=false
+          for d in environments/staging/*/; do
+            [ -d "$d" ] || continue
+            found=true
+            echo "Rendering $d"
+            kubectl kustomize "$d" > /tmp/overlay-rendered.yaml
+            kubeconform \
+              -strict \
+              -summary \
+              -ignore-missing-schemas \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              /tmp/overlay-rendered.yaml
+          done
+          if [ "$found" = false ]; then
+            echo "No staging overlays found, skipping"
+          fi
 
   validate-policies:
     name: Kyverno policies
@@ -149,7 +171,7 @@ jobs:
           # extract only the `nodePort: <value>` fragment — the line's comment
           # often repeats the port (and the node IP) in a URL, which plain
           # number-greps on the whole line double-count
-          dups=$(grep -rhoE 'nodePort: *[0-9]+' services/ infrastructure/ apps/ --include='*.yaml' \
+          dups=$(grep -rhoE 'nodePort: *[0-9]+' services/ infrastructure/ apps/ environments/ --include='*.yaml' \
             | grep -oE '[0-9]+' \
             | sort | uniq -d)
           if [ -n "$dups" ]; then

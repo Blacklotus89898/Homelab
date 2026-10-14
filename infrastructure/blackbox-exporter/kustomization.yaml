@@ -6,4 +6,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - vmprobe.yaml
+  - vmprobe-staging.yaml
   - vmrule.yaml
+  - vmrule-staging.yaml

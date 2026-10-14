@@ -1,0 +1,21 @@
+# Staging lane alerting: hard-down only, warning severity. Staging is the
+# upgrade-rehearsal canary — "staging down" during a rehearsal IS the signal
+# (candidate rejected); outside a rehearsal it means the lane itself rotted.
+# No SLO burn-rate math here: staging has no error budget to spend.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: staging-front-door
+  namespace: monitoring
+spec:
+  groups:
+    - name: staging-front-door-alerts
+      rules:
+        - alert: StagingFrontDoorDown
+          expr: min_over_time(probe_success{job="staging-front-doors"}[5m]) == 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Staging front door DOWN: {{ $labels.instance }}"
+            description: "Staging target failing for 5+ minutes. During an upgrade rehearsal this means the candidate is REJECTED — do not promote until the staging pod serves again. Outside a rehearsal, the staging lane itself is broken (check the staging app in ArgoCD)."
+            runbook_url: "kb://solutions/staging-rehearsal.md"

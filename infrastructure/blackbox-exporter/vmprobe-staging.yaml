@@ -1,0 +1,22 @@
+# Staging front doors: same mechanics as front-doors (vmagent picks any VMProbe
+# up automatically, selectAllByDefault) but kept SEPARATE on purpose — the prod
+# front-doors probe feeds the SLO burn-rate rules, and a rehearsal target must
+# be able to fail loudly without burning the prod error budget.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  name: staging-front-doors
+  namespace: monitoring
+spec:
+  jobName: staging-front-doors
+  interval: 30s
+  vmProberSpec:
+    url: blackbox-exporter.monitoring.svc:9115
+    scheme: http
+  module: http_2xx
+  targets:
+    staticConfig:
+      targets:
+        # The rehearsal lane's front door(s) — in-cluster only (staging
+        # Services are ClusterIP, see the overlay).
+        - http://linkding-svc.staging-linkding.svc.cluster.local:9090

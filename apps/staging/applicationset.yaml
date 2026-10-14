@@ -1,0 +1,49 @@
+# Staging overlay lane (ROADMAP Phase 4): one ApplicationSet stamps the
+# overlays under environments/staging/ into their own namespaces so upgrades
+# get rehearsed before promotion. Adding a service to the lane = one element
+# below + one overlay dir; nothing else changes.
+# Root app-of-apps applies this file via its directory recursion over apps/;
+# the ApplicationSet controller (verified running 2026-10-14) then generates
+# the child Applications in argocd ns. Generated apps are controller-owned and
+# invisible to root's directory scan, so the two mechanisms don't fight.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: staging-overlays
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - app: linkding
+            namespace: staging-linkding
+            path: environments/staging/linkding
+  template:
+    metadata:
+      name: 'staging-{{.app}}'
+      # Staging is disposable by design — cascade-delete resources with the app
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:Blacklotus89898/Homelab.git
+        targetRevision: HEAD
+        path: '{{.path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true # overlays define the whole world; stale resources go
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

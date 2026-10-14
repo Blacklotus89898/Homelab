@@ -1,0 +1,56 @@
+# Staging overlay for linkding — the upgrade-rehearsal lane (ROADMAP Phase 4).
+# Composes the prod base, then makes the copy safe to run beside prod:
+#   - own namespace (staging-linkding) — no name/namespace fights with prod
+#   - NO PVC: the prod PVC is bound to a specific PV (spec.volumeName), and
+#     staging is deliberately stateless — an emptyDir stands in, so a
+#     rehearsal costs ~128Mi RAM and zero disk (host is nearly full)
+#   - Service becomes ClusterIP with no nodePort: nodePorts are cluster-global
+#     and prod owns 30090; the staging front door is probed in-cluster only
+#   - images override = THE rehearsal knob: set the candidate digest here,
+#     watch the staging app + probe, then promote by editing the base
+#     deployment.yaml to the same reference. Keep this in lockstep afterward
+#     so staging stays a mirror of prod between rehearsals.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../services/linkding
+
+namespace: staging-linkding
+
+images:
+  - name: sissbruecker/linkding
+    newTag: "1.46.2"
+    digest: sha256:0c0a9a04c7ebd644293c37f98710872fe7cdff0ea1ff7fd9be4d235e4c4678d2
+
+patches:
+  # Drop the PVC entirely (see header) — the base file stays for prod.
+  # (namespace must be the BASE's — the delete matches before the overlay's
+  # namespace transform rewrites the survivors.)
+  - patch: |-
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: linkding-pvc
+        namespace: linkding
+      $patch: delete
+  # Stand an emptyDir in for the data volume (base has exactly one volume).
+  - target:
+      kind: Deployment
+      name: linkding
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/volumes/0
+        value:
+          name: linkding-data
+          emptyDir: {}
+  # ClusterIP in staging: no nodePort spend, no clash with prod's 30090.
+  - target:
+      kind: Service
+      name: linkding-svc
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: ClusterIP
+      - op: remove
+        path: /spec/ports/0/nodePort

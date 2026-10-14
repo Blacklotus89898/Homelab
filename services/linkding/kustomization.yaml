@@ -1,0 +1,14 @@
+# Passthrough kustomize base: rendering is identical to the raw files (no
+# transforms), but environments/staging/linkding can now compose this dir as a
+# base for the upgrade-rehearsal lane. Same pattern as blackbox-exporter —
+# ArgoCD auto-detects kustomization.yaml in a directory source.
+# docs/ (TechDocs) is deliberately NOT listed: kustomize only builds what's
+# listed, and mkdocs content is never cluster state.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment.yaml
+  - limitrange.yaml
+  - pvc.yaml
+  - service.yaml
