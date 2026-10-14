@@ -39,13 +39,21 @@ kubeControllerManager:
   enabled: false
 kubeScheduler:
   enabled: false
+# k3s runs the sqlite datastore (no --cluster-init, single control-plane) — there
+# is no etcd to scrape; the chart's headless vmstack-kube-etcd Service selects
+# nothing, so the scrape pool sits empty and ScrapePoolHasNoTargets fires forever.
+kubeEtcd:
+  enabled: false
 
 alertmanager:
   # Route all firing alerts to the ntfy push relay (infrastructure/ntfy, NodePort 30310).
-  # v1 is a raw webhook: the JSON payload body becomes the ntfy message (no bridge
-  # deployed — disk/minimalism first). max_alerts bounds the blob; a formatter bridge
-  # is a Phase 2 refinement. Subscribe from a phone: topic "homelab-alerts" on
-  # http://192.168.0.108:30310.
+  # webhook_configs POSTs application/json; ntfy treats non-text/plain bodies as
+  # attachment uploads, and attachments are disabled server-side → 400 on every
+  # notification (AlertmanagerFailedToSendAlerts, found 2026-10-14). Fix: ntfy's
+  # built-in alertmanager template (?template=alertmanager) parses the webhook
+  # payload into a formatted notification — verified live on ntfy v2.28.0 before
+  # this change; no bridge deployment needed. Subscribe from a phone: topic
+  # "homelab-alerts" on http://192.168.0.108:30310.
   config:
     route:
       receiver: ntfy
@@ -70,6 +78,11 @@ alertmanager:
             - alertname = "KubeMemoryOvercommit"
         - receiver: blackhole
           matchers:
+            # same class as KubeMemoryOvercommit above: CPU requests overcommit
+            # is by design on the single worker; Grafana-only
+            - alertname = "KubeCPUOvercommit"
+        - receiver: blackhole
+          matchers:
             # arc-controller app Suspended by user decision 2026-09-28 → its
             # deployment is chronically mismatched; paging would repeat every 4h
             - namespace = "arc-systems"
@@ -77,7 +90,7 @@ alertmanager:
       - name: blackhole # no integrations = drop
       - name: ntfy
         webhook_configs:
-          - url: "http://ntfy.monitoring.svc/homelab-alerts?title=Homelab+alert"
+          - url: "http://ntfy.monitoring.svc/homelab-alerts?template=alertmanager"
             send_resolved: true
             max_alerts: 3
 
