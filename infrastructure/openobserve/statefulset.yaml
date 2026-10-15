@@ -41,7 +41,10 @@ spec:
             - name: ZO_COMPACT_ENABLED
               value: "true"
             - name: ZO_COMPACT_DATA_RETENTION_DAYS
-              value: "30"
+              # 2026-10-15: 30→1 — logs are debug-only and this PVC is the
+              # biggest storage consumer on the disk-constrained worker.
+              # Metrics retention is separate (vmsingle 30d, SLO budgets).
+              value: "1"
             - name: RUST_LOG
               value: "info"
           ports:

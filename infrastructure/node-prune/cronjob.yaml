@@ -1,0 +1,114 @@
+# Weekly per-node container-image prune (2026-10-15): kubelet's built-in
+# image GC only kicks in at >=85% root disk — too late on a nearly-full
+# host. One CronJob per node runs `crictl rmi --prune` (removes images not
+# referenced by any container) against the host containerd through the k3s
+# socket. Explicit nodeName binds directly, so the control plane's cordon
+# does not block it (same trick as the node-ops busybox pods). One-shot
+# launch Jobs live beside this file when needed — commit → Complete →
+# remove in the follow-up commit (decision log 2026-10-14 pattern).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: node-image-prune-worker
+  namespace: kube-system
+spec:
+  schedule: "23 4 * * 0" # Sundays 04:23 UTC, off-minute by house style
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          nodeName: k3s-worker-01
+          restartPolicy: Never
+          containers:
+            - name: prune
+              # k3s image bundles crictl; digest-pinned to the running
+              # k3s so the client always matches the host containerd.
+              image: rancher/k3s:v1.34.5-k3s1@sha256:2b34ec72d589bf0a4e065b81267a63a271ecbe242a36bdbb48ec608f0560cb43
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  echo "== disk before =="
+                  df -h / | tail -1
+                  crictl --runtime-endpoint unix:///run/k3s/containerd/containerd.sock rmi --prune
+                  echo "== disk after =="
+                  df -h / | tail -1
+              # privileged: node-admin scope — talks to the host containerd
+              # daemon over its socket (equivalent of SSH + sudo crictl).
+              securityContext:
+                privileged: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: "1"
+                  memory: 256Mi
+              volumeMounts:
+                - name: containerd-sock
+                  mountPath: /run/k3s/containerd
+          volumes:
+            - name: containerd-sock
+              hostPath:
+                path: /run/k3s/containerd
+                type: Directory
+---
+# Same prune for the control plane (debian). Cordon does not block
+# explicit nodeName binding; toleration covers the k3s master taint if
+# one is ever set.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: node-image-prune-control
+  namespace: kube-system
+spec:
+  schedule: "37 4 * * 0" # Sundays 04:37 UTC — staggered after the worker
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          nodeName: debian
+          restartPolicy: Never
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+          containers:
+            - name: prune
+              image: rancher/k3s:v1.34.5-k3s1@sha256:2b34ec72d589bf0a4e065b81267a63a271ecbe242a36bdbb48ec608f0560cb43
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  echo "== disk before =="
+                  df -h / | tail -1
+                  crictl --runtime-endpoint unix:///run/k3s/containerd/containerd.sock rmi --prune
+                  echo "== disk after =="
+                  df -h / | tail -1
+              securityContext:
+                privileged: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: "1"
+                  memory: 256Mi
+              volumeMounts:
+                - name: containerd-sock
+                  mountPath: /run/k3s/containerd
+          volumes:
+            - name: containerd-sock
+              hostPath:
+                path: /run/k3s/containerd
+                type: Directory
