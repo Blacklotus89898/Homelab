@@ -38,7 +38,7 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: rollout-nudge-openobserve
+  name: rollout-nudge-openobserve-2
   namespace: openobserve
 spec:
   backoffLimit: 1
@@ -49,7 +49,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: nudge
-          image: registry.k8s.io/kubectl:v1.34.5@sha256:de4688e1c070b5c236a557bddd48dc593cd1d6a791699426cdd4c61ea
+          image: registry.k8s.io/kubectl:v1.34.5@sha256:de4688e1c070b5c236a557bddd48dc593cd1d6a7916994cbf379426cdd4c61ea
           command: ["kubectl"]
           args:
             - -n
