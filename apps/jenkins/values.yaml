@@ -1,9 +1,11 @@
 controller:
-  # Jenkins LTS on JDK 21
+  # Jenkins LTS on JDK 21 — digest-pinned to the running image (was the
+  # floating lts-jdk21 tag; a retag would silently change the controller on
+  # the next pod schedule). Renovate bumps this via PR once installed.
   image:
     registry: docker.io
     repository: jenkins/jenkins
-    tag: lts-jdk21
+    tag: lts-jdk21@sha256:c1e4c349365f6d16d88595b2c5f7e8ff39b8ae1d061f62420bac193b4b9616d0
     pullPolicy: IfNotPresent
 
   # NodePort — consistent with other services in this cluster

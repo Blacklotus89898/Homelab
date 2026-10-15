@@ -14,7 +14,9 @@ spec:
   sources:
     - repoURL: https://charts.jenkins.io
       chart: jenkins
-      targetRevision: "*"
+      # Pinned to the deployed-and-proven chart (was "*" — the fleet's last
+      # floating chart ref). Renovate bumps this via PR once installed.
+      targetRevision: "5.9.68"
       helm:
         releaseName: jenkins
         valueFiles:
