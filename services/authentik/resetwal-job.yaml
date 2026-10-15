@@ -1,0 +1,56 @@
+# One-shot WAL recovery for authentik postgres (2026-10-08 incident).
+# The checkpoint record at 0/3767E568 is torn — postgres PANICs on every
+# start ("could not locate a valid checkpoint record") and SIGABRTs a
+# 152MB core dump into the PVC each iteration. Data files are consistent
+# (clean shutdown 2026-10-01 00:40:27 per pg_controldata), so pg_resetwal
+# (-f: skip the clean-shutdown re-check, the WAL is known-bad) writes a
+# fresh checkpoint record + empty WAL and postgres starts clean.
+# REMOVED from git in the follow-up commit once Complete — a live Job
+# object that ArgoCD could recreate must not sit in git (re-running
+# resetwal on a healthy DB is destructive). Procedure + evidence:
+# KB runbooks/authentik-postgres-torn-wal.md.
+# Runs as uid/gid 999 (postgres) — pg_resetwal refuses as non-owner.
+# The postgres Deployment MUST be at replicas 0 (RWO PVC, single writer).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: authentik-postgres-resetwal
+  namespace: default
+spec:
+  backoffLimit: 0 # destructive op — never blind-retry; investigate instead
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: authentik-postgres-resetwal
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+      containers:
+        - name: resetwal
+          image: docker.io/library/postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94 # same digest as the Deployment
+          command: ["/bin/sh", "-eu", "-c"] # -c: sh treats a bare script arg as a filename (runbooks/heartbeat-sh-filename-too-long.md)
+          args:
+            - |
+              pg_resetwal -f -D /var/lib/postgresql/data
+              # core dumps from the crashloop (152MB each) — only remove
+              # once resetwal succeeded (-eu aborts above on failure)
+              rm -f /var/lib/postgresql/data/core
+              echo "== post-resetwal control data =="
+              pg_controldata -D /var/lib/postgresql/data | grep -E "Database cluster state|Latest checkpoint location|REDO WAL file"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: "1"
+              memory: 256Mi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: authentik-postgres-pvc
