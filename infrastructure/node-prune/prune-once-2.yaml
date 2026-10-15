@@ -1,10 +1,11 @@
-# ONE-SHOT (decision-log pattern 2026-10-14): immediate prune + disk
-# ground-truth on the 83%-full worker. REMOVE this file in the follow-up
-# commit once the Job is Complete, so ArgoCD can never re-run it.
+# ONE-SHOT v2 (decision-log pattern 2026-10-14): v1 completed but its
+# crictl fataled (k3s multi-call crictl needs the agent config — now
+# mounted). Jobs are immutable, so the fixed run lives under a new name.
+# REMOVE this file in the follow-up commit once Complete.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: node-prune-once-worker
+  name: node-prune-once-worker-2
   namespace: kube-system
 spec:
   backoffLimit: 0
@@ -22,13 +23,9 @@ spec:
               set -eu
               echo "== disk before =="
               df -h / | tail -1
-              crictl --runtime-endpoint unix:///run/k3s/containerd/containerd.sock rmi --prune || echo "crictl prune returned $? (continuing for the report)"
+              crictl rmi --prune
               echo "== disk after =="
               df -h / | tail -1
-              echo "== local-path PV usage (top 12) =="
-              du -sh /var/lib/rancher/k3s/storage/* 2>/dev/null | sort -h | tail -12 || true
-              echo "== journald size =="
-              du -sh /var/log/journal 2>/dev/null || echo "no /var/log/journal (volatile journal)"
           securityContext:
             privileged: true
           resources:
@@ -41,22 +38,15 @@ spec:
           volumeMounts:
             - name: containerd-sock
               mountPath: /run/k3s/containerd
-            - name: storage
-              mountPath: /var/lib/rancher/k3s/storage
-              readOnly: true
-            - name: journal
-              mountPath: /var/log/journal
+            - name: k3s-agent-etc
+              mountPath: /var/lib/rancher/k3s/agent/etc
               readOnly: true
       volumes:
         - name: containerd-sock
           hostPath:
             path: /run/k3s/containerd
             type: Directory
-        - name: storage
+        - name: k3s-agent-etc
           hostPath:
-            path: /var/lib/rancher/k3s/storage
+            path: /var/lib/rancher/k3s/agent/etc
             type: Directory
-        - name: journal
-          hostPath:
-            path: /var/log/journal
-            type: DirectoryOrCreate

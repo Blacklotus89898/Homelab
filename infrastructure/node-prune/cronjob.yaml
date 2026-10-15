@@ -52,10 +52,19 @@ spec:
               volumeMounts:
                 - name: containerd-sock
                   mountPath: /run/k3s/containerd
+                # k3s's multi-call crictl fatals without its agent config
+                # (it points at the sock above); the host agent dir has it.
+                - name: k3s-agent-etc
+                  mountPath: /var/lib/rancher/k3s/agent/etc
+                  readOnly: true
           volumes:
             - name: containerd-sock
               hostPath:
                 path: /run/k3s/containerd
+                type: Directory
+            - name: k3s-agent-etc
+              hostPath:
+                path: /var/lib/rancher/k3s/agent/etc
                 type: Directory
 ---
 # Same prune for the control plane (debian). Cordon does not block
@@ -107,8 +116,15 @@ spec:
               volumeMounts:
                 - name: containerd-sock
                   mountPath: /run/k3s/containerd
+                - name: k3s-agent-etc
+                  mountPath: /var/lib/rancher/k3s/agent/etc
+                  readOnly: true
           volumes:
             - name: containerd-sock
               hostPath:
                 path: /run/k3s/containerd
+                type: Directory
+            - name: k3s-agent-etc
+              hostPath:
+                path: /var/lib/rancher/k3s/agent/etc
                 type: Directory
