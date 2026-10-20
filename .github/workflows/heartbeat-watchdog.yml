@@ -50,6 +50,26 @@ jobs:
             echo "- verdict: $stale"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Close page issue on recovery
+        # 2026-10-20: a recovered beat must not leave a rotting "Cluster
+        # dark?" issue — the 10-08 page sat open for 12 days after the beat
+        # came back, and the next real page would read as that same old
+        # noise. If the beat is fresh and a page is still open, close it.
+        if: steps.hb.outputs.stale == 'false' && inputs.test_alert != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          LAST_BEAT: ${{ steps.hb.outputs.last_beat }}
+        run: |
+          existing=$(gh issue list --state open --json number,title \
+            --jq '.[] | select(.title | startswith("Cluster dark")) | .number' | head -1)
+          if [ -n "$existing" ]; then
+            echo "Beat recovered (last ${LAST_BEAT} UTC) — closing page issue #${existing}."
+            gh issue close "$existing" --comment "Beat recovered: last heartbeat ${LAST_BEAT} UTC, within the 2h threshold. Auto-closing this page — a new outage opens a fresh issue."
+          else
+            echo "Beat fresh, no open page issue — nothing to close."
+          fi
+
       - name: Open page issue
         if: steps.hb.outputs.stale == 'true' || inputs.test_alert == true
         env:
