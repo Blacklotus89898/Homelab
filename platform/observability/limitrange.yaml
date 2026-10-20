@@ -14,4 +14,9 @@ spec:
         memory: 64Mi
       max:
         cpu: "1"
-        memory: 512Mi
+        # 2026-10-20: 512Mi → 2Gi. The old cap forced vmsingle's limit to
+        # 512Mi; it idles at ~360Mi and the 30d-window SLO queries push it
+        # over → OOMKilled ~9x/day (187 restarts by 2026-10-20). The ns
+        # default (256Mi) still bounds every container that doesn't ask for
+        # more; only vmsingle opts up (2Gi), everything else is unchanged.
+        memory: 2Gi

@@ -28,9 +28,16 @@ vmsingle:
     resources:
       requests:
         cpu: 50m
-        memory: 200Mi
+        # 2026-10-20: 200Mi→512Mi — idles at ~360Mi; the old request
+        # under-reported the steady state to the scheduler.
+        memory: 512Mi
       limits:
-        memory: 512Mi # ns LimitRange (monitoring-limits) caps containers at 512Mi
+        # 2026-10-20: 512Mi→2Gi. At 512Mi the 30d-window SLO recording
+        # rules (avg_over_time(...[30d]), 6-9s/query from vmalert) pushed
+        # working-set past the cap → OOMKilled ~9x/day (187 restarts since
+        # 2026-09-29). 2Gi ≈ 5.5x idle headroom; the monitoring LimitRange
+        # max was raised to match (platform/observability/limitrange.yaml).
+        memory: 2Gi
 
 # k3s embeds scheduler + controller-manager in the control-plane binary — the
 # chart's standalone-pod scrapes/rules can never find targets here and would
