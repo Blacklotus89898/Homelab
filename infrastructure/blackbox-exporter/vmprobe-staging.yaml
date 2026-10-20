@@ -20,3 +20,4 @@ spec:
         # The rehearsal lane's front door(s) — in-cluster only (staging
         # Services are ClusterIP, see the overlay).
         - http://linkding-svc.staging-linkding.svc.cluster.local:9090
+        - http://kavita-service.staging-kavita.svc.cluster.local:5000

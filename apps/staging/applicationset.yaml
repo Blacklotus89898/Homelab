@@ -19,6 +19,9 @@ spec:
           - app: linkding
             namespace: staging-linkding
             path: environments/staging/linkding
+          - app: kavita
+            namespace: staging-kavita
+            path: environments/staging/kavita
   template:
     metadata:
       name: 'staging-{{.app}}'

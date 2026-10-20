@@ -1,0 +1,74 @@
+# Staging overlay for kavita — the upgrade-rehearsal lane (ROADMAP Phase 4),
+# same contract as environments/staging/linkding. Differences that matter
+# for kavita specifically:
+#   - prod storage is TWO hostPaths (config is WRITABLE, comics readOnly).
+#     Both become emptyDir here: a candidate must never migrate prod's
+#     config dir, and the comics mount pins prod to one node — staging
+#     should schedule anywhere and cost nothing. A rehearsal proves "new
+#     version boots and serves", not data migrations (empty library).
+#   - prod's fat resources (2 CPU/2Gi req — from the 2026-07-28 OOM fix)
+#     shrink to a rehearsal profile; .NET boots fine in ~300Mi on a fresh
+#     config. If a candidate OOMs HERE, that is the rehearsal working.
+#   - Service → ClusterIP, no nodePort: prod owns 30050.
+# images override = THE rehearsal knob (mirror of prod between rehearsals;
+# flip to the candidate digest to rehearse, then promote the base).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../services/kavita
+
+namespace: staging-kavita
+
+images:
+  - name: jvmilazz0/kavita
+    newTag: "0.9.1"
+    digest: sha256:31181a32f0dda73cae68721867028a7253d57881b58bea5754cd9e578e75421a
+
+patches:
+  # Writable prod config hostPath -> emptyDir (see header).
+  - target:
+      kind: Deployment
+      name: kavita
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/volumes/0
+        value:
+          name: kavita-config
+          emptyDir: {}
+  # Comics SMB hostPath -> emptyDir: staging is stateless and unpinned.
+  - target:
+      kind: Deployment
+      name: kavita
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/volumes/1
+        value:
+          name: comic-data
+          emptyDir: {}
+  # Rehearsal resource profile (see header).
+  - target:
+      kind: Deployment
+      name: kavita
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+            ephemeral-storage: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1536Mi
+            ephemeral-storage: 2Gi
+  # ClusterIP in staging: no nodePort spend, no clash with prod's 30050.
+  - target:
+      kind: Service
+      name: kavita-service
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: ClusterIP
+      - op: remove
+        path: /spec/ports/0/nodePort
