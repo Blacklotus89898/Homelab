@@ -1,6 +1,6 @@
 # Homelab
 
-GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (custom IDP, replacing Backstage).
+GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, VictoriaMetrics + Grafana, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (pipeline orchestrator) running alongside [Backstage](backstage/) (developer portal) — see Petal ADR 0003: **Backstage is the portal, Petal is the orchestrator.**
 
 > **Architecture diagrams:** [docs/architecture.md](docs/architecture.md) — full visual walkthrough: cluster overview, GitOps flow, sync waves, CI/CD, Petal pipeline runs, observability, network, secrets.
 
@@ -22,13 +22,17 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Open
 |---|---|---|
 | ArgoCD | http://192.168.0.108:31991 | admin / see argocd secret |
 | Backstage | http://192.168.0.108:30900 | GitHub OAuth |
-| OpenObserve | http://192.168.0.108:30500 | admin@homelab.local / admin |
+| OpenObserve | http://192.168.0.108:30500 | creds: `kubectl -n openobserve get secret openobserve-auth -o jsonpath='{.data.password}' \| base64 -d` (rotation pending — see [Sealed Secrets](#sealed-secrets)) |
 | Jenkins | http://192.168.0.108:30808 | ns: jenkins; JCasC auto-configured |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
 | Linkding | http://192.168.0.108:30090 | ns: linkding; data in PVC linkding-pvc |
-| Petal | http://192.168.0.108:30990 | ns: petal; IDP control plane (step-runner via DinD sidecar) |
+| Petal | http://192.168.0.108:30990 | ns: petal; pipeline orchestrator (step-runner via DinD sidecar) |
 | Audiobookshelf | http://192.168.0.108:30030 | ns: audiobookshelf |
-| Authentik | – | existing service (not yet GitOps-managed) |
+| Authentik | http://192.168.0.108:30080 | GitOps-managed since 2026-10-01 (services/authentik/) |
+| Grafana | http://192.168.0.108:30300 | ns: monitoring; admin creds in SealedSecret `grafana-admin-credentials` |
+| ntfy | http://192.168.0.108:30310 | push alerts; topic `homelab-alerts` |
+| uptime-kuma | http://192.168.0.108:30320 | external prober |
+| OpenCost | http://192.168.0.108:30330 | cost view; reads vmsingle as its Prometheus |
 
 ## Bootstrap (one-time, manual)
 
@@ -205,9 +209,8 @@ ssh k3s-worker-01 "sudo cp /opt/cni/bin/istio-cni /var/lib/rancher/k3s/data/cni/
 
 - Deployed as plain StatefulSet (not Helm chart) — the Helm chart requires CloudNativePG in cluster mode and does not support SQLite single-node mode
 - Single-node SQLite mode (`ZO_META_STORE=sqlite`)
-- 20Gi PVC, 30-day auto-compaction
-- Credentials in `infrastructure/openobserve/secret.yaml` (plain secret — seal with kubeseal before making repo public)
-- Auth for OTel collector: `base64("admin@homelab.local:admin")` = `YWRtaW5AaG9tZWxhYi5sb2NhbDphZG1pbg==`
+- 20Gi PVC, 3-day retention (cut from 30d on 2026-10-15; v0.14.6 panics at boot below a 3-day floor)
+- ⚠️ **Open security item:** credential literals still live in `infrastructure/openobserve/secret.yaml` and the OTel collector's `OO_AUTH` env (both predate the repo going public). Fetch the current password with `kubectl -n openobserve get secret openobserve-auth -o jsonpath='{.data.password}' | base64 -d`; the fix — rotate the password, seal both spots, drop the literals — is tracked in `docs/ROADMAP.md`
 
 To update the OTel auth token after a password change:
 ```bash
@@ -223,8 +226,8 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 - Backstage platform: `1.53.0` (new declarative frontend system)
 - Custom image built via CI: `ghcr.io/blacklotus89898/backstage:<commit-sha>` — deployments pin to immutable sha tags, never `:latest`. Bump the tag in `apps/backstage/values.yaml` after each CI build.
 - CSP fix required for plain HTTP: `backend.csp.upgrade-insecure-requests: false`
-- Auth: **GitHub OAuth only** — guest provider removed
-- Software catalog loaded from `catalog/all.yaml` + GitHub org auto-discovery (every 30 min)
+- Auth: **GitHub OAuth** — ⚠️ `guest: {}` is still enabled in `backstage/app-config.production.yaml` (issue #2); removal is pending the authentik OIDC wiring
+- Software catalog loaded from `catalog/all.yaml` with a **static wildcard location** (`catalog/components/*.yaml`) — GitHub org auto-discovery was removed 2026-10-14 (it swept 62 repos and its `catalogPath` glob never expanded)
 
 ### Installed plugins
 
@@ -234,7 +237,7 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 | `@backstage/plugin-home` | Home page at `/home` | ✅ |
 | `@backstage/plugin-techdocs` | Docs per service | ✅ |
 | `@roadiehq/backstage-plugin-argo-cd` | ArgoCD sync/health tab per entity | ✅ |
-| `@backstage/plugin-catalog-backend-module-github` | Auto-discover `catalog-info.yaml` from GitHub org | ✅ |
+| `@backstage/plugin-catalog-backend-module-github` | Org auto-discovery — **removed 2026-10-14**, replaced by the static wildcard catalog location | ➖ |
 | `@backstage/plugin-notifications` + signals | Real-time notifications | ✅ |
 | `@backstage/plugin-jenkins-backend` | Jenkins backend integration | ✅ |
 | `@backstage/plugin-github-actions` | CI workflow runs per entity | ⏳ pending — v0.6.16 has no `/alpha` export |
@@ -258,8 +261,9 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 1. Update `backstage.json` version and run `yarn install`
 2. Rebuild and push image via CI, then pin the new commit-sha tag in `apps/backstage/values.yaml`
-3. **Must wipe PostgreSQL PVC** — Backstage runs forward-only migrations:
+3. PostgreSQL PVC: the old "must wipe on every upgrade" note was a pre-canary-era workaround and is **retired** — the Argo Rollouts canary flow (see `docs/architecture.md` § Observability) assumes catalog state persists across upgrades. Dropping the PVC is a deliberate full reset, not an upgrade step:
    ```bash
+   # deliberate reset ONLY:
    kubectl delete pod -n backstage backstage-postgresql-0
    kubectl delete pvc data-backstage-postgresql-0 -n backstage
    ```
@@ -268,9 +272,9 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 ## Petal
 
-**Petal** (`github.com/Blacklotus89898/Petal`) is the custom internal developer platform built to replace Backstage: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs. Pipelines are repo-native YAML (`.petal/pipelines/*.yaml` in the target repo) executed by Petal's first-party step-runner as plain Docker containers — *Petal decides and remembers; Docker runs; YAML describes* (ADR 0002, which superseded the original Dagger-engine design after vfs/extraction pain in this cluster). Decision log lives in the Petal repo (`docs/adr/`).
+**Petal** (`github.com/Blacklotus89898/Petal`) is the pipeline orchestrator: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs. Pipelines are repo-native YAML (`.petal/pipelines/*.yaml` in the target repo) executed by Petal's first-party step-runner as plain Docker containers — *Petal decides and remembers; Docker runs; YAML describes* (ADR 0002, which superseded the original Dagger-engine design after vfs/extraction pain in this cluster). Decision log lives in the Petal repo (`docs/adr/`).
 
-> **Migration status:** Petal is deployed alongside Backstage. Once Petal covers catalog + notifications (Phases C/D), Backstage will be decommissioned — including its PostgreSQL PVC.
+> **Division of labor (Petal ADR 0003):** Backstage is the portal (catalog, TechDocs, visibility); Petal is the orchestrator (pipeline runs). They run alongside each other by design — this is not a replacement pending cutover.
 
 ### Deployment (this repo)
 
@@ -490,7 +494,7 @@ kubectl create secret generic my-secret -n my-namespace \
   > infrastructure/my-service/sealed-secret.yaml
 ```
 
-**TODO:** Seal `infrastructure/openobserve/secret.yaml` and `platform/observability/otel-collector.yaml` (OO_AUTH) before making this repo public.
+**⚠️ Open security item (2026-10-21):** this repo is public, and `infrastructure/openobserve/secret.yaml` + the OTel collector's `OO_AUTH` env still carry credential literals — leftovers from before the repo went public. Doc-side copies have been redacted; the real fix is **rotate the OpenObserve password → seal both spots → remove the literals** (a cluster change, tracked in `docs/ROADMAP.md`). The old values remain in git history either way, which is why rotation — not a history rewrite — is the fix.
 
 ---
 
@@ -503,7 +507,7 @@ kubectl create secret generic my-secret -n my-namespace \
 | Istio CNI binary not in k3s path | Copy binary manually; fixed in `cniBinDir` values |
 | OpenObserve Helm chart requires CloudNativePG | Use plain StatefulSet with `ZO_META_STORE=sqlite` |
 | Backstage `upgrade-insecure-requests` CSP | Disabled in `backend.csp` config (required for plain HTTP NodePort) |
-| NodePort conflicts | Check `kubectl get svc -A` before assigning. In use: 30030 audiobookshelf, 30050 kavita, 30080 authentik, 30090 linkding, 30443 ArgoCD https, 30500 OpenObserve, 30808 Jenkins, 30900 Backstage, 30990 Petal, 31991 ArgoCD http |
+| NodePort conflicts | Check `kubectl get svc -A` before assigning. In use (live-verified 2026-10-21): 30001 juice-shop (orphan, not in git), 30030 audiobookshelf, 30050 kavita, 30070 paperless (scaled to 0), 30080 authentik, 30090 linkding, 30131/30233/30328 istio-gateway (installed, unused), 30300 grafana, 30310 ntfy, 30320 uptime-kuma, 30330/31189/31744 opencost (31189/31744 auto-assigned), 30443 argocd https, 30500/32365 openobserve, 30808 jenkins, 30900 backstage, 30990 petal, 31991 argocd http |
 | Kavita sees empty /mnt/smb_storage after VM restart | VirtioFS mount drops on reboot — add to /etc/fstab on k3s-worker-01: `smb_storage /mnt/smb_storage virtiofs defaults 0 0` |
 | Petal pod `ImagePullBackOff` | ghcr package still private — make `ghcr.io/blacklotus89898/petal` public (see Petal section) |
 | Petal step images pull slowly on first run | DinD uses fuse-overlayfs (overlay2-on-overlay is rejected; `vfs` deep-copies every layer) — first pull is slow, the PVC-backed layer cache makes repeats fast |
