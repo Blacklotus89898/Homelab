@@ -89,7 +89,7 @@ groups:
       - {name: ubuntu host, type: port, hostname: ubuntu.home, port: 22}
       - {name: agent / ollama host, type: port, hostname: agent.home, port: 22, notify: false, note: "legacy/offline per CLAUDE.md — shown, never pages"}
       - {name: SMB share, type: port, hostname: smb.home, port: 445}
-      - {name: Jellyfin, type: http, url: "http://jellyfin.home:8096/health", note: "DOWN since at least 2026-10-21 — host up, port 8096 refused"}
+      - {name: Jellyfin, type: http, url: "http://jellyfin.lan/health", note: "via NPM (CT 120) -> DMZ 10.10.40.3:8096 — the user-facing path. jellyfin.home (.117:8096) is a stale record: Jellyfin listens on its DMZ address only"}
       - {name: Immich, type: http, url: "http://immich.home:2283/api/server/ping"}
       - {name: Nextcloud, type: http, url: "http://nextcloud.home/status.php"}
       - {name: Nginx Proxy Manager, type: http, url: "http://npm.home:81/"}

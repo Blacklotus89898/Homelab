@@ -1,7 +1,7 @@
 # k3s CoreDNS extension hook: the bundled Corefile imports
 # /etc/coredns/custom/*.server from this (optional) ConfigMap.
-# Forwards the LAN zone `home` — including `lab.home`, the Istio gateway's
-# wildcard (ADR 0009) — to the Pi-hole, so pods resolve jellyfin.home,
+# Forwards the LAN zones `home` — including `lab.home`, the Istio gateway's
+# wildcard (ADR 0009) — and `lan` (NPM-proxied apps, e.g. jellyfin.lan) to the Pi-hole, so pods resolve jellyfin.home,
 # proxmox.home, kavita.lab.home the same way LAN clients do. Everything else
 # keeps the default path (node /etc/resolv.conf).
 apiVersion: v1
@@ -12,6 +12,12 @@ metadata:
 data:
   home.server: |
     home:53 {
+        errors
+        cache 30
+        forward . 192.168.0.53
+    }
+  lan.server: |
+    lan:53 {
         errors
         cache 30
         forward . 192.168.0.53
