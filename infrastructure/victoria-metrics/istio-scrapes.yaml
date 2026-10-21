@@ -1,0 +1,60 @@
+# Istio ambient mesh telemetry (Phase A of the Istio adoption, 2026-10-21).
+# Ambient without waypoints is L4-only: ztunnel exports istio_tcp_* (bytes,
+# connections, per src/dst workload) — there is no istio_requests_total until
+# a waypoint carries L7. The ztunnel + control-plane dashboards in
+# istio-dashboards.yaml are the ones that have data today.
+#
+# podTargetLabels copies the pod's `app` label onto every series: the upstream
+# Istio dashboards select on {app="ztunnel"} / {app="istiod"}.
+# seriesLimit is the cardinality guard (vmsingle OOM-looped until 2026-10-21):
+# measured 2026-10-21 — ztunnel ~600 series/node, istiod ~300, gateway ~500.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: istio-ztunnel
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [istio-system]
+  selector:
+    matchLabels:
+      app: ztunnel
+  podTargetLabels: [app]
+  podMetricsEndpoints:
+    - port: ztunnel-stats
+      path: /metrics
+      seriesLimit: 3000
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: istio-istiod
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [istio-system]
+  selector:
+    matchLabels:
+      app: istiod
+  podTargetLabels: [app]
+  podMetricsEndpoints:
+    - port: http-monitoring
+      path: /metrics
+      seriesLimit: 2000
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: istio-gateway
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [istio-system]
+  selector:
+    matchLabels:
+      istio: gateway
+  podTargetLabels: [app, istio]
+  podMetricsEndpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      seriesLimit: 3000
