@@ -84,12 +84,13 @@ spec:
               mountPath: /data
 
         - name: petal
-          # :latest while Petal is under active development — every push to
-          # Petal main should reach the cluster without a manifest bump.
-          # Before calling Petal stable: pin back to an immutable <sha> tag
-          # (+ IfNotPresent) so a bad push can't self-deploy.
-          image: ghcr.io/blacklotus89898/petal:latest
-          imagePullPolicy: Always
+          # Pinned to an immutable Petal commit-sha tag (2026-10-21): a push to
+          # Petal main no longer self-deploys on the next pod restart. Upgrade
+          # flow: push Petal → CI builds :<sha> → bump the tag here.
+          # 4b9f2cc = orchestrator contract (Petal ADR 0003): writes need the
+          # bearer token below — without it every POST /api/runs returns 503.
+          image: ghcr.io/blacklotus89898/petal:4b9f2cc159de2200c4e88ec1c67e864e6cd89c13
+          imagePullPolicy: IfNotPresent
           args:
             - -addr
             - :8080
@@ -106,6 +107,15 @@ spec:
           env:
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2375
+            # Bearer token for mutating API routes (sealed-api-token.yaml).
+            # The same value is sealed for the backstage ns
+            # (infrastructure/backstage-k8s-rbac/sealed-petal-token.yaml) for
+            # the petal:run scaffolder action.
+            - name: PETAL_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: petal-api-token
+                  key: PETAL_API_TOKEN
           ports:
             - name: http
               containerPort: 8080

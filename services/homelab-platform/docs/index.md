@@ -16,7 +16,7 @@ fleet-wide scorecard rollup; each service's own TechDocs page carries its detail
 | linkding | `1.46.2` + digest | yes | git | :30090 |
 | openobserve | `v0.14.6` | no | git | :30500 |
 | paperless | no (deprecated) | no | git (PVs = accepted loss) | - |
-| petal | `:latest` deliberate | yes | git | :30990 |
+| petal | commit-sha tag | yes | git | :30990 |
 
 Annotation truth lives on each catalog component (`homelab.io/image-pinned`,
 `homelab.io/has-slo`, `homelab.io/recovery`) - this table is the human-readable view.

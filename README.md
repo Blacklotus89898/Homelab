@@ -302,7 +302,7 @@ flowchart LR
 
 ### Image builds (Petal repo CI)
 
-`build-petal.yaml` in the Petal repo mirrors `build-backstage.yaml`: go test → buildx → `ghcr.io/blacklotus89898/petal:{latest,<sha>}` → Trivy scan. **While Petal is under active development, the deployment tracks `:latest` with `imagePullPolicy: Always`** — every push to Petal main reaches the cluster on the next pod restart without a manifest bump. Once stable, pin back to an immutable `<sha>` tag (`IfNotPresent`) so a bad push can't self-deploy and ArgoCD history maps to known images (upgrade flow: push Petal → CI builds → bump the sha tag in `services/petal/deployment.yaml`).
+`build-petal.yaml` in the Petal repo mirrors `build-backstage.yaml`: go test → buildx → `ghcr.io/blacklotus89898/petal:{latest,<sha>}` → Trivy scan. The deployment is **pinned to an immutable `<sha>` tag** (`IfNotPresent`, since 2026-10-21) so a bad push can't self-deploy and ArgoCD history maps to known images. Upgrade flow: push Petal → CI builds `:<sha>` → bump the tag in `services/petal/deployment.yaml`. Mutating API routes require `PETAL_API_TOKEN` (SealedSecret `petal-api-token`, also sealed for the `backstage` ns).
 
 **One-time after the first CI run:** ghcr packages are created **private** — make the package public (GitHub → your profile → Packages → `petal` → Package settings → Change visibility), or pods fail with `ImagePullBackOff`. Same as the Backstage package.
 

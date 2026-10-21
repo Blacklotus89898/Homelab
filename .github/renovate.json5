@@ -14,8 +14,8 @@
   "labels": ["renovate"],
   "packageRules": [
     {
-      // petal floats :latest DELIBERATELY while under active development
-      // (see services/petal/deployment.yaml) — never PR it
+      // petal is pinned to Petal commit-sha tags, bumped by hand after a Petal
+      // CI build — sha tags have no order Renovate can compare, so never PR it
       "matchFileNames": ["services/petal/**"],
       "enabled": false
     },

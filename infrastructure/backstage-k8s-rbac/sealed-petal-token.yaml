@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: petal-api-token
+  namespace: backstage
+spec:
+  encryptedData:
+    PETAL_API_TOKEN: AgAetqKGk7LPzqNa0WwFRTUxptB2u7NHW/MinfRDY2zj5uqkbqO2NfB3iBwngcS/sTEvhGncmVozJd0nYnv6Z6OzD9hxzRGISoLKfQziggyJXHmxQjFCCLlH1ANcddyxBF9lH32uRGEplpxnILS7ExHyY+Dbe0XG2ncq+9Fu0MtbDgrLGKabhxeWq8jVN9Y8Jyuvs2FQ4r623GxQkGXpBxz4I7eK5CFz+ELbI2MP5sECMB8xPa+CRdLTjQuOReQ50sYlZq8ErtTVVdaDwozSviJPfzB4C4DH41niHDnvue4cOoTH31wg3ZzEra/kEGjaO2q3L5WJqq0vAmLikD6i4m0YmtXa6Bu2AUOpySCZkZ1W15CxCkvQQLb0ELgLs85XTbplQBPZVG0IGqW3Z2aXmU1eGvwCSOMoZz55GORkjaL7PtmD1dH9hP+/Os0qB75JNvxbQF9QY+G/03t9vKQXBLj7VaerpHsCmUeVKLEqrhGUqhf6uEUk6slwLKJIAkloxjyl+Ajj8MJMW6fxLH4VzKpT8cliiep4idtT587wFA/DtIZbPyg83yNKThCf0xesrAHa3zxrXWuQu+2htiodb2oKch/iK7gutiuNhN9DLnIyAqC1pL1pjUL5DE4mxkxl17o+A6+VBi888lDBuY6RJBFcdzrsuf0oScdk3Gud7chKa7X55bUXVWHgqzN4DHzvRv9BDxl0Xz+AUwRswtaRbb2SlysK39xHRp0p2Ad05qvy0uLjh7ac0eSQeWa5bfjYpLLMm/zL+IN5cmo7eQoVXtJn
+  template:
+    metadata:
+      name: petal-api-token
+      namespace: backstage

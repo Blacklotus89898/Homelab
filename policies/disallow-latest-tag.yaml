@@ -29,13 +29,6 @@ spec:
         any:
           - resources:
               kinds: [Deployment, StatefulSet, DaemonSet]
-      exclude:
-        any:
-          - resources:
-              # petal floats :latest DELIBERATELY while under active development
-              # (services/petal/deployment.yaml comment); Renovate excludes it too
-              namespaces: [petal]
-              names: ["petal"]
       validate:
         message: "Image tags must be pinned — ':latest' is not allowed."
         pattern:

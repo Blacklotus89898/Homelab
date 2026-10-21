@@ -30,7 +30,8 @@ split from its side.
 - Integration (e.g. Petal run status visible in Backstage) is **future work**, not migration
   debt — nothing is provisional.
 - Known-open items stay per-system: Backstage `guest: {}` still enabled (issue #2, pending
-  authentik OIDC); Petal floats `:latest` deliberately during paused dev, sidecars pinned.
-- Petal's NodePort (30990) fronts unauthenticated mutating routes + a privileged DinD pod —
-  treat NodePort reachability as node-level access until auth or gateway routing lands
-  (ADR 0008).
+  authentik OIDC); Petal is pinned to a commit-sha tag (2026-10-21), sidecars pinned.
+- Petal's mutating routes need a bearer token since 2026-10-21 (Petal ADR 0003), but the
+  token-holder still drives a privileged DinD pod, and once Backstage triggers Petal the
+  effective gate is Backstage's own auth (still `guest: {}`) — treat the trigger path as
+  node-level access until authentik + a permission policy land (ADR 0008).
