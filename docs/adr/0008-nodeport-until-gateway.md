@@ -1,6 +1,6 @@
 # ADR 0008 — Raw NodePort exposure until the gateway consolidation
 
-- **Status:** Accepted (direction committed 2026-10-15; consolidation still pending)
+- **Status:** Partly superseded by [ADR 0009](0009-front-door-istio-gateway-api.md) (2026-10-21) — the gateway exists; NodePorts remain in parallel until traefik is removed
 - **Date:** 2026-10-21 (codified from the ROADMAP decision log)
 
 ## Context

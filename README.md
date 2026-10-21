@@ -27,6 +27,14 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Vict
 
 ## Service URLs
 
+**Front door (ADR 0009):** every service below except Backstage is also served by the Istio
+gateway at `https://<name>.lab.home:30328` (TLS, local CA) — `argocd`, `grafana`, `kavita`,
+`linkding`, `audiobookshelf`, `uptime`, `ntfy`, `opencost`, `openobserve`, `jenkins`,
+`petal`, `auth`. Needs the Pi-hole wildcard (`docs/bootstrap.md` ledger) and the CA trusted
+once per device: `kubectl -n cert-manager get secret lab-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > lab-root-ca.crt`.
+The `:30328` goes away once traefik is disabled and the gateway owns 443; the NodePorts
+below stay until then.
+
 | Service | URL | Notes |
 |---|---|---|
 | ArgoCD | http://192.168.0.108:31991 | admin / see argocd secret |
@@ -94,7 +102,7 @@ infrastructure/     # Raw Kubernetes manifests
   backstage-k8s-rbac/  # RBAC + SealedSecrets for Backstage integrations
 platform/           # Shared platform config
   observability/    # OTel collector CR
-  gateways/         # (empty) Istio Gateway / HTTPRoute rules — pending
+  gateways/         # Istio Gateway API front door: local CA, *.lab.home Gateway, HTTPRoutes (ADR 0009)
 catalog/            # Backstage software catalog entities
   all.yaml          # Root location (loaded by Backstage)
   homelab-system.yaml

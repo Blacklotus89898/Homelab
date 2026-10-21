@@ -13,12 +13,11 @@ a row graduates to an ADR when it shapes how the platform is built, not just wha
 | [0005](0005-canary-gate-front-door-slo.md) | Canary gate = the front-door SLO AnalysisTemplate | Accepted, E2E-verified | 2026-10-13 |
 | [0006](0006-staging-applicationset-digest-knob.md) | Staging lane: ApplicationSet-stamped overlays, digest as the knob | Accepted, E2E-verified | 2026-10-14 |
 | [0007](0007-backstage-portal-petal-orchestrator.md) | Backstage is the portal, Petal is the orchestrator | Accepted | 2026-10-15 |
-| [0008](0008-nodeport-until-gateway.md) | Raw NodePort exposure until the gateway consolidation | Accepted (interim) | 2026-10-15 |
+| [0008](0008-nodeport-until-gateway.md) | Raw NodePort exposure until the gateway consolidation | Partly superseded by 0009 | 2026-10-15 |
+| [0009](0009-front-door-istio-gateway-api.md) | Front door = Istio Gateway API on `*.lab.home` with a local CA | Accepted, live (NodePort phase) | 2026-10-21 |
 
 ## Open decisions (no ADR yet — each needs a choice before work starts)
 
-- **Front door**: finish istio (Gateway + HTTPRoutes + TLS) vs. simplify to traefik vs.
-  Caddy — ADR 0008 defers it; pick one, record it here.
 - **Telemetry stacks**: keep OpenObserve (logs at 3d, no traces yet) alongside
   VictoriaMetrics, or consolidate (e.g. VictoriaLogs into the same Grafana).
 - **Root app-of-apps** (`directory.recurse` over `apps/`) vs. an ApplicationSet per app

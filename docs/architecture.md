@@ -296,10 +296,24 @@ flowchart LR
 
 ## Traffic and network
 
-No Ingress yet — everything is plain-HTTP NodePort, which is why most service
-namespaces are **excluded** from the ambient mesh (ztunnel intercepts and drops
-unencrypted NodePort traffic). `platform/gateways/` is empty pending the Istio
-Gateway/HTTPRoute + cert-manager work.
+**Front door (ADR 0009, 2026-10-21):** a Gateway API `Gateway` (`istio-system/lab`, class
+`istio`) bound to the helm-installed Istio ingress gateway serves `*.lab.home` over HTTPS
+(cert-manager local-CA wildcard) on NodePort 30328 / HTTP 30131, with one HTTPRoute per
+service in `platform/gateways/routes.yaml`. Raw NodePorts (below) run in parallel until
+traefik is disabled and the gateway takes 80/443.
+
+```mermaid
+flowchart LR
+  C["LAN client<br/>https://kavita.lab.home:30328"] -->|"Pi-hole: *.lab.home → .108"| GW["istio-gateway<br/>Gateway 'lab' · TLS *.lab.home"]
+  GW -->|"HTTPRoute"| S1["kavita / linkding / grafana / ...<br/>(ambient: HBONE mTLS via ztunnel)"]
+  GW -->|"HTTPRoute"| S2["argocd / jenkins / petal / authentik<br/>(not enrolled: plaintext in-cluster)"]
+```
+
+Ambient enrollment and NodePorts coexist — kavita, linkding and grafana are enrolled *and*
+NodePort-exposed today. The old note that "ztunnel drops unencrypted NodePort traffic"
+only holds under STRICT PeerAuthentication, which is not enabled yet (ADR 0009 turns it on
+per namespace once traffic arrives only via the gateway). Mesh telemetry: ztunnel / istiod /
+gateway are scraped into vmsingle; Grafana has the Istio Ztunnel + Control Plane dashboards.
 
 ```mermaid
 flowchart LR
@@ -327,7 +341,8 @@ flowchart LR
 | Namespace | In mesh? | Why |
 |---|---|---|
 | monitoring, openobserve, homelab, kavita, linkding, audiobookshelf | ✅ | no NodePort exposure conflict |
-| backstage, jenkins, petal | ❌ | plain-HTTP NodePort access |
+| backstage, jenkins | ❌ | not enrolled yet (NodePort alone is no blocker — see above); ADR 0009 enrollment phase |
+| petal | ❌ | privileged DinD sidecar |
 | arc-systems | ❌ | webhook TLS conflicts with ztunnel |
 | arc-runners | ❌ | DinD conflicts with ambient |
 
