@@ -17,7 +17,7 @@ spec:
         releaseName: backstage
         valueFiles:
           - $values/apps/backstage/values.yaml
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
     # Plain manifests alongside the chart: the canary Rollout, adopted via
@@ -26,7 +26,7 @@ spec:
     # NOTE: the manifest lives in services/backstage/ — NOT under apps/ —
     # because the root app-of-apps watches all of apps/ recursively and
     # would claim the Rollout itself (and deadlock its sync on its health).
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       path: services/backstage
   destination:

@@ -17,7 +17,7 @@ spec:
         releaseName: istio
         valueFiles:
           - $values/apps/istio/values.yaml
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
   destination:

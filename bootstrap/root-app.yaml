@@ -17,7 +17,7 @@ spec:
       jsonPointers:
         - /metadata/finalizers
   source:
-    repoURL: git@github.com:Blacklotus89898/Homelab.git
+    repoURL: https://github.com/Blacklotus89898/Homelab.git
     targetRevision: HEAD
     path: apps
     directory:

@@ -1,0 +1,4 @@
+# Node-side files are copied verbatim onto Linux hosts — a CRLF checkout on
+# the Windows admin workstation would break `#!/bin/sh` and systemd units.
+*.sh text eol=lf
+bootstrap/nodes/** text eol=lf

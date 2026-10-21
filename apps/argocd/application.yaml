@@ -19,7 +19,7 @@ spec:
         valueFiles:
           - $values/apps/argocd/values.yaml
     # Local values file
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
   destination:

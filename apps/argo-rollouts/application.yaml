@@ -19,10 +19,10 @@ spec:
         releaseName: argo-rollouts
         valueFiles:
           - $values/apps/argo-rollouts/values.yaml
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       path: infrastructure/argo-rollouts
   destination:

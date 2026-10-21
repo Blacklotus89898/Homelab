@@ -17,7 +17,7 @@ spec:
         releaseName: cert-manager
         valueFiles:
           - $values/apps/cert-manager/values.yaml
-    - repoURL: git@github.com:Blacklotus89898/Homelab.git
+    - repoURL: https://github.com/Blacklotus89898/Homelab.git
       targetRevision: HEAD
       ref: values
   destination:
