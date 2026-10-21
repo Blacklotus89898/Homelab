@@ -1,0 +1,9 @@
+# /etc/systemd/system/k3s-disk-cleanup.timer (k3s-worker-01)
+[Unit]
+Description=Run k3s disk cleanup daily
+[Timer]
+OnCalendar=*-*-* 04:17:00
+RandomizedDelaySec=10m
+Persistent=true
+[Install]
+WantedBy=timers.target

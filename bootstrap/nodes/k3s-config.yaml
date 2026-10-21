@@ -1,0 +1,14 @@
+# /etc/rancher/k3s/config.yaml — identical on debian (server) and
+# k3s-worker-01 (agent). Captured from both nodes 2026-10-21.
+#
+# The systemd units pass NO flags (`k3s server` / `k3s agent` bare); the agent's
+# K3S_URL + K3S_TOKEN live in /etc/systemd/system/k3s-agent.service.env, written
+# by the installer — secret, never in git (see bootstrap/nodes/README.md).
+#
+# eviction-hard at 2%: deliberately low so the kubelet doesn't evict workloads
+# on a small root fs (52G worker); disk is instead managed by the daily
+# k3s-disk-cleanup timer + the in-cluster node-image-prune CronJobs and the
+# NodeFilesystem alerts. Trade-off: at 2% of 52G (~1G) eviction is a last
+# resort, not an early warning — the alerts are the early warning.
+kubelet-arg:
+  - "eviction-hard=nodefs.available<2%,imagefs.available<2%"

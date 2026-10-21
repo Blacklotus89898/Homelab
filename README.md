@@ -2,7 +2,16 @@
 
 GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, VictoriaMetrics + Grafana, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (pipeline orchestrator) running alongside [Backstage](backstage/) (developer portal) — see Petal ADR 0003: **Backstage is the portal, Petal is the orchestrator.**
 
-> **Architecture diagrams:** [docs/architecture.md](docs/architecture.md) — full visual walkthrough: cluster overview, GitOps flow, sync waves, CI/CD, Petal pipeline runs, observability, network, secrets.
+## Documentation
+
+| Doc | What it answers |
+|---|---|
+| [docs/overview.md](docs/overview.md) | What this platform is for — goals, constraints, non-goals, principles (start here) |
+| [docs/architecture.md](docs/architecture.md) | How it fits together — cluster, GitOps flow, sync waves, CI/CD, observability, network, secrets (diagrams) |
+| [docs/adr/](docs/adr/README.md) | Why it is the way it is — architecture decision records |
+| [docs/bootstrap.md](docs/bootstrap.md) | How to rebuild it from scratch — ordered procedure + everything git cannot restore |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | What's done, what's next, and the running decision log |
+| `services/*/docs/` | Per-service TechDocs (rendered in Backstage) |
 
 ## Cluster
 
@@ -34,73 +43,13 @@ GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, Vict
 | uptime-kuma | http://192.168.0.108:30320 | external prober |
 | OpenCost | http://192.168.0.108:30330 | cost view; reads vmsingle as its Prometheus |
 
-## Bootstrap (one-time, manual)
+## Bootstrap / rebuild
 
-> Everything after this is `git push` → ArgoCD auto-sync.
-
-### 1. Add Helm repos
-
-```bash
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add jetstack https://charts.jetstack.io
-helm repo add istio https://istio-release.storage.googleapis.com/charts
-helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm repo add backstage https://backstage.github.io/charts
-helm repo update
-```
-
-### 2. Install ArgoCD via Helm
-
-```bash
-helm install argocd argo/argo-cd \
-  --namespace argocd --create-namespace \
-  --version 10.2.1 \
-  -f apps/argocd/values.yaml
-```
-
-### 3. Add this repo as an ArgoCD source
-
-```bash
-argocd repo add git@github.com:Blacklotus89898/Homelab.git \
-  --ssh-private-key-path ~/.ssh/id_ed25519
-```
-
-### 4. Apply the root app-of-apps
-
-```bash
-kubectl apply -f bootstrap/root-app.yaml
-```
-
-ArgoCD will now reconcile everything in `apps/` automatically.
-
-### 5. Access ArgoCD UI
-
-k3s 1.34 has a port-forward bug — use NodePort instead:
-
-```bash
-# NodePort is fixed at 31991 in apps/argocd/values.yaml
-kubectl get svc -n argocd argocd-server
-# Access at http://192.168.0.108:31991
-# Login: admin / $(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d)
-```
-
-### 6. ArgoCD CLI login
-
-```bash
-argocd login 192.168.0.108:31991 --username admin --password <password> --insecure
-```
-
-### 7. Register ARC OCI Helm repo in ArgoCD (one-time, for self-hosted runners)
-
-The `actions-runner-controller` charts are OCI-only — ArgoCD needs the registry added before it can sync the `arc-controller` and `arc-runners` apps:
-
-```bash
-argocd repo add ghcr.io/actions/actions-runner-controller-charts \
-  --type helm --name arc-charts --enable-oci
-```
-
-Then seal the GitHub PAT secret and push it (see **Self-hosted runners** section below).
+The full ordered procedure — Proxmox VMs, node config (`bootstrap/nodes/`), k3s, **restoring
+the sealed-secrets keyring before ArgoCD**, ArgoCD install, `bootstrap/root-app.yaml` — and the
+ledger of everything git cannot restore live in **[docs/bootstrap.md](docs/bootstrap.md)**.
+After that, everything is `git push` → ArgoCD auto-sync. ArgoCD UI: http://192.168.0.108:31991
+(NodePort — k3s 1.34 port-forward is unreliable here); `argocd login 192.168.0.108:31991 --insecure`.
 
 ---
 
@@ -272,7 +221,7 @@ echo -n "admin@homelab.local:NEWPASSWORD" | base64
 
 ## Petal
 
-**Petal** (`github.com/Blacklotus89898/Petal`) is the pipeline orchestrator: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs. Pipelines are repo-native YAML (`.petal/pipelines/*.yaml` in the target repo) executed by Petal's first-party step-runner as plain Docker containers — *Petal decides and remembers; Docker runs; YAML describes* (ADR 0002, which superseded the original Dagger-engine design after vfs/extraction pain in this cluster). Decision log lives in the Petal repo (`docs/adr/`).
+**Petal** (`github.com/Blacklotus89898/Petal`) is the pipeline orchestrator: a Go control plane that schedules, deduplicates, records, and reports CI/CD pipeline runs. Pipelines are repo-native YAML (`.petal/pipelines/*.yaml` in the target repo) executed by Petal's first-party step-runner as plain Docker containers — *Petal decides and remembers; Docker runs; YAML describes* (Petal ADR 0002, which superseded the original Dagger-engine design after vfs/extraction pain in this cluster). Decision log lives in the Petal repo (`docs/adr/`).
 
 > **Division of labor (Petal ADR 0003):** Backstage is the portal (catalog, TechDocs, visibility); Petal is the orchestrator (pipeline runs). They run alongside each other by design — this is not a replacement pending cutover.
 
@@ -368,7 +317,7 @@ argocd repo add https://charts.jenkins.io --type helm --name jenkins
 
 **Known ArgoCD quirk:** `arc-controller` shows 4 CRDs as `OutOfSync`. Cosmetic only — cluster-scoped CRDs appear twice in ArgoCD's diff. Everything works correctly.
 
-### Setup (one-time after bootstrap step 7)
+### Setup (one-time; chart-repo registration is in docs/bootstrap.md step 5)
 
 1. **Register the ARC OCI Helm repo** in ArgoCD:
    ```bash

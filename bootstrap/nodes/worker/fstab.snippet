@@ -1,0 +1,4 @@
+# Append to /etc/fstab on k3s-worker-01. VirtIOFS share exported by Proxmox
+# (tag "smb_storage", xattr ENABLED — docs/solutions/virtiofs-xattr-dind-buildkit.md).
+# Consumers: kavita, audiobookshelf (hostPath), petal DinD cache (/mnt/smb_storage/petal-docker-lib).
+smb_storage /mnt/smb_storage virtiofs defaults 0 0

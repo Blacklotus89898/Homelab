@@ -1,0 +1,6 @@
+# /etc/systemd/system/k3s-disk-cleanup.service (k3s-worker-01)
+[Unit]
+Description=k3s worker disk cleanup (dead containers, image prune, stale petal cache, journald cap)
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/k3s-disk-cleanup.sh
