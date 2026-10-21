@@ -1,0 +1,316 @@
+# Per-service routes on the lab Gateway (ADR 0009). One HTTPRoute per service,
+# created in the SERVICE's namespace (no ReferenceGrants needed) but owned by the
+# gateways app — one file is the hostname registry: <name>.lab.home -> service.
+# Attaches to both listeners: https://<name>.lab.home:30328 (TLS, wildcard cert)
+# and http://<name>.lab.home:30131, until traefik is removed and the gateway
+# takes 80/443.
+#
+# Not routed yet: backstage — its app/backend baseUrl and GitHub OAuth callback
+# are bound to http://192.168.0.108:30900; moving it is a config + OAuth-app
+# change that ships through its canary rollout, separately.
+---
+# server.insecure=true; CLI via gateway needs --grpc-web
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - argocd.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: argocd-server
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - grafana.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: victoria-metrics-grafana
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kavita
+  namespace: kavita
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - kavita.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: kavita-service
+          port: 5000
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+# CSRF origins set in services/linkding/deployment.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: linkding
+  namespace: linkding
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - linkding.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: linkding-svc
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - audiobookshelf.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: audiobookshelf-svc
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+# websockets pass through the gateway
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: uptime
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - uptime.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: uptime-kuma
+          port: 3001
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+# base-url stays the NodePort: phone subscriptions are bound to it
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ntfy
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - ntfy.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: ntfy
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+# UI port (http-ui)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: opencost
+  namespace: monitoring
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - opencost.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: opencost
+          port: 9090
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openobserve
+  namespace: openobserve
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - openobserve.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: openobserve
+          port: 5080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - jenkins.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: jenkins
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: petal
+  namespace: petal
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - petal.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: petal
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+# authentik still lives in default (move = separate change)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: auth
+  namespace: default
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+  hostnames:
+    - auth.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: authentik
+          port: 9000
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

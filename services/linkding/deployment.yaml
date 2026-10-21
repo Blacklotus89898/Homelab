@@ -29,6 +29,12 @@ spec:
           env:
             - name: LD_DISABLE_BACKGROUND_TASKS
               value: "False"
+            # Django CSRF: logins/forms through the Istio gateway (ADR 0009)
+            # arrive with an https://linkding.lab.home[:30328] Origin. Both
+            # forms listed: the :30328 one goes away once traefik is removed
+            # and the gateway owns :443. The NodePort (:30090) needs no entry.
+            - name: LD_CSRF_TRUSTED_ORIGINS
+              value: "https://linkding.lab.home:30328,https://linkding.lab.home"
           resources:
             requests:
               cpu: 100m

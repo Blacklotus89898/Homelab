@@ -57,7 +57,8 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - kind: Secret
+          - group: "" # API-server default, stated so ArgoCD's diff stays Synced
+            kind: Secret
             name: lab-wildcard-tls
       allowedRoutes:
         namespaces:
