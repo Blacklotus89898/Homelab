@@ -1,0 +1,23 @@
+# Delivers the homelab root CA (ADR 0009) into the monitoring namespace with no
+# extra components: a cert-manager Certificate issued by lab-ca stores the
+# issuing CA as ca.crt in its secret. The leaf itself is unused — only ca.crt is
+# mounted (statefulset.yaml, NODE_EXTRA_CA_CERTS).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: uptime-kuma-lab-ca
+  namespace: monitoring
+spec:
+  secretName: uptime-kuma-lab-ca
+  commonName: uptime-kuma.monitoring.svc
+  dnsNames:
+    - uptime-kuma.monitoring.svc
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    kind: ClusterIssuer
+    name: lab-ca
+    group: cert-manager.io

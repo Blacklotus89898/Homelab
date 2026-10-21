@@ -23,9 +23,24 @@ spec:
           ports:
             - containerPort: 3001
               name: http
+          env:
+            # Pre-answers the 2.x first-run "setup database" wizard: with the
+            # env set, uptime-kuma writes db-config.json itself (embedded
+            # SQLite) — declarative, survives a rebuild with an empty PVC.
+            - name: UPTIME_KUMA_DB_TYPE
+              value: sqlite
+            # Trust the homelab local CA (ADR 0009) so the front-door monitors
+            # verify TLS for real and track cert expiry. ca.crt comes from
+            # ca-bundle.yaml's cert-manager Certificate, so it follows the CA
+            # automatically (including a rebuild that mints a new one).
+            - name: NODE_EXTRA_CA_CERTS
+              value: /etc/lab-ca/ca.crt
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: lab-ca
+              mountPath: /etc/lab-ca
+              readOnly: true
           resources:
             # Explicit: monitoring ns LimitRange caps at 512Mi/container
             requests:
@@ -46,6 +61,13 @@ spec:
               port: http
             initialDelaySeconds: 45
             periodSeconds: 30
+      volumes:
+        - name: lab-ca
+          secret:
+            secretName: uptime-kuma-lab-ca
+            items:
+              - key: ca.crt
+                path: ca.crt
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -54,4 +76,4 @@ spec:
         storageClassName: local-path
         resources:
           requests:
-            storage: 1Gi # SQLite + heartbeat history; actual expected ~100Mi
+            storage: 1Gi # SQLite + heartbeat history; retention set to 14d by tools/uptime-kuma/provision.py (180d default would outgrow this)

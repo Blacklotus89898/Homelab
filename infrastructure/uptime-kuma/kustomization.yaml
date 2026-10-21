@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - ca-bundle.yaml # homelab root CA for TLS-verifying front-door monitors
   - statefulset.yaml
   - service.yaml
   # admin login for the UI + tools/uptime-kuma/provision.py (read it with
