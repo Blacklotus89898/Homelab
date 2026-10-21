@@ -6,8 +6,8 @@
 #     config dir, and the comics mount pins prod to one node — staging
 #     should schedule anywhere and cost nothing. A rehearsal proves "new
 #     version boots and serves", not data migrations (empty library).
-#   - prod's fat resources (2 CPU/2Gi req — from the 2026-07-28 OOM fix)
-#     shrink to a rehearsal profile; .NET boots fine in ~300Mi on a fresh
+#   - prod's resources (100m/1Gi req since 2026-10-21; 6Gi limit = the
+#     2026-07-28 OOM fix) shrink to a rehearsal profile; .NET boots fine in ~300Mi on a fresh
 #     config. If a candidate OOMs HERE, that is the rehearsal working.
 #   - Service → ClusterIP, no nodePort: prod owns 30050.
 # images override = THE rehearsal knob (mirror of prod between rehearsals;

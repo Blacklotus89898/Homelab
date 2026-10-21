@@ -11,11 +11,11 @@ spec:
   selector:
     matchLabels:
       app: kavita
+  # Recreate, not RollingUpdate: kavita keeps a SQLite DB in the writable
+  # hostPath config dir — a surge pod would run a second writer against it
+  # during every rollout. Trade-off: a ~30s boot gap per rollout.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
+    type: Recreate
   template:
     metadata:
       labels:
@@ -29,9 +29,13 @@ spec:
             - containerPort: 5000
               protocol: TCP
           resources:
+            # Requests right-sized 2026-10-21 from 30d peaks (0.045 cores,
+            # 776Mi working set): 2 CPU/2Gi reserved 25% of the worker's CPU
+            # for an app that idles at ~5m. Limits UNCHANGED — the 6Gi memory
+            # limit is the 2026-07-28 OOM fix (issue #3); CPU 4 = scan bursts.
             requests:
-              cpu: "2"
-              memory: 2Gi
+              cpu: 100m
+              memory: 1Gi
               ephemeral-storage: "1Gi"
             limits:
               cpu: "4"
