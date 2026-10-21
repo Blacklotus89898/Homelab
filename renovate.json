@@ -5,16 +5,17 @@
   "prHourlyLimit": 5,
   "labels": ["dependencies"],
   "argocd": {
-    "fileMatch": ["^apps/[^/]+/[^/]+\\.ya?ml$", "^bootstrap/.*\\.ya?ml$"]
+    "managerFilePatterns": ["apps/*/*.ya?ml", "bootstrap/*.ya?ml"]
   },
-  "regexManagers": [
+  "customManagers": [
     {
-      "description": "Update digest-pinned images in raw k8s manifests (services/*, infrastructure/*) — no default manager covers plain Deployment YAML",
-      "fileMatch": ["^services/[^/]+/.*\\.ya?ml$", "^infrastructure/[^/]+/.*\\.ya?ml$"],
+      "customType": "regex",
+      "description": "Update digest-pinned images in raw k8s manifests (services/, infrastructure/) — no default manager covers plain Deployment YAML",
+      "managerFilePatterns": ["services/**/*.ya?ml", "infrastructure/**/*.ya?ml"],
       "matchStrings": [
         "image:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@sha256:(?<currentDigest>[a-f0-9]+)"
       ],
-      "datasource": "docker"
+      "datasourceTemplate": "docker"
     }
   ],
   "packageRules": [
