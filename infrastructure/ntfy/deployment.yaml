@@ -15,6 +15,11 @@ spec:
     metadata:
       labels:
         app: ntfy
+      annotations:
+        # config-roll: subPath configmap mounts don't hot-reload — bump this to
+        # force a pod recreate through ArgoCD when server.yml changes.
+        # 2026-10-21: upstream-base-url added (iOS push via ntfy.sh bridge)
+        homelab.io/config-version: "2026-10-21-upstream"
     spec:
       containers:
         - name: ntfy
