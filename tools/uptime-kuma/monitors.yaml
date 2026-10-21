@@ -1,0 +1,105 @@
+# uptime-kuma desired state — applied by provision.py (idempotent: creates what
+# is missing, updates drifted monitors by name, never deletes unlisted ones).
+# Every target was verified from inside the uptime-kuma pod on 2026-10-21.
+#
+# Cluster-internal checks use service DNS (they test the workload, not the
+# front door); "Front door" checks go through the Istio gateway on *.lab.home
+# with real TLS verification (NODE_EXTRA_CA_CERTS = homelab root CA);
+# "Home network" names resolve via Pi-hole (infrastructure/coredns-custom).
+# `notify: false` keeps a monitor on the status page without paging ntfy.
+
+settings:
+  keepDataPeriodDays: 14 # 180d default would outgrow the 1Gi PVC (disk is the #1 constraint)
+  primaryBaseURL: https://uptime.lab.home:30328
+
+notification:
+  name: ntfy homelab-alerts
+  ntfyserverurl: http://ntfy.monitoring.svc.cluster.local
+  ntfytopic: homelab-alerts
+  ntfyPriority: 4
+
+defaults:
+  interval: 60
+  retries: 2 # 3 consecutive failures before DOWN — no flapping pages
+  retryInterval: 60
+  http_codes: ["200-299", "300-399"] # "answers" — redirects are not followed (maxredirects 0)
+
+status_page:
+  slug: homelab
+  title: Homelab status
+
+groups:
+  - name: Cluster platform
+    monitors:
+      - {name: Kubernetes API, type: http, url: "https://kubernetes.default.svc/livez", http_codes: ["200-299", "401"], ignore_tls: true, note: "401 = API answering; anonymous is denied by design"}
+      - {name: ArgoCD, type: http, url: "http://argocd-server.argocd.svc.cluster.local/healthz"}
+      - {name: Sealed Secrets, type: http, url: "http://sealed-secrets-controller.sealed-secrets.svc.cluster.local:8080/healthz"}
+      - {name: cert-manager, type: http, url: "http://cert-manager.cert-manager.svc.cluster.local:9402/metrics"}
+      - {name: Istiod, type: http, url: "http://istiod.istio-system.svc.cluster.local:15014/metrics"}
+      - {name: Istio gateway, type: http, url: "http://istio-gateway.istio-system.svc.cluster.local:15021/healthz/ready"}
+      - {name: Cluster DNS (CoreDNS), type: dns, hostname: kubernetes.default.svc.cluster.local, dns_resolve_server: 10.43.0.10}
+
+  - name: Observability
+    monitors:
+      - {name: VictoriaMetrics, type: http, url: "http://vmsingle-vmstack.monitoring.svc.cluster.local:8428/health"}
+      - {name: vmagent, type: http, url: "http://vmagent-vmstack.monitoring.svc.cluster.local:8429/health"}
+      - {name: vmalert, type: http, url: "http://vmalert-vmstack.monitoring.svc.cluster.local:8080/health"}
+      - {name: Alertmanager, type: http, url: "http://vmalertmanager-vmstack.monitoring.svc.cluster.local:9093/-/healthy"}
+      - {name: Grafana, type: http, url: "http://victoria-metrics-grafana.monitoring.svc.cluster.local/api/health"}
+      - {name: ntfy, type: http, url: "http://ntfy.monitoring.svc.cluster.local/v1/health"}
+      - {name: OpenObserve, type: http, url: "http://openobserve.openobserve.svc.cluster.local:5080/healthz"}
+      - {name: OpenCost, type: http, url: "http://opencost.monitoring.svc.cluster.local:9090/"}
+      - {name: Blackbox exporter, type: http, url: "http://blackbox-exporter.monitoring.svc.cluster.local:9115/-/healthy"}
+
+  - name: Apps
+    monitors:
+      - {name: Backstage, type: http, url: "http://backstage.backstage.svc.cluster.local:7007/.backstage/health/v1/liveness"}
+      - {name: Petal, type: http, url: "http://petal.petal.svc.cluster.local/api/health"}
+      - {name: Kavita, type: http, url: "http://kavita-service.kavita.svc.cluster.local:5000/api/health"}
+      - {name: Linkding, type: http, url: "http://linkding-svc.linkding.svc.cluster.local:9090/health"}
+      - {name: Audiobookshelf, type: http, url: "http://audiobookshelf-svc.audiobookshelf.svc.cluster.local/healthcheck"}
+      - {name: Jenkins, type: http, url: "http://jenkins.jenkins.svc.cluster.local:8080/login"}
+      - {name: Authentik, type: http, url: "http://authentik.default.svc.cluster.local:9000/-/health/live/"}
+
+  - name: Front door (Istio gateway)
+    interval: 120
+    monitors:
+      - {name: argocd.lab.home, type: http, url: "https://argocd.lab.home:30328/"}
+      - {name: grafana.lab.home, type: http, url: "https://grafana.lab.home:30328/"}
+      - {name: kavita.lab.home, type: http, url: "https://kavita.lab.home:30328/"}
+      - {name: linkding.lab.home, type: http, url: "https://linkding.lab.home:30328/"}
+      - {name: audiobookshelf.lab.home, type: http, url: "https://audiobookshelf.lab.home:30328/"}
+      - {name: uptime.lab.home, type: http, url: "https://uptime.lab.home:30328/"}
+      - {name: ntfy.lab.home, type: http, url: "https://ntfy.lab.home:30328/"}
+      - {name: opencost.lab.home, type: http, url: "https://opencost.lab.home:30328/"}
+      - {name: openobserve.lab.home, type: http, url: "https://openobserve.lab.home:30328/"}
+      - {name: jenkins.lab.home, type: http, url: "https://jenkins.lab.home:30328/login"}
+      - {name: petal.lab.home, type: http, url: "https://petal.lab.home:30328/"}
+      - {name: auth.lab.home, type: http, url: "https://auth.lab.home:30328/"}
+
+  - name: Home network
+    interval: 120
+    monitors:
+      - {name: Proxmox, type: http, url: "https://proxmox.home:8006/", ignore_tls: true, note: "PVE self-signed cert"}
+      - {name: Pi-hole DNS, type: dns, hostname: debian.home, dns_resolve_server: 192.168.0.53}
+      - {name: Pi-hole web, type: http, url: "http://pihole.home/admin/"}
+      - {name: Router, type: http, url: "http://router.home:8080/"}
+      - {name: k3s control plane (debian), type: port, hostname: debian.home, port: 6443}
+      - {name: k3s worker kubelet, type: port, hostname: worker.home, port: 10250}
+      - {name: ubuntu host, type: port, hostname: ubuntu.home, port: 22}
+      - {name: agent / ollama host, type: port, hostname: agent.home, port: 22, notify: false, note: "legacy/offline per CLAUDE.md — shown, never pages"}
+      - {name: SMB share, type: port, hostname: smb.home, port: 445}
+      - {name: Jellyfin, type: http, url: "http://jellyfin.home:8096/health", note: "DOWN since at least 2026-10-21 — host up, port 8096 refused"}
+      - {name: Immich, type: http, url: "http://immich.home:2283/api/server/ping"}
+      - {name: Nextcloud, type: http, url: "http://nextcloud.home/status.php"}
+      - {name: Nginx Proxy Manager, type: http, url: "http://npm.home:81/"}
+      - {name: qBittorrent, type: http, url: "http://qbit.home:8080/"}
+      - {name: Glance, type: http, url: "http://glance.home:8080/"}
+      - {name: Dashboard, type: http, url: "http://dashboard.home:3000/"}
+      - {name: Vault, type: http, url: "http://vault.home:8200/v1/sys/health", http_codes: ["200-299", "429"], note: "429 = unsealed standby"}
+      - {name: Stirling PDF, type: http, url: "http://pdf.home:8080/"}
+      - {name: whitelotus / garden, type: http, url: "http://whitelotus.home/"}
+      - {name: Vaultwarden host, type: port, hostname: vaultwarden.home, port: 22, note: "host only — web port unknown (80/443/8000 refused 2026-10-21)"}
+      - {name: WireGuard host, type: port, hostname: wg.home, port: 22, note: "host only — WireGuard itself is UDP 51820"}
+      - {name: gitea host, type: port, hostname: gitea.home, port: 22, notify: false, note: "host offline 2026-10-21 (no ping, no ports) — shown, never pages; decide revive or drop the Pi-hole record"}
+      - {name: docmost host, type: port, hostname: docmost.home, port: 22, notify: false, note: "host offline 2026-10-21 (no ping, no ports) — shown, never pages; decide revive or drop the Pi-hole record"}
