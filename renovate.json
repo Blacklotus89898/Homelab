@@ -1,0 +1,27 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["after 3am on Monday"],
+  "prHourlyLimit": 5,
+  "labels": ["dependencies"],
+  "argocd": {
+    "fileMatch": ["^apps/[^/]+/[^/]+\\.ya?ml$", "^bootstrap/.*\\.ya?ml$"]
+  },
+  "regexManagers": [
+    {
+      "description": "Update digest-pinned images in raw k8s manifests (services/*, infrastructure/*) — no default manager covers plain Deployment YAML",
+      "fileMatch": ["^services/[^/]+/.*\\.ya?ml$", "^infrastructure/[^/]+/.*\\.ya?ml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^\\s:]+):(?<currentValue>[^\\s@]+)@sha256:(?<currentDigest>[a-f0-9]+)"
+      ],
+      "datasource": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Staging overlays mirror prod's digest between rehearsals on purpose (the digest IS the rehearsal knob) — never auto-bump them",
+      "matchFileNames": ["environments/staging/**"],
+      "enabled": false
+    }
+  ]
+}
