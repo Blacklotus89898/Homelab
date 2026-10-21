@@ -137,11 +137,15 @@ spec:
             - --root=/git
             - --link=repo
           resources:
+            # 2026-10-21: 100m limit throttled git-sync 47% of CPU periods
+            # (CPUThrottlingHigh riding the alert) — the 30s poll cycle bursts
+            # (TLS + ref listing + fetch) far harder than it idles. 500m is
+            # burst headroom, not a steady claim: requests stay at 20m.
             requests:
               cpu: 20m
               memory: 64Mi
             limits:
-              cpu: 100m
+              cpu: 500m
               memory: 128Mi
           volumeMounts:
             - name: src

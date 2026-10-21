@@ -14,6 +14,15 @@ fullnameOverride: vmstack
 
 defaultRules:
   enabled: true # recording + alerting rules for k8s components
+  rules:
+    # 2026-10-21: RecordingRulesNoData has inverted logic on a healthy cluster.
+    # The kube-prometheus-general rule `count:up0` = count of DOWN targets —
+    # when everything is up, count(up == 0) is an empty set → 0 samples → the
+    # alert fires precisely BECAUSE the cluster is healthy (verified live:
+    # count:up1=23 samples, count:up0=0, alert firing on the 0). Real rule
+    # breakage is still covered by RecordingRulesError / AlertingRulesError.
+    RecordingRulesNoData:
+      enabled: false
 
 defaultDashboards:
   enabled: true # Grafana dashboards via ConfigMap sidecar
@@ -51,6 +60,19 @@ kubeScheduler:
 # nothing, so the scrape pool sits empty and ScrapePoolHasNoTargets fires forever.
 kubeEtcd:
   enabled: false
+
+# node-exporter DaemonSet: chart sets no resources → the monitoring-ns LimitRange
+# default (250m CPU limit) throttled its per-core collectors ~20% of CPU periods
+# (CPUThrottlingHigh riding the 25% alert threshold; verified live 2026-10-21).
+# Explicit headroom — the exporter itself stays tiny.
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
 
 alertmanager:
   # Route all firing alerts to the ntfy push relay (infrastructure/ntfy, NodePort 30310).
