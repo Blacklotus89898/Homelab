@@ -343,6 +343,7 @@ flowchart LR
 | monitoring, openobserve, homelab, kavita, linkding, audiobookshelf | ✅ | no NodePort exposure conflict |
 | backstage, jenkins | ❌ | not enrolled yet (NodePort alone is no blocker — see above); ADR 0009 enrollment phase |
 | petal | ❌ | privileged DinD sidecar |
+| monitoring/uptime-kuma (pod-level opt-out) | ❌ | ztunnel completes every outbound TCP connect locally — TCP port probes from inside the mesh always read UP; probers must sit outside it (KB solutions/istio-ambient-fake-tcp-connect.md) |
 | arc-systems | ❌ | webhook TLS conflicts with ztunnel |
 | arc-runners | ❌ | DinD conflicts with ambient |
 
