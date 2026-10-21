@@ -9,6 +9,12 @@ data:
     # No auth-file configured: topics are open to the cluster and LAN (NodePort 30310).
     # Acceptable on the home LAN; revisit if this is ever exposed past 192.168.0.0/24.
     base-url: "http://192.168.0.108:30310"
+    # 2026-10-21: iOS push. iOS forbids background sockets, so the ntfy iOS app is
+    # woken by APNs — which only works if this server forwards published messages
+    # through ntfy.sh's APNs bridge. Without this line, iPhone receives nothing
+    # unless the app is foregrounded. Trade-off (accepted): notification content
+    # transits ntfy.sh; the phone fetches full state from OUR base-url above.
+    upstream-base-url: "https://ntfy.sh"
     listen-http: ":80"
     # Message cache is ephemeral (emptyDir): pod restarts lose cached history, which
     # only affects "read missed messages since last poll" — instant delivery unaffected.
