@@ -16,6 +16,12 @@ spec:
     metadata:
       labels:
         app: uptime-kuma
+        # Out of the ambient mesh ON PURPOSE: ztunnel accepts every outbound
+        # TCP connect locally (verified 2026-10-21 — a connect to an unused IP
+        # or a closed port "succeeds" from any enrolled pod), so TCP port
+        # monitors from inside the mesh are always UP. A prober must see the
+        # network directly. HTTP/DNS checks were unaffected.
+        istio.io/dataplane-mode: none
     spec:
       containers:
         - name: uptime-kuma
