@@ -1,0 +1,34 @@
+# Front door (ADR 0009): Gateway API Gateway on the existing Istio ingress
+# gateway + the *.lab.home local CA + per-service HTTPRoutes.
+# Wave 0: after cert-manager/gateway-api CRDs (-4), istio (-3), istio-gateway (-2).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateways
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: platform/gateways
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

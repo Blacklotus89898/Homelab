@@ -1,0 +1,64 @@
+# The front door (ADR 0009): one Gateway API Gateway, class istio, bound to the
+# EXISTING helm-installed Istio ingress gateway (apps/istio-gateway) via
+# spec.addresses ("manual deployment") — no new pods, and the fixed NodePorts
+# from apps/istio-gateway/values.yaml stay: HTTP 30131, HTTPS 30328.
+# Listener ports must equal that Service's ports (80/443), not the NodePorts.
+#
+# Until traefik is disabled (it holds 80/443 on the nodes) the URLs carry the
+# NodePort: https://<svc>.lab.home:30328. No HTTP->HTTPS redirect yet: a
+# redirect without an explicit port would send browsers to :443 = traefik.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lab-wildcard
+  namespace: istio-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  secretName: lab-wildcard-tls
+  dnsNames:
+    - "*.lab.home"
+    - lab.home
+  duration: 2160h # 90d, auto-renewed
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    kind: ClusterIssuer
+    name: lab-ca
+    group: cert-manager.io
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: lab
+  namespace: istio-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  gatewayClassName: istio
+  addresses:
+    - type: Hostname
+      value: istio-gateway.istio-system.svc.cluster.local
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: "*.lab.home"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.lab.home"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: lab-wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: All

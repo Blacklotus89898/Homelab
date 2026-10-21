@@ -1,0 +1,50 @@
+# Local CA for *.lab.home (ADR 0009). Chain:
+#   selfsigned-bootstrap (ClusterIssuer) -> lab-root-ca (Certificate, isCA,
+#   10y, secret in cert-manager ns = cert-manager's cluster resource namespace)
+#   -> lab-ca (ClusterIssuer) -> leaf certs (wildcard in gateway.yaml).
+#
+# Trust it once per device: export the PUBLIC cert with
+#   kubectl -n cert-manager get secret lab-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > lab-root-ca.crt
+# The CA PRIVATE key exists only in-cluster (not in git, not sealed): a rebuild
+# mints a new CA and every device must re-trust it — see docs/bootstrap.md ledger.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-bootstrap
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lab-root-ca
+  namespace: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  isCA: true
+  commonName: Homelab Root CA (lab.home)
+  subject:
+    organizations: [Homelab]
+  secretName: lab-root-ca
+  duration: 87600h # 10y — re-trusting devices is the expensive part
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned-bootstrap
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: lab-ca
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  ca:
+    secretName: lab-root-ca
