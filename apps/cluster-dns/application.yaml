@@ -1,0 +1,32 @@
+# CoreDNS custom zones (k3s coredns-custom hook) — LAN `home` zone via Pi-hole.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-dns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: infrastructure/coredns-custom
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

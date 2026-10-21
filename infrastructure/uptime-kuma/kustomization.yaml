@@ -4,3 +4,6 @@ kind: Kustomization
 resources:
   - statefulset.yaml
   - service.yaml
+  # admin login for the UI + tools/uptime-kuma/provision.py (read it with
+  # kubectl -n monitoring get secret uptime-kuma-admin -o jsonpath='{.data.password}' | base64 -d)
+  - sealed-admin.yaml
