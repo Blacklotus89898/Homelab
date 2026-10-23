@@ -298,13 +298,14 @@ flowchart LR
 
 **Front door (ADR 0009, 2026-10-21):** a Gateway API `Gateway` (`istio-system/lab`, class
 `istio`) bound to the helm-installed Istio ingress gateway serves `*.lab.home` over HTTPS
-(cert-manager local-CA wildcard) on NodePort 30328 / HTTP 30131, with one HTTPRoute per
-service in `platform/gateways/routes.yaml`. Raw NodePorts (below) run in parallel until
-traefik is disabled and the gateway takes 80/443.
+(cert-manager local-CA wildcard) on 443 — a k3s ServiceLB LoadBalancer since traefik was
+disabled 2026-10-22 — with one HTTPRoute per service in `platform/gateways/routes.yaml`
+(https listener only; :80 is a catch-all 301 to https). Raw NodePorts (below) remain as
+legacy direct paths.
 
 ```mermaid
 flowchart LR
-  C["LAN client<br/>https://kavita.lab.home:30328"] -->|"Pi-hole: *.lab.home → .108"| GW["istio-gateway<br/>Gateway 'lab' · TLS *.lab.home"]
+  C["LAN client<br/>https://kavita.lab.home"] -->|"Pi-hole: *.lab.home → .108"| GW["istio-gateway<br/>Gateway 'lab' · TLS *.lab.home"]
   GW -->|"HTTPRoute"| S1["kavita / linkding / grafana / ...<br/>(ambient: HBONE mTLS via ztunnel)"]
   GW -->|"HTTPRoute"| S2["argocd / jenkins / petal / authentik<br/>(not enrolled: plaintext in-cluster)"]
 ```

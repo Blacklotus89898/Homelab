@@ -1,6 +1,6 @@
 # ADR 0009 — Front door = Istio Gateway API on *.lab.home with a local CA
 
-- **Status:** Accepted (Phases A + B live 2026-10-21; traefik removal pending a user step)
+- **Status:** Accepted (Phases A + B live 2026-10-21; traefik removed, gateway on 80/443 2026-10-22)
 - **Date:** 2026-10-21
 - **Supersedes:** the interim half of [ADR 0008](0008-nodeport-until-gateway.md)
 
@@ -40,14 +40,21 @@ LAN DNS already exists (Pi-hole at 192.168.0.53 serves `*.home`); there is no pu
 
 ## Consequences
 
-- Until traefik is removed, URLs carry the NodePort (`https://kavita.lab.home:30328`) and
-  there is no HTTP→HTTPS redirect (a port-less redirect would land on traefik's :443).
+- ~~Until traefik is removed, URLs carry the NodePort~~ — done 2026-10-22: URLs are
+  `https://<svc>.lab.home`, `http://` 301s to https (`platform/gateways/http-redirect.yaml`).
+- **Disabling traefik deletes the Gateway API CRDs.** k3s's packaged `traefik-crd` chart
+  owned the standard-channel CRDs; its uninstall cascade-deleted every Gateway and
+  HTTPRoute. ArgoCD's `gateway-api` app re-created the CRDs within a minute, and the
+  `gateways` app re-created the objects once routes were ordered after the Gateway
+  (sync-wave 5, commit 198a0fa). On a rebuild, k3s starts with traefik disabled, so the
+  `gateway-api` app is the CRDs' only owner from day one.
 - The CA private key lives only in the cluster: a rebuild mints a new CA and every device
   re-trusts it (bootstrap ledger). Backing it up is a user decision, like the sealed-secrets
   keyring.
 - The front-door SLO VMProbe still targets in-cluster service DNS. `probe_success` is also
-  the Backstage canary gate (ADR 0005), so it is re-targeted only once the URLs are final
-  (after traefik), under a separate job name first.
+  the Backstage canary gate (ADR 0005); the real gateway path now runs alongside as job
+  `gateway-front-doors` (blackbox `https_lab`, CA-verified) — promote it into the SLO once
+  it has a clean history.
 - backstage is not routed yet: its baseUrl and GitHub OAuth callback are bound to the
   NodePort and move through its canary separately.
 - **Signal this was wrong:** gateway/waypoint overhead pushes the worker's CPU reservations
