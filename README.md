@@ -394,20 +394,25 @@ kubectl logs -n arc-systems \
 | Pod running, Docker step hangs | DinD not ready — check `-c dind` logs |
 | Job queued but 0 runners in GitHub | PAT expired — re-seal with a new token |
 
-### Rotating the GitHub PAT
+### Rotating the heartbeat PAT
+
+The dead-man switch (`infrastructure/heartbeat`, ns `heartbeat`) pushes to the
+`heartbeat` branch with a **classic PAT, scope `repo`** (fine-grained tokens were
+rejected — ROADMAP 2026-10-15). Validate it *before* sealing:
+`curl -sI -H "Authorization: token <NEW_PAT>" https://api.github.com/user | grep -i x-oauth-scopes`.
 
 ```bash
-kubectl create secret generic arc-runner-secret \
-  --namespace arc-runners \
+kubectl create secret generic heartbeat-github-pat \
+  --namespace heartbeat \
   --from-literal=github_token=<NEW_PAT> \
   --dry-run=client -o yaml \
 | kubeseal \
     --controller-name sealed-secrets-controller \
     --controller-namespace sealed-secrets \
     --format yaml \
-> infrastructure/arc-runners/sealed-github-pat.yaml
-git add infrastructure/arc-runners/sealed-github-pat.yaml
-git commit -m "chore: rotate ARC GitHub PAT" && git push
+> infrastructure/heartbeat/sealed-github-pat.yaml
+git add infrastructure/heartbeat/sealed-github-pat.yaml
+git commit -m "chore: rotate heartbeat PAT" && git push
 ```
 
 ---
