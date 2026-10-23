@@ -32,8 +32,12 @@ spec:
           default: component:default/petal
           ui:field: EntityPicker
           ui:options:
+            # Petal runs pipelines from ONE git-synced repo (its own), so any
+            # other component would record a Petal self-build as its run.
+            # Widen this when Petal gains multi-repo runs (repo@ref + allowlist).
             catalogFilter:
               kind: Component
+              metadata.name: petal
         pipeline:
           title: Pipeline
           type: string

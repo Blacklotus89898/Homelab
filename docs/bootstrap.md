@@ -52,8 +52,10 @@ list of things a rebuild must source elsewhere.
    If the controller is already running (keyring restored late), it generated a fresh key —
    restart it so it loads the restored ones:
    `kubectl -n sealed-secrets rollout restart deploy/sealed-secrets-controller`.
-   The keyring rotates ~monthly (controller default): re-export after each rotation, or
-   secrets sealed after the backup won't decrypt on a rebuild.
+   The keyring rotates every 30 days (controller default; observed 07-26, 08-25, 09-24,
+   always 03:15 UTC): re-export after each rotation, or secrets sealed after the backup
+   won't decrypt on a rebuild. Check: `kubectl -n sealed-secrets get secret -l
+   sealedsecrets.bitnami.com/sealed-secrets-key` — the newest key must be in the backup.
 5. **ArgoCD initial install** (it then self-manages from `apps/argocd/`; same chart version
    as `apps/argocd/application.yaml`):
 
@@ -75,15 +77,17 @@ list of things a rebuild must source elsewhere.
    first.
 7. **Wait for convergence**, then verify the load-bearing signals: `kubectl get nodes`;
    applications Synced/Healthy (arc-controller Suspended and audiobookshelf Suspended are
-   by-design exceptions); `probe_success` 6× = 1 in vmsingle; a heartbeat beat lands on the
+   by-design exceptions); `probe_success` = 1 for all 6 `front-doors` and 7 `gateway-front-doors` targets in vmsingle (the latter also proves Pi-hole wildcard → ServiceLB → gateway → CA chain); a heartbeat beat lands on the
    `heartbeat` branch.
 8. ⚠️ **UI-state layer** (per-service, not in git): uptime-kuma monitors + its ntfy provider;
    authentik admin login + the OIDC provider half; the GitHub OAuth app behind Backstage's
    sealed client secret; phone ntfy subscriptions (topic `homelab-alerts`,
    http://192.168.0.108:30310). Grafana/ArgoCD admin creds are SealedSecrets — they survive.
-9. **Floaters — decide, don't auto-restore** (live-only, never in git): juice-shop (:30001),
-   guestbook-ui, simple-rust-api, portainer-agent, the old uptime-kuma deployment. Adopt
-   into git or let them go.
+9. **Floaters — decide, don't auto-restore** (live-only, never in git; re-scanned
+   2026-10-23): juice-shop (:30001), portainer-agent (LoadBalancer :9001), and the whole
+   **paperless** namespace (3 Deployments scaled to 0, 6 PVCs ≈ 22Gi requested) plus its
+   two hand-made traefik Ingresses (inert since traefik was disabled). Adopt into git or
+   let them go.
 10. **Exercises**: watchdog `workflow_dispatch` with `test_alert=true` (issue-open leg);
     a staging rehearsal (ADR 0006) to prove the delivery path end-to-end.
 
@@ -97,8 +101,10 @@ list of things a rebuild must source elsewhere.
 | GitHub | this repo (obviously), branch protection, PATs (arc-runner/heartbeat, Renovate app, Backstage OAuth app) | user GitHub account |
 | UI-state | uptime-kuma admin is created by `tools/uptime-kuma/provision.py` from the sealed `uptime-kuma-admin` Secret and its **monitors are config-as-code** (`tools/uptime-kuma/monitors.yaml`, re-run the script after a rebuild — idempotent; DB wizard pre-answered by env). Still UI-only: authentik providers, phone ntfy subscriptions, Renovate dashboard state | per-service UI / phone |
 | Front door (ADR 0009) | Pi-hole wildcard `lab.home → 192.168.0.108` (dnsmasq line `address=/lab.home/192.168.0.108`: `/etc/dnsmasq.d/` on Pi-hole v5, `misc.dnsmasq_lines` on v6); the local CA **private key** (in-cluster only — a rebuild mints a new CA); device trust of `lab-root-ca.crt`. **Applied 2026-10-21:** Pi-hole v6.4 (192.168.0.53) `misc.dnsmasq_lines` set via its API (`PATCH /api/config` — the list was empty; the 35 `dns.hosts` records are separate and untouched); CA trusted on the Windows workstation (`certutil -addstore -user Root`) — phone + Firefox imports are per-device | Pi-hole host; cluster; each device |
-| Floaters | juice-shop, guestbook-ui, simple-rust-api, portainer-agent, old uptime-kuma | nowhere — adopt or drop |
+| Hosts outside the cluster | Glance LXC config + compose (**captured 2026-10-23** → `hosts/glance/`); k3s VM specs (**captured** → `hosts/proxmox/k3s-vms.md`); Pi-hole `dns.hosts` (35 records backing the `home`/`lan` zones + SSH aliases) — **not captured** (needs the Pi-hole password) | `hosts/`; Pi-hole host |
+| Floaters | juice-shop, portainer-agent, paperless (ns + 6 PVCs) | nowhere — adopt or drop |
 
-Still open (tracked in `ROADMAP.md`): Proxmox VM specs as a captured artifact, and a
-rehearsal that turns the ⚠️ steps into verified ones (a throwaway k3d/kind bootstrap from
+Still open (tracked in `ROADMAP.md`): a rehearsal that turns the ⚠️ steps into verified
+ones — the 2026-10-22 Gateway sync-wave deadlock (routes waiting on a Gateway in a later
+wave) only existed on a fresh create and is exactly what one would have caught (a throwaway k3d/kind bootstrap from
 this repo proves steps 4–7 without touching the real cluster).

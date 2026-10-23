@@ -1,0 +1,676 @@
+# =============================================================================
+# Glance Dashboard — Homelab edition (reviewed 2026-10-21, Glance v0.8.4)
+#
+# Every homelab URL below was probed from the LAN before writing this file.
+# Two one-time prerequisites (see the notes at the bottom of this file):
+#   1. Pi-hole v6 app password -> env var PIHOLE_APP_PASSWORD for the DNS widget
+#   2. Trust the homelab CA inside this LXC so *.lab.home monitors verify TLS
+# k3s services are reached through the Istio gateway (*.lab.home), directly
+# on 443 (traefik disabled 2026-10-22), e.g. https://grafana.lab.home
+# =============================================================================
+
+server:
+  port: 8080
+
+theme:
+  contrast-multiplier: 1.1
+
+branding:
+  hide-footer: false
+  logo-text: "🏠 Homelab"
+  favicon-url: https://selfh.st/icons/glance.png
+
+pages:
+
+  # ---------------------------------------------------------------------------
+  - name: Home
+    head-widgets:
+      - type: search
+        search-engine: google
+        autofocus: false
+        new-tab: true
+        bangs:
+          - title: DuckDuckGo
+            shortcut: "!d"
+            url: https://duckduckgo.com/?q={QUERY}
+          - title: YouTube
+            shortcut: "!yt"
+            url: https://www.youtube.com/results?search_query={QUERY}
+          - title: GitHub
+            shortcut: "!gh"
+            url: https://github.com/search?q={QUERY}
+
+    columns:
+      # -----------------------------------------------------------------------
+      # Column 1: Personal & Time
+      # -----------------------------------------------------------------------
+      - size: small
+        widgets:
+          - type: clock
+            hour-format: 12h
+            show-date: true
+            timezones:
+              - timezone: America/Toronto
+                label: Montréal
+              - timezone: America/Los_Angeles
+                label: West Coast
+              - timezone: Europe/Paris
+                label: Paris
+
+          - type: weather
+            location: Montreal, Canada
+            units: metric
+            hour-format: 12h
+            hide-location: true
+
+          - type: calendar
+            first-day-of-week: monday
+
+          - type: to-do
+            title: Tasks
+            id: main
+
+      # -----------------------------------------------------------------------
+      # Column 2: Homelab — health, links, change feed
+      # -----------------------------------------------------------------------
+      - size: full
+        widgets:
+          - type: group
+            title: Infrastructure Health
+            widgets:
+              # Pi-hole v6 DNS stats — DISABLED until the app password exists.
+              # Glance refuses to start on ANY unset dollar-brace variable — even in comments (it crash-looped on
+              # 2026-10-21), so this stays commented until PIHOLE_APP_PASSWORD is
+              # in /root/glance/.env (see note 1 at bottom), then uncomment:
+              # - type: dns-stats
+              #   title: Pi-hole DNS
+              #   service: pihole-v6
+              #   url: http://pihole.home
+              #   password: <dollar>{PIHOLE_APP_PASSWORD}   <- write it as dollar + braces when uncommenting
+
+              # type: local = the machine Glance runs on, i.e. this LXC (not the
+              # Proxmox host). Host-level stats live in Grafana / uptime-kuma.
+              - type: server-stats
+                servers:
+                  - type: local
+                    name: Glance LXC
+                    cpu: true
+                    memory: true
+                    load: true
+
+          - type: monitor
+            title: Platform (k3s, via Istio gateway)
+            cache: 1m
+            sites:
+              - title: ArgoCD
+                url: https://argocd.lab.home/
+                icon: di:argo-cd
+              - title: Grafana
+                url: https://grafana.lab.home/api/health
+                icon: di:grafana
+              - title: Uptime Kuma
+                url: https://uptime.lab.home/
+                icon: di:uptime-kuma
+              - title: Petal
+                url: https://petal.lab.home/api/health
+                icon: si:githubactions
+              - title: Authentik
+                url: https://auth.lab.home/-/health/live/
+                icon: di:authentik
+              - title: ntfy
+                url: https://ntfy.lab.home/v1/health
+                icon: di:ntfy
+
+          - type: monitor
+            title: Apps & Home Network
+            cache: 1m
+            sites:
+              - title: Proxmox
+                url: https://192.168.0.115:8006/
+                icon: si:proxmox
+                allow-insecure: true # PVE self-signed cert
+              - title: Pi-hole
+                url: http://pihole.home/admin/
+                icon: di:pi-hole
+              - title: Jellyfin
+                url: http://jellyfin.lan/health # via NPM -> DMZ 10.10.40.3 (jellyfin.home is stale)
+                icon: di:jellyfin
+              - title: Immich
+                url: http://immich.home:2283/api/server/ping
+                icon: di:immich
+              - title: Nextcloud
+                url: https://nextcloud.home/status.php
+                allow-insecure: true
+                icon: di:nextcloud
+              - title: Kavita
+                url: https://kavita.lab.home/
+                icon: di:kavita
+              - title: Linkding
+                url: https://linkding.lab.home/health
+                icon: di:linkding
+              - title: Audiobookshelf
+                url: https://audiobookshelf.lab.home/healthcheck
+                icon: di:audiobookshelf
+              - title: qBittorrent
+                url: http://qbit.home:8080
+                icon: di:qbittorrent
+              - title: WireGuard
+                url: http://wg.home:10086/
+                icon: di:wireguard
+              - title: Blacklotus
+                url: https://blacklotus89898.ca
+                icon: si:linux
+              - title: PeakForm
+                url: https://peakformtest.vercel.app
+                icon: si:vercel
+
+          - type: repository
+            repository: Blacklotus89898/Homelab
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          # Versions of what actually runs here (was: generic list incl. offline Ollama)
+          - type: releases
+            title: Stack Updates
+            show-source-icon: true
+            cache: 6h
+            collapse-after: 8
+            repositories:
+              - k3s-io/k3s
+              - argoproj/argo-cd
+              - istio/istio
+              - VictoriaMetrics/VictoriaMetrics
+              - backstage/backstage
+              - louislam/uptime-kuma
+              - goauthentik/authentik
+              - cert-manager/cert-manager
+              - jellyfin/jellyfin
+              - immich-app/immich
+              - dani-garcia/vaultwarden
+              - nextcloud/server
+              - pi-hole/FTL
+              - NginxProxyManager/nginx-proxy-manager
+              - sissbruecker/linkding
+              - Kareadita/Kavita
+              - advplyr/audiobookshelf
+              - qbittorrent/qBittorrent
+              - Stirling-Tools/Stirling-PDF
+              - glanceapp/glance
+
+      # -----------------------------------------------------------------------
+      # Column 3: Bookmarks (grouped by layer) + community
+      # -----------------------------------------------------------------------
+      - size: small
+        widgets:
+          - type: bookmarks
+            title: Homelab
+            groups:
+              - title: Platform (k3s)
+                color: 25 95 65
+                links:
+                  - title: ArgoCD
+                    url: https://argocd.lab.home/
+                    icon: di:argo-cd
+                  - title: Backstage
+                    url: http://192.168.0.108:30900/ # not on the gateway yet (OAuth callback move pending)
+                    icon: di:backstage
+                  - title: Petal
+                    url: https://petal.lab.home/
+                  - title: Jenkins
+                    url: https://jenkins.lab.home/login # / is 403 for anonymous
+                    icon: di:jenkins
+                  - title: Authentik
+                    url: https://auth.lab.home/
+                    icon: di:authentik
+              - title: Observability
+                color: 280 60 65
+                links:
+                  - title: Grafana (k3s)
+                    url: https://grafana.lab.home/
+                    icon: di:grafana
+                  - title: Uptime Kuma
+                    url: https://uptime.lab.home/
+                    icon: di:uptime-kuma
+                  - title: Status page
+                    url: https://uptime.lab.home/status/homelab
+                    icon: di:uptime-kuma
+                  - title: OpenObserve (logs)
+                    url: https://openobserve.lab.home/
+                  - title: OpenCost
+                    url: https://opencost.lab.home/
+                  - title: ntfy
+                    url: https://ntfy.lab.home/
+                    icon: di:ntfy
+                  - title: Grafana (legacy, dashboard.home)
+                    url: http://dashboard.home:3000/
+                    icon: di:grafana
+              - title: Apps
+                color: 160 60 50
+                links:
+                  - title: Immich
+                    url: http://immich.home:2283/
+                    icon: di:immich
+                  - title: Nextcloud
+                    url: https://nextcloud.home
+                    icon: di:nextcloud
+                  - title: Linkding
+                    url: https://linkding.lab.home/
+                    icon: di:linkding
+                  - title: Stirling PDF
+                    url: http://pdf.home:8080/
+                    icon: di:stirling-pdf
+                  - title: Vault
+                    url: http://vault.home:8200/ui/
+                    icon: di:hashicorp-vault
+                  # Vaultwarden: CT 125 is up but no web port answers on 80/443/8000
+                  # from the LAN (2026-10-21) — add its URL here once confirmed.
+              - title: Media
+                color: 220 80 60
+                links:
+                  - title: Jellyfin
+                    url: http://jellyfin.lan/
+                    icon: di:jellyfin
+                  - title: Kavita
+                    url: https://kavita.lab.home/
+                    icon: di:kavita
+                  - title: Audiobookshelf
+                    url: https://audiobookshelf.lab.home/
+                    icon: di:audiobookshelf
+                  - title: qBittorrent
+                    url: http://qbit.home:8080
+                    icon: di:qbittorrent
+              - title: Infra & Network
+                color: 190 70 55
+                links:
+                  - title: Proxmox
+                    url: https://192.168.0.115:8006/
+                    icon: si:proxmox
+                  - title: Portainer
+                    url: https://192.168.0.125:9443/ # CT 133 (was the dead 192.168.0.115:9000)
+                    icon: si:portainer
+                  - title: Pi-hole
+                    url: http://pihole.home/admin/
+                    icon: di:pi-hole
+                  - title: Nginx Proxy Manager
+                    url: http://npm.home:81/
+                    icon: di:nginx-proxy-manager
+                  - title: WireGuard
+                    url: http://wg.home:10086/
+                    icon: di:wireguard
+              - title: Code
+                color: 0 0 70
+                links:
+                  - title: Homelab repo
+                    url: https://github.com/Blacklotus89898/Homelab
+                    icon: si:github
+                  - title: Petal repo
+                    url: https://github.com/Blacklotus89898/Petal
+                    icon: si:github
+                  - title: DaVinci repo
+                    url: https://github.com/Blacklotus89898/DaVinci
+                    icon: si:github
+
+          - type: rss
+            title: r/homelab + r/selfhosted
+            cache: 2h # one multi-subreddit feed = one request; Reddit rate-limits anonymous RSS hard (JSON API is 403)
+            limit: 15
+            collapse-after: 6
+            feeds:
+              - url: https://www.reddit.com/r/homelab+selfhosted/.rss
+                title: r/homelab+selfhosted
+
+
+  # ---------------------------------------------------------------------------
+  - name: Markets
+    columns:
+      - size: full
+        widgets:
+          - type: markets
+            title: Markets
+            markets:
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: ETH-USD
+                name: Ethereum
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: ^GSPC
+                name: S&P 500
+              - symbol: ^GSPTSE # was "TSX" — not a Yahoo symbol; this is the S&P/TSX Composite
+                name: TSX Composite
+              - symbol: LMT
+                name: Lockheed
+              - symbol: RTX
+                name: Raytheon
+
+  # ---------------------------------------------------------------------------
+  - name: Intelligence & Feeds
+    columns:
+      - size: full
+        widgets:
+          - type: group
+            title: News & Discussions
+            widgets:
+              - type: hacker-news
+                limit: 15
+                collapse-after: 5
+
+
+          - type: videos
+            title: Tech YouTube
+            channels:
+              - UC9x0AN7BWHpCDHSm9NiJFJQ # Network Chuck
+              - UCUyeluBRhGPCW4rPe_UvBZQ # ThePrimeTime
+              - UCsBjURrPoezykLs9EqgamOA # Fireship (fixed: old ID had a stray trailing "B" -> 404)
+              - UCbfYPyITQ-7l4upoX8nvctg # Two Minute Papers
+              - UCZgt6AzoyjslHTC9dz0UoTw # ByteByteGo
+              - UCR-DXc1voovS8nhAvccRZhg # Jeff Geerling
+              - UCXuqSBlHAE6Xw-yeJA0Tunw # Linus Tech Tips
+
+          # Removed: iframe http://agent.home/auth — the agent/Ollama host
+          # (192.168.0.103) is offline; re-add when it is back.
+
+      - size: small
+        widgets:
+          - type: rss
+            title: Dev & Tech Blogs
+            limit: 20
+            collapse-after: 5
+            feeds:
+              - url: https://selfh.st/rss/
+                title: selfh.st
+              - url: https://ciechanow.ski/atom.xml
+                title: Bartosz Ciechanowski
+              - url: https://www.joshwcomeau.com/rss.xml
+                title: Josh Comeau
+              - url: https://aws.amazon.com/blogs/aws/feed/
+                title: AWS Blog
+              - url: https://github.blog/changelog/feed/
+                title: GitHub Changelog
+              - url: https://kubernetes.io/feed.xml
+                title: Kubernetes Blog
+              - url: https://istio.io/latest/blog/feed.xml
+                title: Istio Blog
+              - url: https://danluu.com/atom.xml
+                title: Dan Luu
+
+          - type: rss
+            title: Finance & Markets
+            limit: 15
+            collapse-after: 5
+            feeds:
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147
+                title: CNBC Business
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258
+                title: CNBC Economy
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069
+                title: CNBC Investing
+              - url: http://feeds.marketwatch.com/marketwatch/topstories
+                title: MarketWatch
+
+  # ---------------------------------------------------------------------------
+  - name: News & Finance
+    columns:
+      - size: small
+        widgets:
+          - type: markets
+            title: Live Markets
+            markets:
+              - symbol: ^GSPC
+                name: S&P 500
+              - symbol: ^DJI
+                name: Dow Jones
+              - symbol: ^IXIC
+                name: NASDAQ
+              - symbol: ^GSPTSE
+                name: TSX Composite
+              - symbol: ^TNX
+                name: 10Y Treasury
+              - symbol: GC=F
+                name: Gold
+              - symbol: CL=F
+                name: Crude Oil
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: ETH-USD
+                name: Ethereum
+              - symbol: USDCAD=X
+                name: USD/CAD
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: MSFT
+                name: Microsoft
+              - symbol: PLTR
+                name: Palantir
+              - symbol: LMT
+                name: Lockheed
+              - symbol: RTX
+                name: Raytheon
+
+          - type: rss
+            title: r/stocks + r/investing + r/wallstreetbets
+            cache: 2h # one multi-subreddit feed = one request; Reddit rate-limits anonymous RSS hard (JSON API is 403)
+            limit: 15
+            collapse-after: 6
+            feeds:
+              - url: https://www.reddit.com/r/stocks+investing+wallstreetbets/.rss
+                title: r/stocks+investing+wallstreetbets
+
+
+
+      - size: full
+        widgets:
+          - type: rss
+            title: Economy & Markets
+            limit: 20
+            collapse-after: 6
+            feeds:
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258
+                title: CNBC Economy
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839069
+                title: CNBC Investing
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20409666
+                title: CNBC Market Insider
+              - url: http://feeds.marketwatch.com/marketwatch/topstories
+                title: MarketWatch Top Stories
+              - url: http://feeds.marketwatch.com/marketwatch/marketpulse
+                title: MarketWatch Pulse
+              - url: http://rss.cnn.com/rss/money_news_economy.rss
+                title: CNN Money Economy
+              - url: http://rss.cnn.com/rss/money_markets.rss
+                title: CNN Money Markets
+              - url: https://www.investors.com/category/news/economy/feed
+                title: Investor's Business Daily
+
+          - type: rss
+            title: Tech & AI Business News
+            limit: 20
+            collapse-after: 6
+            feeds:
+              - url: https://techcrunch.com/feed/
+                title: TechCrunch
+              - url: https://feeds.arstechnica.com/arstechnica/index
+                title: Ars Technica
+              - url: https://www.theverge.com/rss/index.xml
+                title: The Verge
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147
+                title: CNBC Tech
+              - url: https://blog.bytebytego.com/feed
+                title: ByteByteGo
+
+          - type: rss
+            title: Business & Macro
+            limit: 15
+            collapse-after: 5
+            feeds:
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664
+                title: CNBC Finance
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001054
+                title: CNBC Wealth
+              - url: https://fortune.com/feed
+                title: Fortune
+              - url: https://rss.politico.com/economy.xml
+                title: Politico Economy
+              - url: https://rss.politico.com/morningmoney.xml
+                title: Politico Morning Money
+              - url: http://247wallst.com/feed
+                title: 24/7 Wall St
+              - url: https://www.cbsnews.com/latest/rss/moneywatch
+                title: CBS MoneyWatch
+              - url: https://www.marketbeat.com/feed
+                title: MarketBeat
+
+      - size: small
+        widgets:
+          - type: rss
+            title: Deeper Analysis
+            limit: 15
+            collapse-after: 5
+            feeds:
+              - url: https://www.investors.com/feed
+                title: Investor's Business Daily
+              - url: https://www.investors.com/category/market-trend/the-big-picture/feed
+                title: IBD Big Picture
+              - url: https://www.kiplinger.com/feed/all
+                title: Kiplinger
+              - url: https://www.etf.com/home.feed
+                title: ETF.com
+              - url: https://247wallst.com/investing/feed
+                title: 24/7 WS Investing
+              - url: https://247wallst.com/economy/feed
+                title: 24/7 WS Economy
+
+          - type: rss
+            title: Canadian Finance
+            limit: 10
+            collapse-after: 5
+            feeds:
+              - url: https://storeys.com/money/feed
+                title: Storeys (CA Real Estate)
+              - url: https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/report-on-business/
+                title: Globe & Mail Business
+              - url: https://financialpost.com/feed
+                title: Financial Post
+
+          - type: rss
+            title: Macro & Geopolitics
+            limit: 10
+            collapse-after: 5
+            feeds:
+              - url: https://rss.politico.com/morningtrade.xml
+                title: Politico Morning Trade
+              - url: http://rss.cnn.com/rss/money_news_international.rss
+                title: CNN World Business
+              - url: https://www.ft.com/rss/home
+                title: Financial Times
+              - url: https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=15839135
+                title: CNBC Earnings
+
+  # ---------------------------------------------------------------------------
+  - name: Dev & Repos
+    columns:
+      - size: small
+        widgets:
+          - type: to-do
+            title: Work Tasks
+            id: work
+
+          # Your own projects (was: home-assistant / paperless — not yours)
+          - type: repository
+            repository: Blacklotus89898/Petal
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: repository
+            repository: Blacklotus89898/DaVinci
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+      - size: full
+        widgets:
+          - type: group
+            title: Trending
+            widgets:
+              - type: hacker-news
+                title: Hacker News
+                limit: 10
+                collapse-after: 5
+
+              - type: rss
+                title: r/programming + r/kubernetes + r/devops
+                cache: 2h # one multi-subreddit feed = one request; Reddit rate-limits anonymous RSS hard (JSON API is 403)
+                limit: 15
+                collapse-after: 6
+                feeds:
+                  - url: https://www.reddit.com/r/programming+kubernetes+devops/.rss
+                    title: r/programming+kubernetes+devops
+
+
+
+          - type: rss
+            title: Engineering Feeds
+            limit: 25
+            collapse-after: 8
+            feeds:
+              - url: https://www.reddit.com/r/ExperiencedDevs/.rss
+                title: r/ExperiencedDevs
+              - url: https://aws.amazon.com/blogs/aws/feed/
+                title: AWS
+              - url: https://github.blog/changelog/feed/
+                title: GitHub Changelog
+              - url: https://www.cncf.io/feed/
+                title: CNCF
+              - url: https://www.joshwcomeau.com/rss.xml
+                title: Josh Comeau
+              - url: https://ciechanow.ski/atom.xml
+                title: Bartosz Ciechanowski
+              - url: https://samwho.dev/rss.xml
+                title: Sam Who
+
+      - size: small
+        widgets:
+          - type: markets
+            title: Tech Stocks
+            markets:
+              - symbol: NVDA
+                name: NVIDIA
+              - symbol: MSFT
+                name: Microsoft
+              - symbol: GOOGL
+                name: Google
+              - symbol: AAPL
+                name: Apple
+              - symbol: META
+                name: Meta
+              - symbol: AMD
+                name: AMD
+              - symbol: PLTR
+                name: Palantir
+
+          - type: twitch-channels
+            title: Live Now
+            collapse-after: 5
+            channels:
+              - theprimeagen
+              - christitustech
+              - piratesoftware
+              - networkchuck
+
+# =============================================================================
+# One-time setup notes
+#
+# 1. Pi-hole DNS widget (v6): Pi-hole UI -> Settings -> Web interface / API ->
+#    "Configure app password" -> put it in /root/glance/.env as
+#    PIHOLE_APP_PASSWORD=<value>, add `env_file: .env` to the glance service in
+#    docker-compose.yml, `docker compose up -d`, then uncomment the dns-stats
+#    widget. Glance fails to START on an unset variable — never uncomment first.
+#    NOTE: Glance expands dollar-brace syntax in the RAW file, comments included —
+#    never write that syntax anywhere in this file unless the variable is set.
+#
+# 2. Glance runs in Docker here, so the homelab CA is mounted INTO the container
+#    (docker-compose.yml: ./lab-root-ca.crt:/etc/ssl/certs/homelab-root-ca.crt:ro)
+#    — the *.lab.home monitors then verify TLS for real.
+# =============================================================================

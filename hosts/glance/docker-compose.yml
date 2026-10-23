@@ -1,0 +1,12 @@
+services:
+  glance:
+    image: glanceapp/glance:v0.8.4 # pinned (was :latest); bump deliberately
+    container_name: glance
+    dns:
+      - 192.168.0.53
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config
+      - ./lab-root-ca.crt:/etc/ssl/certs/homelab-root-ca.crt:ro

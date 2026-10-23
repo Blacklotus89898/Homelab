@@ -10,7 +10,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - Node disk ops: journal vacuum on debian (sudoers); image prune via the privileged-pod trick (`get_tool "prune unreferenced container images"`).
 - Proxmox host: `ssh root@proxmox.home` — **password auth only, held by the user** (ask them; no standing key installed by policy 2026-09-29). Run remote commands via `plink -m <file>` (PS 5.1 shreds multiline argv).
 
-## Status (updated 2026-10-21)
+## Status (updated 2026-10-23)
 
 - [x] **Phase 0 — clear the backlog** ✅ DONE 2026-09-28/29 (commits 4705da3, 160c6d7, 9bfb1f9, cc8c3ef)
   - [x] cert-manager sync Unknown → removed schema-invalid `revisionHistoryLimit` (runbooks/cert-manager-sync-unknown.md)
@@ -99,6 +99,26 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - Staging observability is separate on purpose: `VMProbe staging-front-doors` + `VmRule staging-front-door` (hard-down, warning, no SLO math) — rehearsal targets must fail loudly without burning the prod front-door error budget.
     - First rehearsal E2E: linkding 1.46.2 → 1.47.0 — staging Synced/Healthy + probe green on the candidate, then promoted to prod (Synced/Healthy, prod probes 6/6=1 throughout, digest already cached on the worker). All 3 commits CI 9/9 green incl. the new CI step that renders + kubeconform-validates every `environments/staging/*/` overlay. `services/linkding` became a passthrough kustomize base (blackbox-exporter pattern). KB: solutions/staging-rehearsal.md.
     - Lane extended to kavita 2026-10-19 (commit 064a460): second target proves the one-element-plus-one-dir contract at zero marginal design cost. Kavita's twist — prod storage is two **hostPaths** (writable config + readOnly SMB comics), both become emptyDir in staging so a candidate can never migrate prod's config and the rehearsal pod schedules unpinned; prod's 2Gi-request resources (the 2026-07-28 OOM fix) shrink to a 256Mi/1.5Gi rehearsal profile (actual: 324Mi/6m). Upstream has no stable past 0.9.1 (nightlies only), so staging mirrors prod's digest — the lane is built and rehearsing = flipping the digest knob when a real candidate lands. E2E: CI 9/9 (incl. overlay render), app Synced/Healthy, pod 0 restarts, `probe_success`=1 on the kavita staging target; prod kavita + linkding staging unaffected by the passthrough-base flip.
+
+- [ ] **Phase 5 — hardening & consolidation** (from the 2026-10-23 full assessment)
+  - P0
+    - [ ] **Re-export the sealed-secrets keyring after the 2026-10-24 03:15 UTC rotation** (user; keys rotate every 30d — the 10-21 backup lacks the new key, so anything sealed after the rotation won't decrypt on a rebuild)
+    - [ ] **Rotate OpenObserve credentials** — repo is PUBLIC and `infrastructure/openobserve/secret.yaml` + `OO_AUTH` in `platform/observability/otel-collector.yaml` carry `admin@homelab.local`/`admin` in plaintext (in git history forever → sealing alone is not enough). Change via OpenObserve's API/UI first (root env is read on first start only — verify), then seal + `OO_AUTH` from a `secretKeyRef`. Or retire OpenObserve (P2).
+  - P1
+    - [ ] Bootstrap rehearsal: steps 4–7 on a throwaway kind/k3d cluster (local, then CI) — the system is *documented*, not *rehearsed*; the Gateway sync-wave deadlock (198a0fa) only existed on a fresh create
+    - [ ] Petal multi-repo runs (`repo@ref` per run + allowlist, Petal ADR 0003 "next increment") — until then `petal:run` is restricted to component:default/petal (2801464+)
+    - [ ] Floaters: decide juice-shop, portainer-agent, paperless (6 PVCs ≈ 22Gi) — adopt or delete
+    - [ ] Capture Pi-hole `dns.hosts` (35 records; needs the Pi-hole password) into `hosts/pihole/`
+    - [ ] Branch protection is admin-bypassed on every push ("Bypassed rule violations… 8 of 8 required status checks") — enforce for admins or document the bypass as policy
+    - [ ] Re-run `tools/uptime-kuma/provision.py` (user creds) — 13 monitors still on `:30328`
+    - [ ] Backstage via the gateway (`https://backstage.lab.home`; GitHub OAuth callback is the user step)
+    - [ ] authentik SSO for ArgoCD + Backstage, plus a real Backstage permission policy (today: sign-in limited to `catalog/users.yaml`; the scoped `automation` token can run ANY template, incl. `homelab-service` which publishes to GitHub)
+  - P2
+    - [ ] Consolidate CI: retire ARC (dead since 2026-09) and Jenkins in favour of GitHub Actions + Petal once multi-repo lands — memory/disk on the single worker
+    - [ ] OpenObserve → VictoriaLogs (one metrics+logs vendor, removes a 20Gi PVC and the plaintext creds)
+    - [ ] ADR 0009 next phases: STRICT mTLS per namespace, default-deny AuthorizationPolicies, waypoint for L7
+    - [ ] Worker disk 79% after image prune (10-23) — each Backstage release adds a large image; watch the trend
+    - [ ] Proxmox (user): k3s VMs `onboot=0`, CT rootfs near full (jellyfin 99.8%, npm 96.6%), VLAN firewall drift, SMR `hard_drive` 94% holding both k3s VM disks
 
 ## Watchlist (known, accepted — don't re-escalate in audits)
 

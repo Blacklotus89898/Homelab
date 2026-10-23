@@ -6,7 +6,7 @@ GitOps source of truth for a k3s cluster. ArgoCD (app-of-apps, root at `bootstra
 
 **The one rule: all cluster changes go through git commit → push → ArgoCD sync.** Never `kubectl apply`/`kubectl edit`/`kubectl scale` live objects outside `bootstrap/` — ArgoCD will revert out-of-band changes. Diagnose with kubectl freely; change via git only.
 
-## Cluster facts (verified 2026-09-28)
+## Cluster facts (verified 2026-10-23)
 
 - Nodes: `debian` (control-plane, SchedulingDisabled) = **192.168.0.112**; `k3s-worker-01` = **192.168.0.108**. k3s v1.34.5+k3s1, containerd, Debian 12.
 - SSH (key auth via Windows ssh-agent): `ssh debian.home`, `ssh k3s-worker-01`, `ssh ubuntu.home` — user `blacklotus`.
@@ -14,7 +14,9 @@ GitOps source of truth for a k3s cluster. ArgoCD (app-of-apps, root at `bootstra
 - Passwordless sudo on debian only: `kubectl`, `journalctl`, `systemctl` (see `/etc/sudoers.d/900-claude-ops`; k3s kubectl is `/usr/local/bin/kubectl`).
 - Node-level ops on the worker (no sudo there): one-shot busybox pod with explicit `nodeName` + `hostPath` mount — bypasses the scheduler/cordon. Ship files via ConfigMap (`--from-file`), never by embedding content in YAML.
 - k3s CNI paths are nonstandard: binaries `/var/lib/rancher/k3s/data/cni`, config `/var/lib/rancher/k3s/agent/etc/cni/net.d`.
-- StorageClass `local-path`. ArgoCD UI: http://192.168.0.108:31991.
+- StorageClass `local-path`. ArgoCD UI: http://192.168.0.108:31991 or https://argocd.lab.home.
+- Front door (ADR 0009): Istio gateway on 80/443 (ServiceLB; traefik disabled), `https://<svc>.lab.home`, routes in `platform/gateways/routes.yaml`.
+- Hosts outside the cluster (Glance LXC, Proxmox VM specs): `hosts/`.
 - Offline/legacy: 192.168.0.103, 192.168.0.101 (pi).
 
 ## Verifying changes
