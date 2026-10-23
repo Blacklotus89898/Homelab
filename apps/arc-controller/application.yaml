@@ -28,6 +28,11 @@ spec:
     namespace: arc-systems
   syncPolicy:
     automated:
+      # Explicit: the live Application had enabled=false set out-of-band
+      # (never in git, so the root's client-side apply never cleared it).
+      # Re-enabled 2026-10-23 so the controller runs while ARC's finalizers
+      # drain the scale set during retirement (ADR 0010).
+      enabled: true
       prune: true
       selfHeal: true
     syncOptions:
