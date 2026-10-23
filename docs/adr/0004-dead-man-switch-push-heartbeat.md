@@ -14,7 +14,8 @@ needs monitoring.
 
 **Push, not pull.** A git-managed CronJob (`infrastructure/heartbeat/cluster-heartbeat`,
 arc-runners ns, 2×/h at :07/:37) pushes a timestamp commit to the orphan `heartbeat` branch,
-reusing the arc-runner PAT via SealedSecret. On GitHub's side, a watchdog Actions workflow
+reusing the arc-runner PAT via SealedSecret (since 2026-10-23: its own ns `heartbeat` and
+SealedSecret `heartbeat-github-pat` — ARC was retired, ADR 0010). On GitHub's side, a watchdog Actions workflow
 (hourly, **GitHub-hosted** runner — free for this public repo, survives the cluster) opens a
 "Cluster dark?" issue when the branch is >2h stale, comments on the existing issue instead of
 stacking, and **auto-closes on recovery** (added 2026-10-19 after the 10-08 page rotted open

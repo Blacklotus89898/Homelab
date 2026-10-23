@@ -1,6 +1,6 @@
 # Dead-man switch, GitHub side. Runs on GitHub-hosted runners so it keeps
 # working when the entire cluster is down. Checks the freshness of the
-# orphan `heartbeat` branch (pushed 2x/hour by arc-runners/cluster-heartbeat);
+# orphan `heartbeat` branch (pushed 2x/hour by heartbeat/cluster-heartbeat);
 # stale past the threshold opens an issue — GitHub notifications are then the
 # only surviving page. Dispatch with test_alert to verify the paging path.
 name: Heartbeat watchdog
@@ -101,16 +101,16 @@ jobs:
           Last heartbeat commit on the heartbeat branch: **${LAST_BEAT}** UTC (age ${AGE_MIN} min).
 
           Opened by the GitHub-side watchdog because the cluster-side heartbeat
-          CronJob (arc-runners / cluster-heartbeat, 2x/hour) has not pushed.
+          CronJob (heartbeat / cluster-heartbeat, 2x/hour) has not pushed.
 
           Triage order:
           1. Cluster or host actually down — check worker node 192.168.0.108, the
              Proxmox host, power. If the cluster is up, the in-cluster ntfy
              alerts will have been firing too.
           2. Cluster up but heartbeat failing — run
-             kubectl -n arc-runners get jobs,pods
+             kubectl -n heartbeat get jobs,pods
              A local ntfy alert titled "Heartbeat push FAILED (cluster is up)"
-             means the PAT in arc-runner-secret likely expired or GitHub was
+             means the PAT in heartbeat-github-pat likely expired or GitHub was
              unreachable from the cluster.
           3. GitHub Actions degraded — check this workflow's run history for
              missed schedules (cron jitter up to ~30 min is normal; the page
