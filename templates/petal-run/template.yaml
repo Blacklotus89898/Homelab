@@ -1,0 +1,61 @@
+# Backstage -> Petal trigger (Petal ADR 0003). The petal:run action lives in
+# backstage/packages/backend/src/modules/petal.ts; it queues the run with the
+# provenance `backstage:<entity>#<user>` and returns immediately — the run
+# itself is followed in Petal's console (link in the output).
+#
+# Trust note (ADR 0003): Backstage runs the allow-all permission policy, so
+# anyone who can open this page can start a privileged build. Closing that is
+# the authentik sign-in + permission-policy roadmap item.
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: petal-run
+  title: Run a Petal pipeline
+  description: Trigger a Petal pipeline for a catalog component; the run is recorded as started from Backstage by you
+  tags:
+    - petal
+    - ci
+spec:
+  owner: user:blacklotus89898
+  type: action
+
+  parameters:
+    - title: What to run
+      required:
+        - entity
+        - pipeline
+      properties:
+        entity:
+          title: Component
+          type: string
+          description: The catalog component this run is for (recorded as the run's source)
+          default: component:default/petal
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: Component
+        pipeline:
+          title: Pipeline
+          type: string
+          description: Pipeline from Petal's catalog (GET https://petal.lab.home/api/pipelines)
+          enum:
+            - docker-image
+          enumNames:
+            - docker-image — build and push the container image (ttl.sh, 1h)
+
+  steps:
+    - id: run
+      name: Queue Petal run
+      action: petal:run
+      input:
+        pipeline: ${{ parameters.pipeline }}
+        entityRef: ${{ parameters.entity }}
+
+  output:
+    links:
+      - title: Open run in Petal
+        url: ${{ steps.run.output.runUrl }}
+    text:
+      - title: Run
+        content: |
+          Queued **${{ parameters.pipeline }}** as `${{ steps.run.output.runId }}`.

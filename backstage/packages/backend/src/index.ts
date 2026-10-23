@@ -19,6 +19,8 @@ backend.add(import('@backstage/plugin-scaffolder-backend-module-github'));
 backend.add(
   import('@backstage/plugin-scaffolder-backend-module-notifications'),
 );
+// petal:run — trigger Petal pipelines (Petal ADR 0003)
+backend.add(import('./modules/petal'));
 
 // techdocs plugin
 backend.add(import('@backstage/plugin-techdocs-backend'));
