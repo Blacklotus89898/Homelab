@@ -91,6 +91,14 @@ metadata:
   name: arc-systems
 
 ---
+# Dead-man switch CronJob (infrastructure/heartbeat) — its own ns since ARC's
+# retirement (ADR 0010); plain git push to GitHub, no mesh needed
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: heartbeat
+
+---
 # ARC runner pods — DinD (Docker-in-Docker) conflicts with Istio ambient; keep outside mesh
 apiVersion: v1
 kind: Namespace

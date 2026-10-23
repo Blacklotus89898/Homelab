@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: heartbeat-github-pat
+  namespace: heartbeat
+spec:
+  encryptedData:
+    github_token: AgApn4t9x8FCetOD+8dAlW8XUq9s8Irmc0Qm6+v9RIQw6hSg5cqaP322jtSmTh2K5YK4juSwQld626b1WBgt9YqKO7OppuDnVxDLuDlpuvlEMet8tjUnxg2bXAWoXxXpLcxv3lB5U2MLZYkUv/Zivx1Xru6Uz4J0hvWP5dcOD4AAk1zYQdgJMyDAT8WoU/dT2tZgDw+YXAaLK/7yXQYlrI6TIMI2gxbpNlMjiYQ+QjmKGLzrQn6ERWAcnjf9i/SPNsJhOBcayQl7vke18JuI0iKoJ6g113lyBapCUT0XLxJQH2IhRUnQstKc/Ug3AiV6HEBCtzcMzaVid1mFlmd8DYze5GO55PGTA8i2xlhOnhpzckTyLHG8QiJrDvTlc45BHvIEjMk3yCuNrGocu57gdTskaNlZjJR1t6QtN6hFnGQsQwiWj71LTjpI+fKqxK9ofHkyVQju3XkBGBwbCgNVjOuz9A1MEWb/ZOXtwGLNATBm/Duq27kz8RURUyxx877Y+/cpCM4NclWZPE8FcpVm91fR52tIRW17ZAt2LY4m1xlglzMqcIxTd/hG5d8pGLfzePLRkADR/Ov79pmHrEbJ9yocKKQ7DuVw61rPg9syT5DvVIi+byQJImhCBA+DwwoY+XJzP68OAKt2hXs0RGpevz/XZbVVU0cDxhlOV7Go8xMs02sdGpyc7ZhwrufYBnx7KEv0M+aiJ0sA92csvCom+gfRObZHjqB85LgQ/wirO9J/pDwMvZ+pXHUy
+  template:
+    metadata:
+      name: heartbeat-github-pat
+      namespace: heartbeat

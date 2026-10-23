@@ -4,13 +4,14 @@
 # outside the cluster — and opens an issue if the branch goes stale.
 # This is the ONLY alert path that survives the whole cluster being down
 # (vmalertmanager, uptime-kuma and ArgoCD notifications are all in-cluster).
-# Lives in arc-runners ns to reuse the existing arc-runner-secret PAT
-# (SealedSecrets are namespace-scoped; no second copy of the token).
+# Own namespace since 2026-10-23 (ARC retired, ADR 0010): the PAT is sealed
+# here as heartbeat-github-pat (sealed-github-pat.yaml) — classic PAT, scope
+# `repo`; rotation: README "Rotating the heartbeat PAT".
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cluster-heartbeat
-  namespace: arc-runners
+  namespace: heartbeat
 spec:
   schedule: "7,37 * * * *" # 2x/hour, off the :00/:30 marks
   concurrencyPolicy: Forbid
@@ -39,7 +40,7 @@ spec:
                 - name: GH_TOKEN
                   valueFrom:
                     secretKeyRef:
-                      name: arc-runner-secret
+                      name: heartbeat-github-pat
                       key: github_token
               command: ["/bin/sh", "-eu", "-c"] # -c or sh treats the script arg as a filename
               args:
@@ -59,7 +60,7 @@ spec:
                     # pages "cluster dark" — busybox wget, alpine/git has no curl.
                     wget -qO- --header "Title: Heartbeat push FAILED (cluster is up)" \
                       --header "Tags: warning" \
-                      --post-data="Heartbeat CronJob could not push to GitHub. If this keeps failing the GitHub watchdog will page 'cluster dark'. Check the PAT in arc-runner-secret and: kubectl -n arc-runners get jobs" \
+                      --post-data="Heartbeat CronJob could not push to GitHub. If this keeps failing the GitHub watchdog will page 'cluster dark'. Check the PAT in heartbeat-github-pat and: kubectl -n heartbeat get jobs" \
                       http://ntfy.monitoring.svc.cluster.local/homelab-alerts || true
                     exit 1
                   fi
