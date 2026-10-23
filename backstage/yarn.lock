@@ -13378,6 +13378,7 @@ __metadata:
     "@backstage/plugin-notifications": "npm:^0.5.19"
     "@backstage/plugin-org": "npm:^0.7.6"
     "@backstage/plugin-scaffolder": "npm:^1.38.1"
+    "@backstage/plugin-scaffolder-react": "npm:^2.0.2"
     "@backstage/plugin-search": "npm:^1.7.6"
     "@backstage/plugin-signals": "npm:^0.0.33"
     "@backstage/plugin-techdocs": "npm:^1.17.8"
