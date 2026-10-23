@@ -22,8 +22,10 @@ list of things a rebuild must source elsewhere.
    `k3s-disk-cleanup` script + service + timer; on debian recreate the sudoers drop-in
    `/etc/sudoers.d/900-claude-ops` (root-only readable, not captured — scope in CLAUDE.md).
 3. ⚠️ **k3s** (v1.34.5+k3s1; install commands reconstructed, not yet rehearsed). Both nodes:
-   copy `bootstrap/nodes/k3s-config.yaml` to `/etc/rancher/k3s/config.yaml` first — the
-   units run bare `k3s server` / `k3s agent`, all flags live in that file.
+   copy `bootstrap/nodes/server/k3s-config.yaml` (debian) or `worker/k3s-config.yaml`
+   (worker) to `/etc/rancher/k3s/config.yaml` first — the units run bare `k3s server` /
+   `k3s agent`, all flags live in that file. The server's copy disables traefik (ADR 0009):
+   the Istio gateway takes 80/443 via ServiceLB.
 
    ```bash
    # debian (server)

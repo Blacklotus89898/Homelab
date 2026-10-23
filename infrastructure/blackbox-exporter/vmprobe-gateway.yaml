@@ -1,0 +1,30 @@
+# The REAL front door (ADR 0009): https://<name>.lab.home through Pi-hole DNS ->
+# 192.168.0.108:443 (ServiceLB) -> istio-gateway -> HTTPRoute -> service, with
+# the TLS chain verified against the homelab CA. Complements `front-doors`
+# (service-direct): front-doors down = the app; gateway-front-doors down with
+# front-doors up = DNS / gateway / cert / route.
+#
+# Separate job name on purpose: the front-door SLO + canary analysis select
+# job="front-doors"; this job runs alongside before anything gates on it.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  name: gateway-front-doors
+  namespace: monitoring
+spec:
+  jobName: gateway-front-doors
+  interval: 30s
+  vmProberSpec:
+    url: blackbox-exporter.monitoring.svc:9115
+    scheme: http
+  module: https_lab
+  targets:
+    staticConfig:
+      targets:
+        - https://argocd.lab.home/
+        - https://grafana.lab.home/
+        - https://kavita.lab.home/
+        - https://linkding.lab.home/
+        - https://petal.lab.home/
+        - https://uptime.lab.home/
+        - https://ntfy.lab.home/

@@ -6,7 +6,8 @@ Node-level state that ArgoCD cannot reconcile. Captured verbatim from `debian` a
 
 | File | Install to | Node |
 |---|---|---|
-| `k3s-config.yaml` | `/etc/rancher/k3s/config.yaml` | both |
+| `server/k3s-config.yaml` | `/etc/rancher/k3s/config.yaml` | debian (server) |
+| `worker/k3s-config.yaml` | `/etc/rancher/k3s/config.yaml` | worker (agent) |
 | `worker/fstab.snippet` | append to `/etc/fstab` | worker |
 | `worker/k3s-disk-cleanup.sh` | `/usr/local/bin/k3s-disk-cleanup.sh` (`chmod 755`) | worker |
 | `worker/k3s-disk-cleanup.{service,timer}` | `/etc/systemd/system/`, then `systemctl enable --now k3s-disk-cleanup.timer` | worker |

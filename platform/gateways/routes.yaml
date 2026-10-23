@@ -1,9 +1,8 @@
 # Per-service routes on the lab Gateway (ADR 0009). One HTTPRoute per service,
 # created in the SERVICE's namespace (no ReferenceGrants needed) but owned by the
 # gateways app — one file is the hostname registry: <name>.lab.home -> service.
-# Attaches to both listeners: https://<name>.lab.home:30328 (TLS, wildcard cert)
-# and http://<name>.lab.home:30131, until traefik is removed and the gateway
-# takes 80/443.
+# Attaches to the https listener only: https://<name>.lab.home (TLS, wildcard
+# cert). Plain http is answered by the catch-all 301 in http-redirect.yaml.
 #
 # Not routed yet: backstage — its app/backend baseUrl and GitHub OAuth callback
 # are bound to http://192.168.0.108:30900; moving it is a config + OAuth-app
@@ -21,6 +20,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - argocd.lab.home
   rules:
@@ -46,6 +46,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - grafana.lab.home
   rules:
@@ -71,6 +72,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - kavita.lab.home
   rules:
@@ -97,6 +99,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - linkding.lab.home
   rules:
@@ -122,6 +125,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - audiobookshelf.lab.home
   rules:
@@ -148,6 +152,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - uptime.lab.home
   rules:
@@ -174,6 +179,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - ntfy.lab.home
   rules:
@@ -200,6 +206,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - opencost.lab.home
   rules:
@@ -225,6 +232,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - openobserve.lab.home
   rules:
@@ -250,6 +258,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - jenkins.lab.home
   rules:
@@ -275,6 +284,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - petal.lab.home
   rules:
@@ -301,6 +311,7 @@ spec:
       kind: Gateway
       name: lab
       namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
   hostnames:
     - auth.lab.home
   rules:

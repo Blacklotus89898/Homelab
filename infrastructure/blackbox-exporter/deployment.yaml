@@ -28,6 +28,9 @@ spec:
             - name: config
               mountPath: /etc/blackbox_exporter/config.yml
               subPath: config.yml
+            - name: lab-ca
+              mountPath: /etc/lab-ca
+              readOnly: true
           resources:
             # Explicit: monitoring ns LimitRange would otherwise default us to 256Mi
             requests:
@@ -52,3 +55,9 @@ spec:
         - name: config
           configMap:
             name: blackbox-exporter-config
+        - name: lab-ca
+          secret:
+            secretName: blackbox-lab-ca
+            items:
+              - key: ca.crt
+                path: ca.crt

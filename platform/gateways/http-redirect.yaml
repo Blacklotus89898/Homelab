@@ -1,0 +1,28 @@
+# Catch-all on the http listener: every http://<name>.lab.home/... gets a 301 to
+# https on 443. Service routes (routes.yaml) bind to sectionName https only, so
+# this is the sole route on :80 and plain-text traffic never reaches a backend.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https
+  namespace: istio-system
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: http
+  hostnames:
+    - "*.lab.home"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            port: 443
+            statusCode: 301
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

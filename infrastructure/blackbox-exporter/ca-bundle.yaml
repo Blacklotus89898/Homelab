@@ -1,0 +1,23 @@
+# Homelab root CA for the https_lab module (ADR 0009) — same pattern as
+# infrastructure/uptime-kuma/ca-bundle.yaml: a lab-ca-issued Certificate whose
+# secret carries the issuing CA as ca.crt. The leaf is unused; only ca.crt is
+# mounted.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: blackbox-lab-ca
+  namespace: monitoring
+spec:
+  secretName: blackbox-lab-ca
+  commonName: blackbox-exporter.monitoring.svc
+  dnsNames:
+    - blackbox-exporter.monitoring.svc
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    kind: ClusterIssuer
+    name: lab-ca
+    group: cert-manager.io

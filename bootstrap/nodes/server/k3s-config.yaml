@@ -1,0 +1,12 @@
+# /etc/rancher/k3s/config.yaml on debian (server). Live since 2026-10-22; the
+# pre-change copy sits next to it on the node as config.yaml.bak-pre-traefik.
+#
+# The systemd unit passes NO flags (bare `k3s server`) — everything is here.
+#
+# kubelet-arg: same eviction-hard trade-off as the worker (../worker/k3s-config.yaml).
+kubelet-arg:
+  - "eviction-hard=nodefs.available<2%,imagefs.available<2%"
+# ADR 0009: the Istio gateway owns 80/443 via ServiceLB; traefik is retired.
+# Server-only option: the packaged traefik HelmChart is deployed by the server.
+disable:
+  - traefik

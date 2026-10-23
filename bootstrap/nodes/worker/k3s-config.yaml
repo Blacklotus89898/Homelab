@@ -1,5 +1,6 @@
-# /etc/rancher/k3s/config.yaml — identical on debian (server) and
-# k3s-worker-01 (agent). Captured from both nodes 2026-10-21.
+# /etc/rancher/k3s/config.yaml on k3s-worker-01 (agent). Captured 2026-10-21.
+# The server (debian) carries the same kubelet-arg plus `disable: [traefik]` —
+# see ../server/k3s-config.yaml.
 #
 # The systemd units pass NO flags (`k3s server` / `k3s agent` bare); the agent's
 # K3S_URL + K3S_TOKEN live in /etc/systemd/system/k3s-agent.service.env, written

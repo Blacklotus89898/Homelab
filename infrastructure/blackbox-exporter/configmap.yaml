@@ -14,3 +14,14 @@ data:
         http:
           preferred_ip_protocol: ip4 # cluster DNS + svc CIDRs are v4 here
           follow_redirects: true # several front doors 302 to /login
+      https_lab:
+        # *.lab.home through the Istio gateway (vmprobe-gateway.yaml). Redirects
+        # are followed but must stay on https; the chain must verify against
+        # the homelab root CA (ca-bundle.yaml).
+        prober: http
+        http:
+          preferred_ip_protocol: ip4
+          follow_redirects: true
+          fail_if_not_ssl: true
+          tls_config:
+            ca_file: /etc/lab-ca/ca.crt

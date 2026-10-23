@@ -1,9 +1,9 @@
 service:
-  # Using NodePort because Traefik holds ports 80/443 on the node.
-  # HTTP:  192.168.0.108:30080
-  # HTTPS: 192.168.0.108:30443
-  # Switch to LoadBalancer after Traefik is removed (post step 3).
-  type: NodePort
+  # ADR 0009: traefik is disabled (k3s `disable: [traefik]`), so k3s ServiceLB
+  # (klipper svclb) binds 80/443 on every node for this Service. Pi-hole
+  # *.lab.home -> 192.168.0.108. The fixed nodePorts are kept so old
+  # :30131/:30328 bookmarks keep working; nothing in git uses them any more.
+  type: LoadBalancer
   ports:
     - name: status-port
       port: 15021

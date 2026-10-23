@@ -1,12 +1,11 @@
 # The front door (ADR 0009): one Gateway API Gateway, class istio, bound to the
 # EXISTING helm-installed Istio ingress gateway (apps/istio-gateway) via
-# spec.addresses ("manual deployment") — no new pods, and the fixed NodePorts
-# from apps/istio-gateway/values.yaml stay: HTTP 30131, HTTPS 30328.
-# Listener ports must equal that Service's ports (80/443), not the NodePorts.
+# spec.addresses ("manual deployment") — no new pods. That Service is a
+# LoadBalancer (k3s ServiceLB) on 80/443 since traefik was disabled 2026-10-22.
+# Listener ports must equal that Service's ports (80/443).
 #
-# Until traefik is disabled (it holds 80/443 on the nodes) the URLs carry the
-# NodePort: https://<svc>.lab.home:30328. No HTTP->HTTPS redirect yet: a
-# redirect without an explicit port would send browsers to :443 = traefik.
+# URLs: https://<svc>.lab.home. The http listener only carries the 301 redirect
+# (http-redirect.yaml); service routes attach to the https listener.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

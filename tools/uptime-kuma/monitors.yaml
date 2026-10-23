@@ -10,7 +10,7 @@
 
 settings:
   keepDataPeriodDays: 14 # 180d default would outgrow the 1Gi PVC (disk is the #1 constraint)
-  primaryBaseURL: https://uptime.lab.home:30328
+  primaryBaseURL: https://uptime.lab.home
 
 notification:
   name: ntfy homelab-alerts
@@ -64,18 +64,18 @@ groups:
   - name: Front door (Istio gateway)
     interval: 120
     monitors:
-      - {name: argocd.lab.home, type: http, url: "https://argocd.lab.home:30328/"}
-      - {name: grafana.lab.home, type: http, url: "https://grafana.lab.home:30328/"}
-      - {name: kavita.lab.home, type: http, url: "https://kavita.lab.home:30328/"}
-      - {name: linkding.lab.home, type: http, url: "https://linkding.lab.home:30328/"}
-      - {name: audiobookshelf.lab.home, type: http, url: "https://audiobookshelf.lab.home:30328/"}
-      - {name: uptime.lab.home, type: http, url: "https://uptime.lab.home:30328/"}
-      - {name: ntfy.lab.home, type: http, url: "https://ntfy.lab.home:30328/"}
-      - {name: opencost.lab.home, type: http, url: "https://opencost.lab.home:30328/"}
-      - {name: openobserve.lab.home, type: http, url: "https://openobserve.lab.home:30328/"}
-      - {name: jenkins.lab.home, type: http, url: "https://jenkins.lab.home:30328/login"}
-      - {name: petal.lab.home, type: http, url: "https://petal.lab.home:30328/"}
-      - {name: auth.lab.home, type: http, url: "https://auth.lab.home:30328/"}
+      - {name: argocd.lab.home, type: http, url: "https://argocd.lab.home/"}
+      - {name: grafana.lab.home, type: http, url: "https://grafana.lab.home/"}
+      - {name: kavita.lab.home, type: http, url: "https://kavita.lab.home/"}
+      - {name: linkding.lab.home, type: http, url: "https://linkding.lab.home/"}
+      - {name: audiobookshelf.lab.home, type: http, url: "https://audiobookshelf.lab.home/"}
+      - {name: uptime.lab.home, type: http, url: "https://uptime.lab.home/"}
+      - {name: ntfy.lab.home, type: http, url: "https://ntfy.lab.home/"}
+      - {name: opencost.lab.home, type: http, url: "https://opencost.lab.home/"}
+      - {name: openobserve.lab.home, type: http, url: "https://openobserve.lab.home/"}
+      - {name: jenkins.lab.home, type: http, url: "https://jenkins.lab.home/login"}
+      - {name: petal.lab.home, type: http, url: "https://petal.lab.home/"}
+      - {name: auth.lab.home, type: http, url: "https://auth.lab.home/"}
 
   - name: Home network
     interval: 120
