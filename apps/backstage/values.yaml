@@ -9,11 +9,10 @@ backstage:
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
-    # Pinned to the CI-built image for commit ddf415b ("seal Jenkins API token,
-    # enable backend connection") — the newest functional build; later commits
-    # were docs-only. To upgrade: merge a backstage/** change, wait for the
+    # Pinned to the CI-built image for commit 2339a03 (petal:run scaffolder
+    # action). To upgrade: merge a backstage/** change, wait for the
     # build-backstage.yaml run, then bump this to the new commit sha tag.
-    tag: "ddf415be3556fffb9774eae6e67cad8f95001efd"
+    tag: "2339a03c81b837fda78c514f312b5e4e91f809dc"
     pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
@@ -22,6 +21,7 @@ backstage:
     - backstage-k8s-token
     - backstage-argocd-token
     - backstage-jenkins
+    - petal-api-token # PETAL_API_TOKEN for petal:run (infrastructure/backstage-k8s-rbac)
 
   resources:
     requests:
@@ -109,6 +109,14 @@ backstage:
             - Authorization
           credentials: dangerously-allow-unauthenticated
 
+    # petal:run scaffolder action (backstage/packages/backend/src/modules/petal.ts,
+    # Petal ADR 0003). Writes need the bearer token; consoleUrl is what the
+    # template's "Open run in Petal" link points at.
+    petal:
+      baseUrl: http://petal.petal.svc.cluster.local
+      consoleUrl: https://petal.lab.home
+      token: ${PETAL_API_TOKEN}
+
     jenkins:
       instances:
         - name: default
@@ -156,6 +164,8 @@ backstage:
           target: https://raw.githubusercontent.com/Blacklotus89898/Homelab/main/catalog/apis.yaml
         - type: url
           target: https://github.com/Blacklotus89898/Homelab/blob/main/templates/homelab-service/template.yaml
+        - type: url
+          target: https://github.com/Blacklotus89898/Homelab/blob/main/templates/petal-run/template.yaml
 
 service:
   type: NodePort
