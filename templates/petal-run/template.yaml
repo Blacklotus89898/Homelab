@@ -37,11 +37,10 @@ spec:
         pipeline:
           title: Pipeline
           type: string
-          description: Pipeline from Petal's catalog (GET https://petal.lab.home/api/pipelines)
-          enum:
-            - docker-image
-          enumNames:
-            - docker-image — build and push the container image (ttl.sh, 1h)
+          description: Pipelines are read live from Petal's catalog
+          # Custom field (backstage/packages/app/src/modules/petal): lists
+          # GET /api/pipelines via the /petal proxy; free text if Petal is down.
+          ui:field: PetalPipelinePicker
 
   steps:
     - id: run
