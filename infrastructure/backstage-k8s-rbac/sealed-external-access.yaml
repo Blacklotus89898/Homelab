@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: backstage-external-access
+  namespace: backstage
+spec:
+  encryptedData:
+    BACKSTAGE_AUTOMATION_TOKEN: AgANBdqezERxRQ0gmxFlqbLEIno2w+tHAYRJeJnDJowVQrQ/HblzsS/SuDPQQ4dNx/sDs300ysdyChqipP1G9fDiCRrwwV8C/vq4oCFcSRrUvuy/cuDHb1JGVkRsm77wYtVeO/pAU79mmtnDpbeynl/TO5gW/d8H3uh+aj+d3vxtm8fUe+C/AU8q/7DqNe+kVuvITv21mVKWEYNL8ypqWzWo3aJX5k/l2/YLJV1wYSLX8yx4ohSvZWSa7XmoRwbt4KivweMjASYshvOwzs9O4aFs+S9xVaaACfvyw0BKIwI5EQJ5Cuc4MitwFWhUNvy4z0nn6Xf03vOX20nexzu1AyUbX5coGOVdWFlXSgAUlUIxxAUgLhjG6/MX9Xbk7g1J+Q0HIv6inLBWuITtQAbsmReHhtFmE93FENLpaMuou6+AAYJz8d0bsAT9juzC6sIoJnvaq5assMsuEaojtSb3PmxF+IqOpkKlLdDmhb3bNB3m2nXBINUT2j4XssD5OQAyu2c/M1d4zBq9IxNlXJNbLG11dk15+1zM1rm1KkPu5W9yl0uLRNEcMBH5y2tAvODdxicznAk9pkqnG2biQU9hOXy6ez0lABP29c0jIeiXy/TdQXpWAV7Aj+sukAG5J+/CJ4L9h5kj8zCz1Y2bnspz2TusdD/QPQSx/p7FHqMJTXyer08CGuuwerfh5oQjd/a4HFuxbZABANaNlWy1sXHg24q3QQEnl6cW3wUfVJtu/l4nzHwZMT7pdsJ7X6wu
+  template:
+    metadata:
+      name: backstage-external-access
+      namespace: backstage

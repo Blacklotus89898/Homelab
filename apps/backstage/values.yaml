@@ -22,6 +22,7 @@ backstage:
     - backstage-argocd-token
     - backstage-jenkins
     - petal-api-token # PETAL_API_TOKEN for petal:run (infrastructure/backstage-k8s-rbac)
+    - backstage-external-access # BACKSTAGE_AUTOMATION_TOKEN (backend.auth.externalAccess)
 
   resources:
     requests:
@@ -55,6 +56,19 @@ backstage:
       baseUrl: http://192.168.0.108:30900
       listen:
         port: 7007
+      # Automation caller (E2E checks, scripted petal:run): a static service
+      # token, limited to the scaffolder + catalog plugins. Its tasks carry no
+      # user, so petal:run records the source as backstage:<entity>#unknown.
+      # Revoke: delete this block + the sealed secret.
+      auth:
+        externalAccess:
+          - type: static
+            options:
+              token: ${BACKSTAGE_AUTOMATION_TOKEN}
+              subject: automation
+            accessRestrictions:
+              - plugin: scaffolder
+              - plugin: catalog
       database:
         client: pg
         connection:
