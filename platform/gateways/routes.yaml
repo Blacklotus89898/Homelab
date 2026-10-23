@@ -14,6 +14,8 @@ kind: HTTPRoute
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -40,6 +42,8 @@ kind: HTTPRoute
 metadata:
   name: grafana
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -66,6 +70,8 @@ kind: HTTPRoute
 metadata:
   name: kavita
   namespace: kavita
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -93,6 +99,8 @@ kind: HTTPRoute
 metadata:
   name: linkding
   namespace: linkding
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -119,6 +127,8 @@ kind: HTTPRoute
 metadata:
   name: audiobookshelf
   namespace: audiobookshelf
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -146,6 +156,8 @@ kind: HTTPRoute
 metadata:
   name: uptime
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -173,6 +185,8 @@ kind: HTTPRoute
 metadata:
   name: ntfy
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -200,6 +214,8 @@ kind: HTTPRoute
 metadata:
   name: opencost
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -226,6 +242,8 @@ kind: HTTPRoute
 metadata:
   name: openobserve
   namespace: openobserve
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -252,6 +270,8 @@ kind: HTTPRoute
 metadata:
   name: jenkins
   namespace: jenkins
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -278,6 +298,8 @@ kind: HTTPRoute
 metadata:
   name: petal
   namespace: petal
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -305,6 +327,8 @@ kind: HTTPRoute
 metadata:
   name: auth
   namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
