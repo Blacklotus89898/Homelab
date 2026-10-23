@@ -9,10 +9,10 @@ backstage:
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
-    # Pinned to the CI-built image for commit 2339a03 (petal:run scaffolder
-    # action). To upgrade: merge a backstage/** change, wait for the
+    # Pinned to the CI-built image for commit d23f01a (Petal runs entity card +
+    # petal:run action). To upgrade: merge a backstage/** change, wait for the
     # build-backstage.yaml run, then bump this to the new commit sha tag.
-    tag: "2339a03c81b837fda78c514f312b5e4e91f809dc"
+    tag: "d23f01adde91960db4439371d218feec4b2f956e"
     pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
@@ -116,6 +116,13 @@ backstage:
           changeOrigin: true
           headers:
             Cookie: "argocd.token=${ARGOCD_TOKEN}"
+        # Petal runs card (packages/app/src/modules/petal). GET-only and NO
+        # token header on purpose: Petal reads are open, and an authenticated
+        # proxy would let any browser user POST runs past petal:run.
+        '/petal':
+          target: http://petal.petal.svc.cluster.local/api
+          changeOrigin: true
+          allowedMethods: ['GET']
         '/jenkins':
           target: http://jenkins.jenkins.svc.cluster.local:8080
           changeOrigin: true
