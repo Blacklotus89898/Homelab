@@ -19,6 +19,7 @@ import argocdPlugin from '@roadiehq/backstage-plugin-argo-cd/alpha';
 // import jenkinsPlugin from '@backstage/plugin-jenkins/alpha';
 import { navModule } from './modules/nav';
 import { signInModule } from './modules/signIn';
+import { petalModule } from './modules/petal';
 
 export default createApp({
   features: [
@@ -39,5 +40,6 @@ export default createApp({
     argocdPlugin,
     navModule,
     signInModule,
+    petalModule,
   ],
 });

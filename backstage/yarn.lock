@@ -13354,6 +13354,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "app@workspace:packages/app"
   dependencies:
+    "@backstage/catalog-model": "npm:^1.9.0"
     "@backstage/cli": "npm:^0.36.4"
     "@backstage/core-components": "npm:^0.18.12"
     "@backstage/core-plugin-api": "npm:^1.12.8"
@@ -13369,6 +13370,7 @@ __metadata:
     "@backstage/plugin-catalog": "npm:^2.0.7"
     "@backstage/plugin-catalog-graph": "npm:^0.6.6"
     "@backstage/plugin-catalog-import": "npm:^0.13.15"
+    "@backstage/plugin-catalog-react": "npm:^3.2.0"
     "@backstage/plugin-github-actions": "npm:^0.6.16"
     "@backstage/plugin-home": "npm:*"
     "@backstage/plugin-jenkins": "npm:^0.9.10"
