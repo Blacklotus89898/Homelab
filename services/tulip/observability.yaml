@@ -53,3 +53,14 @@ spec:
             summary: "Tulip's kill switch is armed — nothing will execute"
             description: "Armed by Claude Code (kill_switch_arm) or the operator. Only the operator disarms it, with the passphrase, at http://192.168.0.108:30995/killswitch."
             runbook_url: "kb://runbooks/tulip-alerts.md"
+        # Co-pilot only (the gauge exists only then). 1 ok, 0 failing,
+        # -1 not tried yet — so == 0, never != 1 (weekends would fire).
+        - alert: TulipBrokerAuthFailing
+          expr: tulip_broker_auth_ok == 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Tulip can't read the Questrade account — it proposes nothing"
+            description: "Refresh token expired (unused ~7 days), revoked, spent elsewhere, or the rotated token couldn't be persisted. Generate a new manual-authorization token in Questrade's API Centre and re-seal tulip-questrade (TechDocs → Co-pilot). journal_list kind=broker.auth_failed has the reason."
+            runbook_url: "kb://runbooks/tulip-alerts.md"

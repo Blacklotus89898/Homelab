@@ -1,8 +1,9 @@
 # Tulip
 
-Human-approved paper-trading agent: rules propose, Claude reviews, the operator
-approves. Source and design: [github.com/Blacklotus89898/Tulip](https://github.com/Blacklotus89898/Tulip)
-(read ADR 0001 and 0002 first).
+Human-gated trading co-pilot: rules propose, Claude reviews, the operator
+approves (paper) or places the order themselves in Questrade (co-pilot). Source
+and design: [github.com/Blacklotus89898/Tulip](https://github.com/Blacklotus89898/Tulip)
+(read ADR 0001–0003 first).
 
 ## Overview
 
@@ -11,7 +12,7 @@ approves. Source and design: [github.com/Blacklotus89898/Tulip](https://github.c
 | Namespace | `tulip` |
 | URL | `https://tulip.lab.home` (`/health`, `/metrics`, `POST /mcp`) |
 | Direct NodePort | `http://192.168.0.108:30995` (debugging only) |
-| Mode | `paper` — no live broker exists in v1 |
+| Mode | `paper`, or `copilot` — read-only Questrade, you place every order (ADR 0003) |
 | Storage | PVC `tulip-data` 1Gi, append-only SQLite journal at `/data/tulip.db` |
 | Rollout | `Recreate` — single SQLite writer, so a deploy means a short outage |
 
@@ -31,7 +32,10 @@ ADR 0002 §3). Never add an approve tool to the MCP surface.
    ```
 2. Seal it and commit `services/tulip/sealed-approval.yaml`:
    ```bash
-   kubectl create secret generic tulip-approval -n tulip      --from-literal=TULIP_APPROVAL_PASSPHRASE_HASH='<the printed pbkdf2-sha256$… line>'      --dry-run=client -o yaml | kubeseal --controller-name sealed-secrets-controller      --controller-namespace sealed-secrets --format yaml > services/tulip/sealed-approval.yaml
+   kubectl create secret generic tulip-approval -n tulip \
+     --from-literal=TULIP_APPROVAL_PASSPHRASE_HASH='<the printed pbkdf2-sha256$… line>' \
+     --dry-run=client -o yaml | kubeseal --controller-name sealed-secrets-controller \
+     --controller-namespace sealed-secrets --format yaml > services/tulip/sealed-approval.yaml
    ```
    Then restart Tulip (`kubectl -n tulip rollout restart deploy/tulip`) — it
    reads the hash at startup. Until then approvals are disabled.
@@ -43,6 +47,51 @@ ADR 0002 §3). Never add an approve tool to the MCP surface.
 Agents never read `tulip-approval`, never call `/approve` or `/killswitch`
 (Homelab `CLAUDE.md`).
 
+## Co-pilot mode (Questrade, real account)
+
+Questrade's API is read-only for retail clients: Tulip reads **one** account
+(cash, equity, holdings, executions), sizes suggestions from it, and **you
+place every order yourself** in the Questrade app. Executions are reconciled
+automatically (every 3 min, open → close + 1h): an order matching a suggestion
+(same symbol + side, same day) is recorded as acted on with its slippage;
+anything else is a manual trade, excluded from the strategy's record.
+
+**Set it up (you, once):**
+
+1. Ideally open a **small dedicated account** for Tulip — it reads only the
+   account number you give it.
+2. Questrade web → your name (top right) → **API centre** → **Activate API**,
+   accept the agreement.
+3. **Register a personal app**: any name; scope **Account data** only (no
+   trading scope exists for retail anyway).
+4. On the app, **Generate new token** → copy the manual-authorization token.
+   It's single-use and dies if unused for ~7 days — seal it right away.
+5. Seal both values (no token in your shell history — `read -s`):
+   ```bash
+   read -s -p "Questrade token: " QT; echo
+   read -p "Account number: " QA
+   kubectl create secret generic tulip-questrade -n tulip \
+     --from-literal=QUESTRADE_REFRESH_TOKEN="$QT" --from-literal=TULIP_QUESTRADE_ACCOUNT="$QA" \
+     --dry-run=client -o yaml | kubeseal --controller-name sealed-secrets-controller \
+     --controller-namespace sealed-secrets --format yaml > services/tulip/sealed-questrade.yaml
+   unset QT QA
+   git add services/tulip/sealed-questrade.yaml && git commit -m "feat(tulip): seal Questrade co-pilot token" && git push
+   ```
+6. Tell Claude Code your account size; it sets Thorn's caps
+   (`TULIP_THORN_MAX_ORDER_VALUE`, `TULIP_THORN_DAILY_LOSS_CAP`,
+   `TULIP_THORN_MAX_POSITION_WEIGHT`) and flips `-mode paper` → `-mode copilot`.
+
+**Day to day:** ntfy pages you → the page says *place BUY 3 XIU.TO, limit near
+53.90, before the close* → you do it in Questrade (or Decline). Claude's review
+is on the same page.
+
+**Token health:** `tulip_broker_auth_ok` (1 ok, 0 failing) and the
+`TulipBrokerAuthFailing` alert. If it fires, generate a new token (step 4) and
+re-seal (step 5) — Tulip notices the new sealed value and re-bootstraps.
+**Never use the token anywhere else** (scripts, other apps, an agent): one
+refresh elsewhere spends it and breaks Tulip's chain. Agents never read
+`tulip-questrade` (Homelab `CLAUDE.md`).
+
 ## Claude Code
 
 ```bash
@@ -52,7 +101,7 @@ claude mcp add --transport http tulip https://tulip.lab.home/mcp \
 claude mcp get tulip   # Status: Connected
 ```
 
-Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `propose`, `decline`, `kill_switch_arm`, `cycle_run` — none approves, executes or disarms.
+Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `propose`, `review_suggestion`, `decline`, `kill_switch_arm`, `cycle_run`, `broker_account` (read-only) — none approves, executes or disarms.
 
 ## Operations
 
