@@ -3,9 +3,15 @@
 # provenance `backstage:<entity>#<user>` and returns immediately — the run
 # itself is followed in Petal's console (link in the output).
 #
+# Multi-repo (Petal ADR 0004): the run's source repo comes from the chosen
+# component's `petal.io/repo` annotation — an alias in Petal's allowlist
+# (services/petal/repos-configmap.yaml) — and its pipelines live in that repo's
+# .petal/pipelines/. Opting a component in = add the annotation (+ the repo to
+# the allowlist if new).
+#
 # Trust note (ADR 0003): Backstage runs the allow-all permission policy, so
-# anyone who can open this page can start a privileged build. Closing that is
-# the authentik sign-in + permission-policy roadmap item.
+# every signed-in user (catalog/users.yaml) can start a privileged build.
+# Closing that is the authentik sign-in + permission-policy roadmap item.
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
@@ -32,18 +38,17 @@ spec:
           default: component:default/petal
           ui:field: EntityPicker
           ui:options:
-            # Petal runs pipelines from ONE git-synced repo (its own), so any
-            # other component would record a Petal self-build as its run.
-            # Widen this when Petal gains multi-repo runs (repo@ref + allowlist).
+            # Only components that name a Petal repo can run anything.
             catalogFilter:
               kind: Component
-              metadata.name: petal
+              metadata.annotations.petal.io/repo:
+                exists: true
         pipeline:
           title: Pipeline
           type: string
-          description: Pipelines are read live from Petal's catalog
-          # Custom field (backstage/packages/app/src/modules/petal): lists
-          # GET /api/pipelines via the /petal proxy; free text if Petal is down.
+          description: "Pipeline in the component's repo (.petal/pipelines/) — e.g. validate for homelab-platform, docker-image for petal"
+          # Custom field (backstage/packages/app/src/modules/petal): suggests
+          # Petal's own catalog via the /petal proxy, accepts any typed name.
           ui:field: PetalPipelinePicker
 
   steps:
