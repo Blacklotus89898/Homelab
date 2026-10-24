@@ -2,25 +2,20 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: jenkins
-  description: Jenkins CI server — builds the Homelab repo on every branch
+  description: "RETIRED 2026-10-23 (ADR 0010) — reactivation: docs/runbooks/reactivate-jenkins.md"
   links:
-    - url: http://192.168.0.108:30808
-      title: Jenkins UI
-    - url: http://192.168.0.108:30808/job/homelab/
-      title: Homelab Pipeline
+    - url: https://github.com/Blacklotus89898/Homelab/blob/main/docs/runbooks/reactivate-jenkins.md
+      title: Reactivation runbook
   annotations:
-    argocd/app-name: jenkins
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/jenkins
     homelab.io/image-pinned: "false"
     homelab.io/has-slo: "false"
     homelab.io/recovery: git
 spec:
   type: service
-  lifecycle: production
+  lifecycle: deprecated
   owner: user:blacklotus89898
   system: homelab
-  providesApis:
-    - jenkins-api
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Component
@@ -30,11 +25,8 @@ metadata:
   links:
     - url: https://github.com/Blacklotus89898/Homelab
       title: GitHub
-    - url: http://192.168.0.108:30808/job/homelab/
-      title: Jenkins Builds
   annotations:
     github.com/project-slug: Blacklotus89898/Homelab
-    jenkins.io/job-full-name: homelab/main
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/homelab-platform
 spec:
   type: service

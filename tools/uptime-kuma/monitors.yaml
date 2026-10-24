@@ -58,7 +58,6 @@ groups:
       - {name: Kavita, type: http, url: "http://kavita-service.kavita.svc.cluster.local:5000/api/health"}
       - {name: Linkding, type: http, url: "http://linkding-svc.linkding.svc.cluster.local:9090/health"}
       - {name: Audiobookshelf, type: http, url: "http://audiobookshelf-svc.audiobookshelf.svc.cluster.local/healthcheck"}
-      - {name: Jenkins, type: http, url: "http://jenkins.jenkins.svc.cluster.local:8080/login"}
       - {name: Authentik, type: http, url: "http://authentik.default.svc.cluster.local:9000/-/health/live/"}
 
   - name: Front door (Istio gateway)
@@ -73,7 +72,6 @@ groups:
       - {name: ntfy.lab.home, type: http, url: "https://ntfy.lab.home/"}
       - {name: opencost.lab.home, type: http, url: "https://opencost.lab.home/"}
       - {name: openobserve.lab.home, type: http, url: "https://openobserve.lab.home/"}
-      - {name: jenkins.lab.home, type: http, url: "https://jenkins.lab.home/login"}
       - {name: petal.lab.home, type: http, url: "https://petal.lab.home/"}
       - {name: auth.lab.home, type: http, url: "https://auth.lab.home/"}
 

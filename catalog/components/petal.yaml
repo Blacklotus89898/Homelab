@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: petal
-  description: Jenkins CI executor - custom DinD + git-sync image
+  description: Pipeline orchestrator (Petal ADR 0003) — step-runner on a DinD sidecar, git-synced pipelines
   links:
     - url: http://192.168.0.108:30990
       title: Petal

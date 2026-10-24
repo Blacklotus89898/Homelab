@@ -64,8 +64,8 @@ list of things a rebuild must source elsewhere.
    helm install argocd argo/argo-cd --namespace argocd --create-namespace      --version 10.2.1 -f apps/argocd/values.yaml
    # chart sources ArgoCD cannot discover on its own (one-time registrations):
    argocd login 192.168.0.108:31991 --username admin --insecure      --password "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
-   argocd repo add ghcr.io/actions/actions-runner-controller-charts --type helm --name arc-charts --enable-oci
-   argocd repo add https://charts.jenkins.io --type helm --name jenkins
+   # (Jenkins + ARC chart repos are only needed to reactivate them — ADR 0010,
+   #  docs/runbooks/reactivate-{jenkins,arc}.md)
    ```
 
    The Homelab repo itself needs **no registration or credentials**: every `repoURL` is the

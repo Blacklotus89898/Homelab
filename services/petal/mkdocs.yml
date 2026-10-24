@@ -1,5 +1,5 @@
 site_name: petal
-site_description: Jenkins CI executor - custom DinD + git-sync image
+site_description: Pipeline orchestrator — step-runner on a DinD sidecar, git-synced pipelines
 docs_dir: docs
 plugins:
   - techdocs-core

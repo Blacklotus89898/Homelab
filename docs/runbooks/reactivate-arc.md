@@ -75,3 +75,35 @@ worker (DinD per runner) and unused — see ADR 0010.
 6. **Verify:** listener pod Running in `arc-systems`; GitHub repo → Settings → Actions →
    Runners shows the `homelab-runner` scale set; a `workflow_dispatch` of a test workflow
    with `runs-on: homelab-runner` spins a runner pod (DinD sidecar) and completes.
+
+## Diagnosing after reactivation (from the retired README section)
+
+A job is hung if it stays "Waiting for a runner…" for more than ~60 seconds.
+
+```bash
+# 1. Is the listener pod alive?
+kubectl get pods -n arc-systems
+kubectl logs -n arc-systems \
+  -l app.kubernetes.io/component=runner-scale-set-listener --tail=20
+
+# 2. Did a runner pod spawn?
+kubectl get pods -n arc-runners -w
+
+# 3. Pod exists but Pending — check scheduling
+kubectl describe pod <runner-pod> -n arc-runners
+
+# 4. Pod Running but job stuck — check DinD sidecar
+kubectl logs <runner-pod> -n arc-runners -c dind
+kubectl logs <runner-pod> -n arc-runners -c runner
+
+# 5. Controller errors
+kubectl logs -n arc-systems \
+  deployment/arc-controller-gha-rs-controller --tail=50
+```
+
+| Symptom | Likely cause |
+|---|---|
+| No runner pod after 60 s | Listener pod crashed — check listener logs |
+| Pod stuck `Pending` | Node resource pressure — check `kubectl describe node` |
+| Pod running, Docker step hangs | DinD not ready — check `-c dind` logs |
+| Job queued but 0 runners in GitHub | PAT expired — re-seal with a new token |

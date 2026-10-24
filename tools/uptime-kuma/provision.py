@@ -8,7 +8,7 @@ Monitors that exist only in the UI are left alone (never deleted).
 
 Usage (from the repo root, kubectl pointed at the cluster):
     pip install uptime-kuma-api pyyaml
-    python tools/uptime-kuma/provision.py [--url http://192.168.0.108:30320] [--dry-run]
+    python tools/uptime-kuma/provision.py [--url http://192.168.0.108:30320] [--dry-run] [--prune]
 
 Credentials: KUMA_USERNAME / KUMA_PASSWORD env vars if set (an admin created in
 the UI), otherwise the SealedSecret-backed Secret monitoring/uptime-kuma-admin
@@ -115,6 +115,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://192.168.0.108:30320")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--prune", action="store_true",
+                    help="delete monitors in managed groups that are gone from monitors.yaml")
     args = ap.parse_args()
     spec = yaml.safe_load((HERE / "monitors.yaml").read_text(encoding="utf-8"))
     user = os.environ.get("KUMA_USERNAME") or secret_field("username")
@@ -183,6 +185,20 @@ def main() -> int:
                     unchanged += 1
             page_groups.append({"name": g["name"], "monitorList": [{"id": i} for i in ids]})
 
+        # --prune: delete monitors that sit inside a MANAGED group but are no
+        # longer in monitors.yaml (e.g. a retired service). Monitors outside the
+        # managed groups are never touched — hand-made checks survive.
+        pruned = 0
+        if args.prune:
+            group_ids = {live[g["name"]]["id"] for g in spec["groups"] if g["name"] in live}
+            wanted = {m["name"] for g in spec["groups"] for m in g["monitors"]}
+            for m in live.values():
+                if m.get("parent") in group_ids and m["name"] not in wanted:
+                    print(f"  - {m['name']}")
+                    if not args.dry_run:
+                        api.delete_monitor(m["id"])
+                    pruned += 1
+
         sp = spec["status_page"]
         if not args.dry_run:
             if sp["slug"] not in {p["slug"] for p in api.get_status_pages()}:
@@ -191,7 +207,7 @@ def main() -> int:
             save_status_page_v2(api, sp["slug"], sp["title"], page_groups)
 
         print(json.dumps({"created": created, "updated": updated, "unchanged": unchanged,
-                          "dry_run": args.dry_run}))
+                          "pruned": pruned, "dry_run": args.dry_run}))
         return 0
     finally:
         api.disconnect()

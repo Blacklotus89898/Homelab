@@ -217,9 +217,6 @@ pages:
                     icon: di:backstage
                   - title: Petal
                     url: https://petal.lab.home/
-                  - title: Jenkins
-                    url: https://jenkins.lab.home/login # / is 403 for anonymous
-                    icon: di:jenkins
                   - title: Authentik
                     url: https://auth.lab.home/
                     icon: di:authentik

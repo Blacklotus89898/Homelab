@@ -7,6 +7,10 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "assignees": ["Blacklotus89898"],
+  // Retired apps (ADR 0010) — no bump PRs for definitions nothing deploys;
+  // bump pins deliberately when reactivating (docs/runbooks/reactivate-*.md)
+  // (setting ignorePaths replaces the preset's list, so node_modules is restated)
+  "ignorePaths": ["archive/**", "**/node_modules/**"],
   "schedule": ["before 5am on Monday"],
   // First run backlogs hard with this many manifests — trickle the PRs
   "prHourlyLimit": 2,
@@ -17,12 +21,6 @@
       // petal is pinned to Petal commit-sha tags, bumped by hand after a Petal
       // CI build — sha tags have no order Renovate can compare, so never PR it
       "matchFileNames": ["services/petal/**"],
-      "enabled": false
-    },
-    {
-      // arc-controller Suspended by user decision; chart/image bumps for the
-      // suspended app are noise until it is revived
-      "matchFileNames": ["apps/arc-controller/**", "apps/arc-runners*/**"],
       "enabled": false
     },
     {

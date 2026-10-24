@@ -11,7 +11,7 @@ fleet-wide scorecard rollup; each service's own TechDocs page carries its detail
 | audiobookshelf | digest-only | no (suspended) | git | :30030 |
 | authentik | `2025.2.4` | no (postgres parked) | git | :30080 |
 | backstage | CI sha tag | yes | git | :30900 |
-| jenkins | chart `*` floats | no | git | :30808 |
+| jenkins | retired 2026-10-23 (ADR 0010) | - | git (`archive/apps/`) | - |
 | kavita | `0.9.1` + digest | yes | git | :30050 |
 | linkding | `1.46.2` + digest | yes | git | :30090 |
 | openobserve | `v0.14.6` | no | git | :30500 |
@@ -25,7 +25,7 @@ Annotation truth lives on each catalog component (`homelab.io/image-pinned`,
 
 - App-of-apps root: `bootstrap/root-app.yaml` -> everything in `apps/` reconciles automatically.
 - Golden path: Backstage scaffolder template -> PR -> CI gates -> merge -> ArgoCD converges -> catalog ingests.
-- CI: GitHub Actions `validate-pr.yaml` (9 jobs incl. strict TechDocs builds) + Jenkins for image builds.
+- CI: GitHub Actions `validate-pr.yaml` (9 jobs incl. strict TechDocs builds) + image builds on GitHub-hosted runners; Petal for cluster pipelines (Jenkins/ARC retired, ADR 0010).
 
 ## Operations
 

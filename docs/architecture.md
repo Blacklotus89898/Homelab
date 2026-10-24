@@ -60,14 +60,6 @@ flowchart TB
       BACK["Backstage 1.53.0<br/>custom ghcr image<br/>canary via Argo Rollouts<br/>NodePort 30900"]
       PG["PostgreSQL<br/>PVC data-backstage-postgresql-0"]
     end
-    subgraph jenkinsns["namespace: jenkins — NOT in mesh"]
-      JENK["Jenkins (JCasC)<br/>NodePort 30808"]
-    end
-    subgraph arc["namespaces: arc-systems / arc-runners — NOT in mesh"]
-      ARCC["ARC controller"]
-      LISTEN["listener pod"]
-      ARCR["runner pods (ephemeral)<br/>+ DinD sidecar"]
-    end
     subgraph petalns["namespace: petal — NOT in mesh"]
       PP["petal<br/>API + UI + scheduler + step-runner<br/>NodePort 30990"]
       PDIND["petal-dind sidecar<br/>(fuse-overlayfs)"]
@@ -84,7 +76,7 @@ flowchart TB
 
   AUTH["authentik :30080<br/>(GitOps-adopted 2026-10-01)"]
 
-  USER --> ARGO & BACK & JENK & OO & LINK & KAV & ABS & PP
+  USER --> ARGO & BACK & OO & LINK & KAV & ABS & PP
   PP --- PDIND --- PSTEP
   PGIT --> PP
   BACK --- PG
@@ -107,7 +99,7 @@ flowchart LR
   DEV["git push"] --> REPO["GitHub<br/>Blacklotus89898/Homelab"]
   REPO -->|"SSH repo connection<br/>(id_ed25519)"| ROOT["root-app<br/>watches apps/*"]
   ROOT -->|"creates/updates"| APPS["ArgoCD Applications<br/>one per apps/ subdir"]
-  APPS -->|"native Helm chart<br/>argocd, istio, jenkins,<br/>backstage, otel, cert-manager,<br/>sealed-secrets, arc"| CHARTS["Upstream Helm repos<br/>+ ghcr OCI (ARC)"]
+  APPS -->|"native Helm chart<br/>argocd, istio,<br/>backstage, otel, cert-manager,<br/>sealed-secrets"| CHARTS["Upstream Helm repos<br/>+ ghcr OCI (ARC)"]
   APPS -->|"git source"| LOCAL["This repo:<br/>services/* (petal, linkding,<br/>kavita, audiobookshelf)<br/>infrastructure/namespaces"]
   CHARTS & LOCAL --> SYNC["ArgoCD sync<br/>automated · selfHeal<br/>ServerSideApply"]
   SYNC --> K8S["k3s cluster"]
@@ -125,7 +117,7 @@ bootstrap order is deterministic:
 
 ```mermaid
 flowchart LR
-  Wm10["wave -10<br/>ArgoCD self-mgmt"] --> Wm5["wave -5<br/>namespaces<br/>(ambient labels here)"] --> Wm4["wave -4<br/>sealed-secrets<br/>cert-manager<br/>gateway-api CRDs"] --> Wm3["wave -3<br/>Istio ambient"] --> Wm2["wave -2<br/>OTel operator<br/>istio-ingressgateway<br/>ARC controller"] --> Wm1["wave -1<br/>OpenObserve<br/>ARC runner infra<br/>pod-cleanup"] --> W0["wave 0<br/>OTel collector · platform-observability<br/>ARC runners · backstage-k8s-rbac<br/>audiobookshelf · jenkins-infra<br/>kavita · linkding · petal"] --> W1["wave 1<br/>Backstage · Jenkins"]
+  Wm10["wave -10<br/>ArgoCD self-mgmt"] --> Wm5["wave -5<br/>namespaces<br/>(ambient labels here)"] --> Wm4["wave -4<br/>sealed-secrets<br/>cert-manager<br/>gateway-api CRDs"] --> Wm3["wave -3<br/>Istio ambient"] --> Wm2["wave -2<br/>OTel operator<br/>istio-ingressgateway"] --> Wm1["wave -1<br/>OpenObserve<br/>ARC runner infra<br/>pod-cleanup"] --> W0["wave 0<br/>OTel collector · platform-observability<br/>ARC runners · backstage-k8s-rbac<br/>audiobookshelf<br/>kavita · linkding · petal"] --> W1["wave 1<br/>Backstage · Jenkins"]
 ```
 
 Namespaces carry their Istio ambient label at creation time (wave -5) so pods in
@@ -135,8 +127,10 @@ enrolled namespaces never start outside the mesh.
 
 ## CI/CD flows
 
-Three build/trigger paths coexist. GH-hosted runners build container images;
-on-cluster runners and Jenkins run jobs that need cluster-adjacent resources.
+Two build/trigger paths: GitHub-hosted runners do repo CI and build container images;
+Petal runs pipelines that need the cluster. Jenkins and the ARC on-cluster runners were
+retired 2026-10-23 ([ADR 0010](adr/0010-retire-jenkins-and-arc.md) — reactivation runbooks
+in `runbooks/`).
 
 ```mermaid
 flowchart TB
@@ -144,14 +138,6 @@ flowchart TB
     BB["build-backstage.yaml<br/>backstage/** changed"] -->|"buildx + trivy"| GHCRB["ghcr.io/blacklotus89898/backstage<br/>latest + sha (public)"]
     BP["build-petal.yaml (Petal repo)<br/>go test → buildx + trivy"] --> GHCRP["ghcr.io/blacklotus89898/petal<br/>latest + sha"]
     RP["release.yml<br/>release-please"] --> REL["Release PR → changelog"]
-  end
-
-  subgraph arcflow["ARC on-cluster runners (homelab-runner)"]
-    WF["workflows with<br/>runs-on: homelab-runner"] --> L["listener long-polls GitHub"] --> RP2["ephemeral runner pod<br/>+ DinD sidecar"] --> DKR["docker/build-push-action<br/>works unchanged"]
-  end
-
-  subgraph jenkinsflow["Jenkins (multibranch)"]
-    MB["homelab multibranch job<br/>scans all branches"] --> JF["Jenkinsfile at repo root"]
   end
 
   subgraph petalflow["Petal triggers (Petal repo)"]
@@ -236,7 +222,7 @@ sequenceDiagram
 Step containers are **plain siblings in the DinD sidecar**: petal talks the
 Docker Engine API to the `petal-dind` privileged sidecar
 (`DOCKER_HOST=tcp://127.0.0.1:2375`, fuse-overlayfs storage driver) — the same
-DinD pattern the ARC runners use. No engine, no SDK, no docker CLI.
+DinD pattern the (retired) ARC runners used. No engine, no SDK, no docker CLI.
 
 ---
 
@@ -251,14 +237,14 @@ Two stacks, split by disk cost (see `docs/ROADMAP.md` standing constraints):
 - **Backstage canary** (2026-10-13, Argo Rollouts — workloadRef, no mesh): ArgoCD has no helm post-renderer, so `services/backstage/rollout.yaml` *adopts* the chart's Deployment instead of replacing it — the chart stays the single pod-template source (bump the image/env/probes there), the Rollout owns the pods and runs the dance on every template change: `setWeight 50` (1:1 replica-ratio split behind the existing Service), background AnalysisRun against `front-door-success-rate` (avg probe_success ≥ 0.9, abort = auto-rollback), 5m pause, promote. The chart Deployment itself is pinned at `replicas: 0` — a pod-less template shell (git-enforced; serving replicas live on the Rollout alone). petal is excluded: single SQLite writer on RWO PVC.
 - **Quarterly drills** (2026-10-13): a git-tracked **kube-bench** CronJob (kube-system, 04:23 UTC on the 14th of Jan/Apr/Jul/Oct) runs the CIS k3s-cis-1.9 benchmark on the control-plane node and posts its summary line to the same ntfy topic — findings are data (`--exit-code 0`), so a completed scan never pages as an outage. First baseline (2026-10-13): 32 PASS / 28 FAIL / 56 WARN / 14 INFO, triaged in `runbooks/kube-bench-cis-drill.md` (mostly k3s embedded-flag false-positives). The **restore drill** is a git-rebuild rehearsal (repo = source of truth; no backup product by user decision): git↔live parity + floating-workload sweep per `runbooks/cluster-rebuild-from-git.md`. Blameless postmortems file under `runbooks/postmortem-*.md`.
 
-Two more paging paths land on the same topic: **uptime-kuma** `:30320` (external prober for NodePorts + control-plane TCP 6443) and **ArgoCD notifications** (on-sync-failed / on-health-degraded, global subscription) — one phone subscription covers everything. The cluster-down gap is being closed by a **dead-man switch** (built 2026-10-07; **not yet E2E-verified** — cluster-side pushes fail on an expired PAT, and the watchdog's page step had a bug fixed 2026-10-08): the `cluster-heartbeat` CronJob (arc-runners, 2×/h) pushes to the orphan `heartbeat` branch on GitHub, and a GitHub Actions watchdog (hourly) opens a "Cluster dark?" issue if the branch goes >2h stale — the only page path that survives the whole cluster being down. The vmalertmanager message body is raw JSON — a formatting bridge is a Phase 2 roadmap item.
+Two more paging paths land on the same topic: **uptime-kuma** `:30320` (external prober for NodePorts + control-plane TCP 6443) and **ArgoCD notifications** (on-sync-failed / on-health-degraded, global subscription) — one phone subscription covers everything. The cluster-down gap is being closed by a **dead-man switch** (built 2026-10-07; **not yet E2E-verified** — cluster-side pushes fail on an expired PAT, and the watchdog's page step had a bug fixed 2026-10-08): the `cluster-heartbeat` CronJob (ns heartbeat, 2×/h) pushes to the orphan `heartbeat` branch on GitHub, and a GitHub Actions watchdog (hourly) opens a "Cluster dark?" issue if the branch goes >2h stale — the only page path that survives the whole cluster being down. The vmalertmanager message body is raw JSON — a formatting bridge is a Phase 2 roadmap item.
 
 ```mermaid
 flowchart LR
   subgraph sources["Cluster"]
     PODS["pod logs"]
     KUBE["kubeletstats + node_exporter metrics"]
-    HB["cluster-heartbeat cron<br/>arc-runners · 2×/h"]
+    HB["cluster-heartbeat cron<br/>ns heartbeat · 2×/h"]
   end
   subgraph mon["namespace: monitoring"]
     COLL["OTel collector"]
@@ -307,7 +293,7 @@ legacy direct paths.
 flowchart LR
   C["LAN client<br/>https://kavita.lab.home"] -->|"Pi-hole: *.lab.home → .108"| GW["istio-gateway<br/>Gateway 'lab' · TLS *.lab.home"]
   GW -->|"HTTPRoute"| S1["kavita / linkding / grafana / ...<br/>(ambient: HBONE mTLS via ztunnel)"]
-  GW -->|"HTTPRoute"| S2["argocd / jenkins / petal / authentik<br/>(not enrolled: plaintext in-cluster)"]
+  GW -->|"HTTPRoute"| S2["argocd / petal / authentik<br/>(not enrolled: plaintext in-cluster)"]
 ```
 
 Ambient enrollment and NodePorts coexist — kavita, linkding and grafana are enrolled *and*
@@ -329,7 +315,6 @@ flowchart LR
   NP --> P30320[":30320 uptime-kuma"]
   NP --> P30330[":30330 OpenCost UI"]
   NP --> P30500[":30500 OpenObserve"]
-  NP --> P30808[":30808 Jenkins"]
   NP --> P30900[":30900 Backstage"]
   NP --> P30990[":30990 Petal"]
   NP --> P31991[":31991 ArgoCD"]
@@ -342,11 +327,10 @@ flowchart LR
 | Namespace | In mesh? | Why |
 |---|---|---|
 | monitoring, openobserve, homelab, kavita, linkding, audiobookshelf | ✅ | no NodePort exposure conflict |
-| backstage, jenkins | ❌ | not enrolled yet (NodePort alone is no blocker — see above); ADR 0009 enrollment phase |
+| backstage | ❌ | not enrolled yet (NodePort alone is no blocker — see above); ADR 0009 enrollment phase |
 | petal | ❌ | privileged DinD sidecar |
 | monitoring/uptime-kuma (pod-level opt-out) | ❌ | ztunnel completes every outbound TCP connect locally — TCP port probes from inside the mesh always read UP; probers must sit outside it (KB solutions/istio-ambient-fake-tcp-connect.md) |
-| arc-systems | ❌ | webhook TLS conflicts with ztunnel |
-| arc-runners | ❌ | DinD conflicts with ambient |
+| heartbeat | ❌ | a CronJob that only pushes to GitHub; nothing to protect in-mesh |
 
 ---
 
@@ -362,9 +346,9 @@ flowchart LR
   RAW -->|"pipe through kubeseal"| SEALED["SealedSecret (committed to git)"]
   SEALED -->|"git push → ArgoCD sync"| SSC["sealed-secrets controller<br/>ns: sealed-secrets"]
   SSC -->|"unseal (controller key only)"| S["Secret in target namespace"]
-  S --> CONSUMERS["ARC runners (GitHub PAT)<br/>Backstage (ArgoCD token, Jenkins key)<br/>+ any service"]
+  S --> CONSUMERS["heartbeat (GitHub PAT)<br/>Backstage (ArgoCD token, Petal token)<br/>+ any service"]
 ```
 
-Sealed secrets in the repo: ARC GitHub PAT (`infrastructure/arc-runners/`),
-Backstage ArgoCD token + Jenkins API key (`infrastructure/backstage-k8s-rbac/`).
+Sealed secrets in the repo include the heartbeat GitHub PAT (`infrastructure/heartbeat/`)
+and Backstage's ArgoCD / Petal / automation tokens (`infrastructure/backstage-k8s-rbac/`).
 Rotation procedures for each are in the README.
