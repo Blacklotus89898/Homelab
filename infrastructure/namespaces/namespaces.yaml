@@ -84,33 +84,12 @@ metadata:
     istio.io/dataplane-mode: ambient
 
 ---
-# ARC controller — must NOT be in ambient mesh (webhook TLS conflicts with ztunnel)
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: arc-systems
-
----
 # Dead-man switch CronJob (infrastructure/heartbeat) — its own ns since ARC's
 # retirement (ADR 0010); plain git push to GitHub, no mesh needed
 apiVersion: v1
 kind: Namespace
 metadata:
   name: heartbeat
-
----
-# ARC runner pods — DinD (Docker-in-Docker) conflicts with Istio ambient; keep outside mesh
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: arc-runners
-
----
-# Jenkins CI — NodePort access; excluded from ambient mesh
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: jenkins
 
 ---
 # Petal IDP — NodePort access + DinD sidecar (Docker builds); excluded from ambient mesh
