@@ -6,16 +6,20 @@
 name: validate
 description: yamllint (repo .yamllint) + duplicate-NodePort check on the Homelab repo
 
+# Both checks are independent DAG roots (Petal ADR 0005), so they run in
+# parallel; the run fails fast if either fails.
+max_parallel: 2
+timeout: 20m
+
 steps:
   - name: yamllint
-    image: python:3.12-slim
-    run: |
-      pip install --quiet --disable-pip-version-check yamllint==1.35.1
-      yamllint -c .yamllint .
-      echo "yamllint: clean"
+    uses: yamllint # .petal/steps/yamllint.yaml
+    needs: []
 
   - name: nodeport-conflicts
     image: alpine:3.21
+    needs: []
+    timeout: 2m
     # busybox grep has no --include, so find selects the files. Zero ports
     # found means the check itself broke: fail loudly, never pass silently.
     run: |

@@ -1,0 +1,16 @@
+# Reusable step (Petal ADR 0005): yamllint with the repo's own config, the same
+# rules CI's `YAML lint` job enforces. Use it from any pipeline in this repo:
+#   - name: lint
+#     uses: yamllint
+#     with: { config: .yamllint }   # optional, these are the defaults
+name: yamllint
+description: yamllint with a repo config file
+inputs:
+  config: { default: .yamllint }
+  version: { default: "1.35.1" }
+image: python:3.12-slim
+run: |
+  pip install --quiet --disable-pip-version-check --root-user-action=ignore "yamllint==$INPUT_VERSION"
+  yamllint -c "$INPUT_CONFIG" .
+  echo "yamllint: clean"
+timeout: 10m
