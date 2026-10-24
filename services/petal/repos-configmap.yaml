@@ -3,6 +3,8 @@
 # here runs on the worker next to the privileged DinD daemon, so adding a repo
 # is a reviewed commit, and the repo's own branch protection matters.
 # v1: public https repos only (Petal holds no clone credentials).
+# `schedules:` are declarative cron triggers: synced at startup into decl-*
+# rows (insert/update/delete) — git owns them; API-made schedules are separate.
 # Petal reads it at startup — restart the pod after editing:
 #   kubectl -n petal rollout restart deploy/petal   (or bump the deployment)
 apiVersion: v1
@@ -19,3 +21,10 @@ data:
       petal:
         url: https://github.com/Blacklotus89898/Petal.git
         default_ref: main
+    schedules:
+      # Nightly self-check of the Homelab repo — the job Jenkins used to run
+      # (Homelab ADR 0010). Dead-man alert: PetalNightlyValidateMissing.
+      - id: homelab-validate-nightly
+        repo: homelab
+        pipeline: validate
+        cron: "17 3 * * *" # 03:17 UTC, off the :00 marks

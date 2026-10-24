@@ -1,0 +1,67 @@
+# Petal's own metrics (Petal /metrics, computed from its run registry at scrape
+# time) + alerts. vmagent/vmalert run with selectAllByDefault, so these CRs are
+# picked up from the petal namespace. Runbook: kb://runbooks/petal-alerts.md
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: petal
+  namespace: petal
+spec:
+  selector:
+    matchLabels:
+      app: petal
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s # the registry changes per run, not per second
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: petal
+  namespace: petal
+spec:
+  groups:
+    - name: petal
+      rules:
+        # The most recent finished run of a pipeline (per repo) failed — either
+        # it failed after its last success, or it has never succeeded.
+        - alert: PetalPipelineFailing
+          expr: |
+            (
+              max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
+                > max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="succeeded"})
+            )
+            or
+            (
+              max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
+                unless on (pipeline, repo) petal_run_last_finished_timestamp_seconds{status="succeeded"}
+            )
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Petal pipeline failing: {{ $labels.pipeline }} ({{ $labels.repo }})"
+            description: "The latest finished run of {{ $labels.pipeline }} from repo {{ $labels.repo }} failed. Open https://petal.lab.home and filter by pipeline; the run's error + step logs say why. Resolves on the next successful run."
+            runbook_url: "kb://runbooks/petal-alerts.md"
+        - alert: PetalQueueStuck
+          expr: min_over_time(petal_runs_queued[30m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Petal has had queued runs for 30m"
+            description: "Runs are waiting but nothing picks them up — workers wedged or the DinD sidecar is down. kubectl -n petal get pods; kubectl -n petal logs deploy/petal -c dind --tail=50."
+            runbook_url: "kb://runbooks/petal-alerts.md"
+        # Dead-man for the nightly schedule itself (services/petal/repos-configmap.yaml
+        # schedule homelab-validate-nightly, 03:17 UTC): 26h = one missed night + slack.
+        - alert: PetalNightlyValidateMissing
+          expr: |
+            (time() - max(petal_run_last_finished_timestamp_seconds{pipeline="validate",repo="homelab",status="succeeded"})) > 26 * 3600
+            or absent(petal_run_last_finished_timestamp_seconds{pipeline="validate",repo="homelab",status="succeeded"})
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No successful nightly Homelab validate in 26h"
+            description: "The decl-homelab-validate-nightly schedule hasn't produced a successful run: the schedule didn't fire (Petal down at 03:17, schedule not synced) or the run failed (PetalPipelineFailing would also fire). curl https://petal.lab.home/api/schedules."
+            runbook_url: "kb://runbooks/petal-alerts.md"
