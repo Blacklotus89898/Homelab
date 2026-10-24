@@ -8,6 +8,7 @@ metadata:
       title: Petal
   annotations:
     argocd/app-name: petal
+    petal.io/repo: petal # Petal allowlist alias (services/petal/repos-configmap.yaml)
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/petal
     homelab.io/image-pinned: "true"
     homelab.io/has-slo: "true"

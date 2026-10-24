@@ -1,0 +1,21 @@
+# Petal multi-repo allowlist (Petal ADR 0004) — the repos a run may name, by
+# alias. THIS FILE IS THE TRUST BOUNDARY: pipeline YAML from any repo listed
+# here runs on the worker next to the privileged DinD daemon, so adding a repo
+# is a reviewed commit, and the repo's own branch protection matters.
+# v1: public https repos only (Petal holds no clone credentials).
+# Petal reads it at startup — restart the pod after editing:
+#   kubectl -n petal rollout restart deploy/petal   (or bump the deployment)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: petal-repos
+  namespace: petal
+data:
+  repos.yaml: |
+    repos:
+      homelab:
+        url: https://github.com/Blacklotus89898/Homelab.git
+        default_ref: main
+      petal:
+        url: https://github.com/Blacklotus89898/Petal.git
+        default_ref: main

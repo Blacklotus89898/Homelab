@@ -27,6 +27,7 @@ metadata:
       title: GitHub
   annotations:
     github.com/project-slug: Blacklotus89898/Homelab
+    petal.io/repo: homelab # Petal runs this repo's .petal/pipelines (validate)
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/homelab-platform
 spec:
   type: service

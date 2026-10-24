@@ -1,0 +1,26 @@
+# Homelab repo validation, run by Petal (Petal ADR 0004 multi-repo runs) — the
+# job Jenkins used to own before its retirement (Homelab ADR 0010). Same rules
+# as CI's `YAML lint` + `NodePort conflicts` jobs (validate-pr.yaml), so a
+# Petal run and a PR check agree. Trigger from Backstage: "Run a Petal
+# pipeline" on component homelab-platform (annotation petal.io/repo: homelab).
+name: validate
+description: yamllint (repo .yamllint) + duplicate-NodePort check on the Homelab repo
+
+steps:
+  - name: yamllint
+    image: python:3.12-slim
+    run: |
+      pip install --quiet --disable-pip-version-check yamllint==1.35.1
+      yamllint -c .yamllint .
+      echo "yamllint: clean"
+
+  - name: nodeport-conflicts
+    image: alpine:3.21
+    run: |
+      dups=$(grep -rh "nodePort:" apps/ services/ infrastructure/ --include="*.yaml" \
+        | grep -oE '[0-9]+' | sort | uniq -d)
+      if [ -n "$dups" ]; then
+        echo "duplicate NodePorts: $dups"
+        exit 1
+      fi
+      echo "no NodePort conflicts"

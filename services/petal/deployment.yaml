@@ -87,9 +87,10 @@ spec:
           # Pinned to an immutable Petal commit-sha tag (2026-10-21): a push to
           # Petal main no longer self-deploys on the next pod restart. Upgrade
           # flow: push Petal → CI builds :<sha> → bump the tag here.
-          # 4b9f2cc = orchestrator contract (Petal ADR 0003): writes need the
-          # bearer token below — without it every POST /api/runs returns 503.
-          image: ghcr.io/blacklotus89898/petal:4b9f2cc159de2200c4e88ec1c67e864e6cd89c13
+          # 456e289 = multi-repo runs (Petal ADR 0004) on top of the
+          # orchestrator contract (ADR 0003: writes need the bearer token below
+          # — without it every POST /api/runs returns 503).
+          image: ghcr.io/blacklotus89898/petal:456e289877f91076a3a73a090ef492d77b77facd
           imagePullPolicy: IfNotPresent
           args:
             - -addr
@@ -102,6 +103,8 @@ spec:
             - steps
             - -workdir
             - /git/repo
+            - -repos # multi-repo allowlist (repos-configmap.yaml, Petal ADR 0004)
+            - /etc/petal/repos.yaml
             - -workers
             - "2"
           env:
@@ -137,6 +140,9 @@ spec:
               mountPath: /data
             - name: src
               mountPath: /git
+            - name: repos
+              mountPath: /etc/petal
+              readOnly: true
 
         - name: git-sync
           image: registry.k8s.io/git-sync/git-sync:v4.1.0
@@ -171,6 +177,9 @@ spec:
         - name: src
           emptyDir:
             sizeLimit: 1Gi
+        - name: repos
+          configMap:
+            name: petal-repos
         # Docker image layers live on the SMB share, NOT the root fs: the
         # kubelet evicts on root-fs pressure, and a 15Gi build cache sharing
         # the OS disk caused repeated disk-pressure incidents (see the
