@@ -455,7 +455,6 @@ pages:
                 title: r/stocks+investing+wallstreetbets
 
 
-
       - size: full
         widgets:
           - type: rss
@@ -604,7 +603,6 @@ pages:
                 feeds:
                   - url: https://www.reddit.com/r/programming+kubernetes+devops/.rss
                     title: r/programming+kubernetes+devops
-
 
 
           - type: rss

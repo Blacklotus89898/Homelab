@@ -110,11 +110,6 @@ alertmanager:
             # same class as KubeMemoryOvercommit above: CPU requests overcommit
             # is by design on the single worker; Grafana-only
             - alertname = "KubeCPUOvercommit"
-        - receiver: blackhole
-          matchers:
-            # arc-controller app Suspended by user decision 2026-09-28 → its
-            # deployment is chronically mismatched; paging would repeat every 4h
-            - namespace = "arc-systems"
     receivers:
       - name: blackhole # no integrations = drop
       - name: ntfy

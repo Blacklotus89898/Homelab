@@ -9,10 +9,10 @@ backstage:
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
-    # Pinned to the CI-built image for commit 0dbb75f (Petal pipeline picker,
+    # Pinned to the CI-built image for commit 2c5c27c (Jenkins plugins removed,
     # runs card, petal:run). To upgrade: merge a backstage/** change, wait for the
     # build-backstage.yaml run, then bump this to the new commit sha tag.
-    tag: "0dbb75faaca6ee9e5a9f629bc817f421e48d28d7"
+    tag: "2c5c27cafa88e0c5c710b734553d6cd62ddc0805"
     pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
@@ -20,7 +20,6 @@ backstage:
     - backstage-github-auth
     - backstage-k8s-token
     - backstage-argocd-token
-    - backstage-jenkins
     - petal-api-token # PETAL_API_TOKEN for petal:run (infrastructure/backstage-k8s-rbac)
     - backstage-external-access # BACKSTAGE_AUTOMATION_TOKEN (backend.auth.externalAccess)
 
@@ -123,12 +122,6 @@ backstage:
           target: http://petal.petal.svc.cluster.local/api
           changeOrigin: true
           allowedMethods: ['GET']
-        '/jenkins':
-          target: http://jenkins.jenkins.svc.cluster.local:8080
-          changeOrigin: true
-          allowedHeaders:
-            - Authorization
-          credentials: dangerously-allow-unauthenticated
 
     # petal:run scaffolder action (backstage/packages/backend/src/modules/petal.ts,
     # Petal ADR 0003). Writes need the bearer token; consoleUrl is what the
@@ -137,13 +130,6 @@ backstage:
       baseUrl: http://petal.petal.svc.cluster.local
       consoleUrl: https://petal.lab.home
       token: ${PETAL_API_TOKEN}
-
-    jenkins:
-      instances:
-        - name: default
-          baseUrl: http://jenkins.jenkins.svc.cluster.local:8080
-          username: admin
-          apiKey: ${JENKINS_API_KEY}
 
     integrations:
       github:

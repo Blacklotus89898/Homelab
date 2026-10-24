@@ -76,8 +76,8 @@ list of things a rebuild must source elsewhere.
    repo and syncs app-of-apps; the heartbeat child carries `sync-wave: "-1"` and lands
    first.
 7. **Wait for convergence**, then verify the load-bearing signals: `kubectl get nodes`;
-   applications Synced/Healthy (arc-controller Suspended and audiobookshelf Suspended are
-   by-design exceptions); `probe_success` = 1 for all 6 `front-doors` and 7 `gateway-front-doors` targets in vmsingle (the latter also proves Pi-hole wildcard → ServiceLB → gateway → CA chain); a heartbeat beat lands on the
+   applications Synced/Healthy (audiobookshelf Suspended is the one
+   by-design exception); `probe_success` = 1 for all 6 `front-doors` and 7 `gateway-front-doors` targets in vmsingle (the latter also proves Pi-hole wildcard → ServiceLB → gateway → CA chain); a heartbeat beat lands on the
    `heartbeat` branch.
 8. ⚠️ **UI-state layer** (per-service, not in git): uptime-kuma monitors + its ntfy provider;
    authentik admin login + the OIDC provider half; the GitHub OAuth app behind Backstage's
@@ -98,7 +98,7 @@ list of things a rebuild must source elsewhere.
 | Proxmox | host config, VM/CT definitions, VirtIOFS shares, storage | user (password-held) |
 | Nodes | Debian OS, SSH keys, sudoers drop-in, k3s join token | nodes only. **Captured in git (2026-10-21):** `/etc/rancher/k3s/config.yaml`, worker fstab line, `k3s-disk-cleanup` timer/service/script → `bootstrap/nodes/` |
 | Cluster bootstrap | sealed-secrets keyring (backed up ✅ 2026-10-21, re-export after rotations), ArgoCD initial install + admin password, OCI/Jenkins chart-repo registrations, `root-app` apply | keyring: password manager; rest: steps 4–6 above |
-| GitHub | this repo (obviously), branch protection, PATs (arc-runner/heartbeat, Renovate app, Backstage OAuth app) | user GitHub account |
+| GitHub | this repo (obviously), branch protection, PATs (heartbeat, Renovate app, Backstage OAuth app) | user GitHub account |
 | UI-state | uptime-kuma admin is created by `tools/uptime-kuma/provision.py` from the sealed `uptime-kuma-admin` Secret and its **monitors are config-as-code** (`tools/uptime-kuma/monitors.yaml`, re-run the script after a rebuild — idempotent; DB wizard pre-answered by env). Still UI-only: authentik providers, phone ntfy subscriptions, Renovate dashboard state | per-service UI / phone |
 | Front door (ADR 0009) | Pi-hole wildcard `lab.home → 192.168.0.108` (dnsmasq line `address=/lab.home/192.168.0.108`: `/etc/dnsmasq.d/` on Pi-hole v5, `misc.dnsmasq_lines` on v6); the local CA **private key** (in-cluster only — a rebuild mints a new CA); device trust of `lab-root-ca.crt`. **Applied 2026-10-21:** Pi-hole v6.4 (192.168.0.53) `misc.dnsmasq_lines` set via its API (`PATCH /api/config` — the list was empty; the 35 `dns.hosts` records are separate and untouched); CA trusted on the Windows workstation (`certutil -addstore -user Root`) — phone + Firefox imports are per-device | Pi-hole host; cluster; each device |
 | Hosts outside the cluster | Glance LXC config + compose (**captured 2026-10-23** → `hosts/glance/`); k3s VM specs (**captured** → `hosts/proxmox/k3s-vms.md`); Pi-hole `dns.hosts` (35 records backing the `home`/`lan` zones + SSH aliases) — **not captured** (needs the Pi-hole password) | `hosts/`; Pi-hole host |

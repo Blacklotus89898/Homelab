@@ -122,9 +122,8 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 
 ## Watchlist (known, accepted — don't re-escalate in audits)
 
-- arc-controller app OutOfSync/Suspended — **kept by user decision 2026-09-28** (environment/cluster-decisions.md); runners Healthy
 - audiobookshelf app Suspended but pod running — cosmetic
-- svclb-traefik restarts (low rate); petal restarts (active dev)
+- petal restarts (active dev)
 - ArgoCD no-op webhook apply every ~5 min on istio app (runbooks/argocd-empty-diff-sync-loop.md)
 - victoria-metrics app: operator self-rotates its webhook TLS cert + caBundles → transient OutOfSync residue possible (same class as istio). If it starts oscillating, fix = `victoria-metrics-operator.admissionWebhooks.enabled: false` in values. Do not re-escalate on a transient diff.
 
