@@ -39,7 +39,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:bfb87b0f7b0a99893088ba540351ea465f6c85c1
+          image: ghcr.io/blacklotus89898/tulip:e71b1c48cf711eb727d04940904d0266c75a63f8
           imagePullPolicy: IfNotPresent
           # paper until the Questrade token redeems (2026-10-24: login returned
           # HTTP 500 server-side). Co-pilot (ADR 0003) = "-mode", "copilot";
@@ -78,6 +78,22 @@ spec:
                   name: tulip-questrade
                   key: TULIP_QUESTRADE_ACCOUNT
                   optional: true
+            # Strategy + Thorn caps (Tulip docs/backtests, 2026-10-24):
+            # trend-filter-200 rebalances monthly into thirds of XIU/VFV/XEF,
+            # rotating a below-trend third into ZAG. Caps sized for the
+            # 10k paper book: one order may move a third (or all of it into
+            # ZAG); equities ≤ 40%; ZAG may hold 100%.
+            # Re-tune these to the real account before co-pilot mode.
+            - name: TULIP_STRATEGY
+              value: trend-filter-200
+            - name: TULIP_THORN_MAX_ORDER_VALUE
+              value: "10000"
+            - name: TULIP_THORN_MAX_POSITION_WEIGHT
+              value: "0.4"
+            - name: TULIP_THORN_MAX_WEIGHT_BY_SYMBOL
+              value: ZAG.TO=1
+            - name: TULIP_THORN_MAX_SUGGESTIONS_PER_DAY
+              value: "8"
             - name: TULIP_NTFY_URL
               value: http://ntfy.monitoring.svc
             - name: TULIP_NTFY_TOPIC
