@@ -19,7 +19,8 @@ list of things a rebuild must source elsewhere.
 2. **Node OS** (Debian 12) — config captured in [`bootstrap/nodes/`](../bootstrap/nodes/README.md):
    SSH key auth (Windows ssh-agent keys); on the worker append
    `bootstrap/nodes/worker/fstab.snippet` to `/etc/fstab` and install the
-   `k3s-disk-cleanup` script + service + timer; on debian recreate the sudoers drop-in
+   `k3s-disk-cleanup` script + service + timer; on both nodes install
+   `bootstrap/nodes/common/journald-size.conf` (journal cap 300M); on debian recreate the sudoers drop-in
    `/etc/sudoers.d/900-claude-ops` (root-only readable, not captured — scope in CLAUDE.md).
 3. ⚠️ **k3s** (v1.34.5+k3s1; install commands reconstructed, not yet rehearsed). Both nodes:
    copy `bootstrap/nodes/server/k3s-config.yaml` (debian) or `worker/k3s-config.yaml`
