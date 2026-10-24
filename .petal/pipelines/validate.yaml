@@ -19,8 +19,10 @@ steps:
     # busybox grep has no --include, so find selects the files. Zero ports
     # found means the check itself broke: fail loudly, never pass silently.
     run: |
-      ports=$(find apps services infrastructure -name '*.yaml' -exec grep -h "nodePort:" {} + \
-        | grep -oE '[0-9]+' || true)
+      # -o on 'nodePort: N' only, like CI: numbers in trailing comments
+      # (e.g. "# http://192.168.0.108:30310") must not double-count.
+      ports=$(find apps services infrastructure environments -name '*.yaml' \
+        -exec grep -ohE 'nodePort: *[0-9]+' {} + | grep -oE '[0-9]+' || true)
       if [ -z "$ports" ]; then
         echo "no nodePort lines found - the check is broken"
         exit 1
