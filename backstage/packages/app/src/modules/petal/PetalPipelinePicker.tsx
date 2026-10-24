@@ -1,10 +1,10 @@
 /*
  * `ui:field: PetalPipelinePicker` — the petal-run template's pipeline input.
- * Suggests Petal's own catalog (GET /api/pipelines via the GET-only /petal
- * proxy) but accepts any typed name: since multi-repo runs (Petal ADR 0004) a
- * component's pipelines live in its own repo, which Petal only reads at
- * checkout — so e.g. `validate` for homelab-platform is typed, not listed.
- * Petal fails the run at checkout if the pipeline isn't in that repo.
+ * Lists the pipelines of the repo behind the component picked in the same
+ * form: entity → `petal.io/repo` annotation → GET /api/pipelines?repo=<alias>
+ * (Petal ADR 0004; a cached sparse clone of that repo's .petal/pipelines),
+ * through the GET-only /petal proxy. Typing a name stays possible (freeSolo)
+ * for a pipeline on a branch, or when Petal can't be reached.
  */
 import { useEffect, useState } from 'react';
 import { TextField } from '@material-ui/core';
@@ -14,10 +14,13 @@ import {
   fetchApiRef,
   useApi,
 } from '@backstage/frontend-plugin-api';
+import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import type { FieldExtensionComponentProps } from '@backstage/plugin-scaffolder-react';
 import { createFormField } from '@backstage/plugin-scaffolder-react/alpha';
 
 type Pipeline = { name: string; description?: string };
+
+const REPO_ANNOTATION = 'petal.io/repo';
 
 function PetalPipelinePickerComponent(
   props: FieldExtensionComponentProps<string>,
@@ -25,24 +28,52 @@ function PetalPipelinePickerComponent(
   const { onChange, formData, required, rawErrors, schema, idSchema } = props;
   const discoveryApi = useApi(discoveryApiRef);
   const fetchApi = useApi(fetchApiRef);
+  const catalogApi = useApi(catalogApiRef);
+  // The scaffolder Stepper passes the whole form's data as formContext.formData.
+  const entityRef: string | undefined = (props.formContext as any)?.formData
+    ?.entity;
+
+  const [repo, setRepo] = useState<string | undefined>();
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const [loadError, setLoadError] = useState<string | undefined>();
+  const [status, setStatus] = useState<string | undefined>();
 
   useEffect(() => {
     let cancelled = false;
+    setPipelines([]);
+    setRepo(undefined);
+    if (!entityRef) {
+      setStatus('Pick a component first');
+      return () => {
+        cancelled = true;
+      };
+    }
+    setStatus('Loading pipelines…');
     (async () => {
+      const entity = await catalogApi.getEntityByRef(entityRef);
+      const alias = entity?.metadata.annotations?.[REPO_ANNOTATION];
+      if (!alias) throw new Error(`${entityRef} has no ${REPO_ANNOTATION}`);
       const base = await discoveryApi.getBaseUrl('proxy');
-      const res = await fetchApi.fetch(`${base}/petal/pipelines`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as Pipeline[];
+      const res = await fetchApi.fetch(
+        `${base}/petal/pipelines?repo=${encodeURIComponent(alias)}`,
+      );
+      if (!res.ok) throw new Error(`Petal: HTTP ${res.status}`);
+      return { alias, list: (await res.json()) as Pipeline[] };
     })().then(
-      p => !cancelled && setPipelines(p),
-      e => !cancelled && setLoadError(String(e?.message ?? e)),
+      ({ alias, list }) => {
+        if (cancelled) return;
+        setRepo(alias);
+        setPipelines(list);
+        setStatus(undefined);
+        if (!formData && list.length === 1) onChange(list[0].name);
+      },
+      e =>
+        !cancelled && setStatus(`${String(e?.message ?? e)} — type the name`),
     );
     return () => {
       cancelled = true;
     };
-  }, [discoveryApi, fetchApi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entityRef, catalogApi, discoveryApi, fetchApi]);
 
   const describe = (name: string) =>
     pipelines.find(p => p.name === name)?.description;
@@ -67,10 +98,10 @@ function PetalPipelinePickerComponent(
           error={(rawErrors?.length ?? 0) > 0}
           margin="normal"
           helperText={
-            loadError
-              ? `Couldn't load Petal's pipelines (${loadError}) — type the name`
-              : schema.description ??
-                "Suggestions are Petal's own pipelines; type another repo's pipeline name"
+            status ??
+            (repo
+              ? `Pipelines in repo "${repo}" (.petal/pipelines on its default branch)`
+              : schema.description)
           }
         />
       )}
