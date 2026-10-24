@@ -39,7 +39,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:17f3e5645020ec1ad9bf5b31faf5af658a9f6acd
+          image: ghcr.io/blacklotus89898/tulip:bfb87b0f7b0a99893088ba540351ea465f6c85c1
           imagePullPolicy: IfNotPresent
           # Co-pilot (ADR 0003): read-only Questrade, the operator places
           # every order. Needs tulip-questrade (sealed-questrade.yaml) —
