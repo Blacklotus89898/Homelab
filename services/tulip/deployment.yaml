@@ -36,7 +36,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:83e8385e760e382a051c9d8f5c524bcb11321974
+          image: ghcr.io/blacklotus89898/tulip:fbfe444b5f24e9f7625236c048f9c2404a78a69a
           imagePullPolicy: IfNotPresent
           args: ["-addr", ":8080", "-db", "/data/tulip.db", "-mode", "paper"]
           env:
