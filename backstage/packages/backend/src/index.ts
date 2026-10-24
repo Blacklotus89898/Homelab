@@ -60,9 +60,6 @@ backend.add(import('@backstage/plugin-search-backend-module-techdocs'));
 // kubernetes plugin
 backend.add(import('@backstage/plugin-kubernetes-backend'));
 
-// jenkins plugin
-backend.add(import('@backstage/plugin-jenkins-backend'));
-
 // user settings plugin
 backend.add(import('@backstage/plugin-user-settings-backend'));
 
