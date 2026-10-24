@@ -1,0 +1,15 @@
+# Tulip's journal (append-only SQLite, ADR 0001 §5) — the product's memory.
+# 1Gi: events are small JSON rows; worker disk is the platform's #1 constraint.
+# local-path = node-local; recovery stance: git restores config, the journal
+# itself is accepted loss on a full rebuild (Homelab ADR 0003) until backed up.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tulip-data
+  namespace: tulip
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

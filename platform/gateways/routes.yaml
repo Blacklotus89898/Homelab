@@ -321,3 +321,33 @@ spec:
         - path:
             type: PathPrefix
             value: /
+---
+# Tulip: health, metrics and the MCP supervision surface (POST /mcp, bearer
+# token). Claude Code: claude mcp add --transport http tulip https://tulip.lab.home/mcp
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tulip
+  namespace: tulip
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
+  hostnames:
+    - tulip.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: tulip-svc
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /

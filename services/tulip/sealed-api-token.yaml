@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: tulip-api-token
+  namespace: tulip
+spec:
+  encryptedData:
+    TULIP_API_TOKEN: AgAtfLglR9RNehfTLsovicZZhQTtxR3UsI7P9vOyfEDvDNMWia10pbkXmhn3v3zKhiM4WUSnvE1pCGwF/R7QSs/uIG4UvhC+QvHPqjUgvIhgqTbwpx7rzWJBOe2d1LlQuMkr68LMJ6hMuZbrXltnOSTNVtB+wsej6FaDMHDKpR3E6Q895OboT+w8nB756ytn9mJZXt8YlMnbyjZat2qdTN3z664RISMjrD5ocL5UAUFBiSj+ecD262M50Mpb+0Ms31VGkEFqw5p5RdX4pfU/bU/VhVNFDglZCg9yiN0ErsKdYKu/iDioHP33SQXaac+O8pZOvZ9lw13wkjseDl6E/8P/5cL8Mj3kwHEWATOi+oPzE1uJWqKY6sPEScF5cPFBff7t0dabXEB3TmzFNEPYok0ixiXjQWCMcDWVVt9MMiapZog3HfCM/vH+nZqtlNqAuBCzM2gLP4OJ8kVN4awFnWfLPQdoqMBYSzYNaOb5Ao5sgSIH1B+8CCJ0YB4U0si44IMeSVxw0UOL8BIgdpxuPr7KsDF9s44qY14nIwDG53HiXIlvpQ4rAtEEzw/0n++Xm3ArgrTkoZIl7mMAMiR2iDa1ucm1I877uFXSQxPzfvpZlHXE0CyK9DrCIIKJglSpKe1AfmTatx2cTuxxVZqypiTqjY8AXxdV8r+93W6LzNOdU27MbR9+Ezu7LUeBS3v4fvPcRkFNl+ubSHyDHtqRmfQ8iGRn96HucC+XyDAlUBMqieIUKAWV5CsOvhaV
+  template:
+    metadata:
+      name: tulip-api-token
+      namespace: tulip

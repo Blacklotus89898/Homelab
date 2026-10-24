@@ -1,0 +1,5 @@
+site_name: tulip
+site_description: "Human-approved paper-trading agent: rules propose, Claude reviews, the operator approves"
+docs_dir: docs
+plugins:
+  - techdocs-core

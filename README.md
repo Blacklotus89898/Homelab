@@ -274,6 +274,14 @@ Then open the UI and trigger the `docker-image` pipeline — the dogfood build (
 
 ---
 
+## Onboarding a new service
+
+Step-by-step, from how Tulip was onboarded: [docs/guides/onboarding-a-service.md](docs/guides/onboarding-a-service.md)
+(service-repo readiness → golden-path template → what the template can't know →
+merge → Claude Code MCP wiring).
+
+---
+
 ## Retired CI: Jenkins and ARC
 
 Jenkins and the ARC self-hosted runners were retired on 2026-10-23 ([ADR 0010](docs/adr/0010-retire-jenkins-and-arc.md)):
