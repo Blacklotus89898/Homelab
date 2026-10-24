@@ -16,11 +16,18 @@ steps:
 
   - name: nodeport-conflicts
     image: alpine:3.21
+    # busybox grep has no --include, so find selects the files. Zero ports
+    # found means the check itself broke: fail loudly, never pass silently.
     run: |
-      dups=$(grep -rh "nodePort:" apps/ services/ infrastructure/ --include="*.yaml" \
-        | grep -oE '[0-9]+' | sort | uniq -d)
+      ports=$(find apps services infrastructure -name '*.yaml' -exec grep -h "nodePort:" {} + \
+        | grep -oE '[0-9]+' || true)
+      if [ -z "$ports" ]; then
+        echo "no nodePort lines found - the check is broken"
+        exit 1
+      fi
+      dups=$(echo "$ports" | sort | uniq -d)
       if [ -n "$dups" ]; then
         echo "duplicate NodePorts: $dups"
         exit 1
       fi
-      echo "no NodePort conflicts"
+      echo "no NodePort conflicts ($(echo "$ports" | wc -l) nodePorts checked)"
