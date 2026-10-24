@@ -99,6 +99,14 @@ metadata:
   name: petal
 
 ---
+# Tulip trading agent (github.com/Blacklotus89898/Tulip) — single SQLite writer;
+# outbound only to market data + the Anthropic API; not in the mesh yet
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tulip
+
+---
 # Argo Rollouts controller — no mesh label needed; talks to the API server only
 apiVersion: v1
 kind: Namespace

@@ -10,7 +10,8 @@ spec:
   selector:
     app: tulip
   ports:
-    - port: 8080
+    - name: http # the VMServiceScrape and HTTPRoute refer to it
+      port: 8080
       targetPort: 8080
       nodePort: 30995
       protocol: TCP

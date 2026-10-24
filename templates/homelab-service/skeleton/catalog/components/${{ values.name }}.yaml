@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.name }}
-  description: ${{ values.description }}
+  description: ${{ values.description | dump }} # dump = JSON-quoted: free text may contain ": "
   links:
     - url: http://192.168.0.108:${{ values.nodePort }}
       title: ${{ values.name }} UI

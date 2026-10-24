@@ -1,0 +1,16 @@
+# Tulip /metrics (journal events by kind, build info), scraped by vmagent
+# (selectAllByDefault). Alerts arrive with the trading loop — the skeleton has
+# nothing to page on yet.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: tulip
+  namespace: tulip
+spec:
+  selector:
+    matchLabels:
+      app: tulip
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s

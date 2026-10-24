@@ -1,40 +1,49 @@
-# tulip
+# Tulip
 
-Human-approved paper-trading agent: rules propose, Claude reviews, the operator approves
+Human-approved paper-trading agent: rules propose, Claude reviews, the operator
+approves. Source and design: [github.com/Blacklotus89898/Tulip](https://github.com/Blacklotus89898/Tulip)
+(read ADR 0001 and 0002 first).
 
 ## Overview
 
 | Field | Value |
 |---|---|
 | Namespace | `tulip` |
-| Image | `ghcr.io/blacklotus89898/tulip:11d3cbadc56acde6c010034cc4f73ff0e0a8cc77` |
-| URL | http://192.168.0.108:30995 |
+| URL | `https://tulip.lab.home` (`/health`, `/metrics`, `POST /mcp`) |
+| Direct NodePort | `http://192.168.0.108:30995` (debugging only) |
+| Mode | `paper` — no live broker exists in v1 |
+| Storage | PVC `tulip-data` 1Gi, append-only SQLite journal at `/data/tulip.db` |
+| Rollout | `Recreate` — single SQLite writer, so a deploy means a short outage |
+
+## The one rule
+
+The MCP/API token (`tulip-api-token`) can read the journal, propose, decline and
+arm the kill switch. It can **not** approve an order: approval is a
+human-channel action, single-use and bound to the exact proposal (Tulip
+ADR 0002 §3). Never add an approve tool to the MCP surface.
+
+## Claude Code
+
+```bash
+claude mcp add --transport http tulip https://tulip.lab.home/mcp \
+  --header "Authorization: Bearer $(kubectl -n tulip get secret tulip-api-token \
+    -o jsonpath='{.data.TULIP_API_TOKEN}' | base64 -d)" --scope user
+claude mcp get tulip   # Status: Connected
+```
+
+Tools today: `tulip_status`, `journal_list`. Trading tools land with the loop.
 
 ## Operations
 
-### Restart
-
 ```bash
-kubectl rollout restart deployment/tulip -n tulip
+kubectl -n tulip get pods
+kubectl -n tulip logs deploy/tulip --tail=50
+curl -s https://tulip.lab.home/health
 ```
 
-### Logs
+Upgrade: push to the Tulip repo → its CI builds `ghcr.io/blacklotus89898/tulip:<sha>`
+→ bump the tag in `services/tulip/deployment.yaml` → ArgoCD rolls it.
 
-```bash
-kubectl logs -n tulip deployment/tulip -f
-```
-
-### Scale down / up
-
-```bash
-kubectl scale deployment/tulip -n tulip --replicas=0
-kubectl scale deployment/tulip -n tulip --replicas=1
-```
-
-## ArgoCD
-
-Managed by ArgoCD Application `tulip`. To force a sync:
-
-```bash
-argocd app sync tulip
-```
+Rotate the API token: re-seal `services/tulip/sealed-api-token.yaml`
+(`kubectl create secret generic tulip-api-token -n tulip --from-literal=TULIP_API_TOKEN=<new> --dry-run=client -o yaml | kubeseal --controller-name sealed-secrets-controller --controller-namespace sealed-secrets --format yaml`),
+then re-run the `claude mcp add` above.

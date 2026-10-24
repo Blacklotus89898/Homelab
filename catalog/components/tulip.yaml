@@ -2,10 +2,14 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: tulip
-  description: Human-approved paper-trading agent: rules propose, Claude reviews, the operator approves
+  description: "Human-approved paper-trading agent: rules propose, Claude reviews, the operator approves"
   links:
-    - url: http://192.168.0.108:30995
-      title: tulip UI
+    - url: https://tulip.lab.home/health
+      title: Tulip (health)
+    - url: https://github.com/Blacklotus89898/Tulip
+      title: Source + ADRs
+    - url: https://github.com/Blacklotus89898/Homelab/blob/main/docs/guides/onboarding-a-service.md
+      title: How Tulip was onboarded
   annotations:
     argocd/app-name: tulip
     backstage.io/kubernetes-namespace: tulip
