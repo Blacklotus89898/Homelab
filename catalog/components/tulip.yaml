@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tulip
+  description: Human-approved paper-trading agent: rules propose, Claude reviews, the operator approves
+  links:
+    - url: http://192.168.0.108:30995
+      title: tulip UI
+  annotations:
+    argocd/app-name: tulip
+    backstage.io/kubernetes-namespace: tulip
+    backstage.io/kubernetes-label-selector: 'app=tulip'
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/tulip
+  tags:
+    - self-hosted
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

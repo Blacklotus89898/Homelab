@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tulip
+  namespace: tulip
+  labels:
+    app: tulip
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: tulip
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: tulip
+    spec:
+      # Golden-path default: no SA token unless the service needs one (CIS 5.1.6)
+      automountServiceAccountToken: false
+      containers:
+        - name: tulip
+          image: ghcr.io/blacklotus89898/tulip:11d3cbadc56acde6c010034cc4f73ff0e0a8cc77
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
