@@ -8,6 +8,10 @@
  * `backstage:<entity-ref>#<user-ref>`, so Petal can list one entity's runs with
  * `GET /api/runs?source=backstage:<entity-ref>%23`.
  *
+ * Source repo (Petal ADR 0004): the `repo` input, else the entity's
+ * `petal.io/repo` annotation (an alias in Petal's allowlist). An entity without
+ * either is refused rather than silently running Petal's own repo.
+ *
  * Config (app-config / apps/backstage/values.yaml):
  *   petal.baseUrl     in-cluster API, e.g. http://petal.petal.svc.cluster.local
  *   petal.consoleUrl  browser-facing console, e.g. https://petal.lab.home
@@ -21,6 +25,21 @@ import {
   createTemplateAction,
   scaffolderActionsExtensionPoint,
 } from '@backstage/plugin-scaffolder-node';
+import { catalogServiceRef } from '@backstage/plugin-catalog-node';
+import type { BackstageCredentials } from '@backstage/backend-plugin-api';
+
+/** Annotation naming the Petal allowlist alias of an entity's repo. */
+export const PETAL_REPO_ANNOTATION = 'petal.io/repo';
+
+/** The slice of the catalog service the action needs (easy to fake in tests). */
+export type EntityLookup = {
+  getEntityByRef(
+    ref: string,
+    options: { credentials: BackstageCredentials },
+  ): Promise<
+    { metadata: { annotations?: Record<string, string> } } | undefined
+  >;
+};
 
 export type PetalOptions = {
   baseUrl: string;
@@ -28,9 +47,18 @@ export type PetalOptions = {
   token: string;
 };
 
-type PetalRun = { id: string; status: string; pipeline: string };
+type PetalRun = {
+  id: string;
+  status: string;
+  pipeline: string;
+  repo?: string;
+  ref?: string;
+};
 
-export function createPetalRunAction(opts: PetalOptions) {
+export function createPetalRunAction(
+  opts: PetalOptions,
+  catalog: EntityLookup,
+) {
   const baseUrl = opts.baseUrl.replace(/\/+$/, '');
   const consoleUrl = opts.consoleUrl.replace(/\/+$/, '');
 
@@ -54,6 +82,18 @@ export function createPetalRunAction(opts: PetalOptions) {
             .record(z.string(), z.unknown())
             .optional()
             .describe('Pipeline params, passed through as the run args'),
+        repo: z =>
+          z
+            .string()
+            .optional()
+            .describe(
+              `Petal repo alias; default: the entity's ${PETAL_REPO_ANNOTATION} annotation`,
+            ),
+        ref: z =>
+          z
+            .string()
+            .optional()
+            .describe("Branch, tag or SHA; default: the repo's default_ref"),
       },
       output: {
         runId: z => z.string().describe('Petal run id'),
@@ -61,11 +101,26 @@ export function createPetalRunAction(opts: PetalOptions) {
       },
     },
     async handler(ctx) {
-      const { pipeline, entityRef, args } = ctx.input;
+      const { pipeline, entityRef, args, ref } = ctx.input;
       const source = `backstage:${entityRef}#${ctx.user?.ref ?? 'unknown'}`;
 
+      let repo = ctx.input.repo;
+      if (!repo) {
+        const entity = await catalog.getEntityByRef(entityRef, {
+          credentials: await ctx.getInitiatorCredentials(),
+        });
+        repo = entity?.metadata.annotations?.[PETAL_REPO_ANNOTATION];
+      }
+      if (!repo) {
+        throw new Error(
+          `${entityRef} has no ${PETAL_REPO_ANNOTATION} annotation — add one naming its repo in Petal's allowlist (Homelab services/petal/repos-configmap.yaml)`,
+        );
+      }
+
       if (ctx.isDryRun) {
-        ctx.logger.info(`dry run: would queue ${pipeline} (${source})`);
+        ctx.logger.info(
+          `dry run: would queue ${pipeline} from ${repo} (${source})`,
+        );
         ctx.output('runId', 'dry-run');
         ctx.output('runUrl', consoleUrl);
         return;
@@ -84,6 +139,8 @@ export function createPetalRunAction(opts: PetalOptions) {
         },
         body: JSON.stringify({
           pipeline,
+          repo,
+          ...(ref ? { ref } : {}),
           args: args ?? {},
           trigger_kind: 'backstage',
           trigger_source: source,
@@ -94,12 +151,16 @@ export function createPetalRunAction(opts: PetalOptions) {
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => '');
-        throw new Error(`Petal rejected the run (HTTP ${res.status}): ${detail}`);
+        throw new Error(
+          `Petal rejected the run (HTTP ${res.status}): ${detail}`,
+        );
       }
 
       const run = (await res.json()) as PetalRun;
       const runUrl = `${consoleUrl}/?run=${encodeURIComponent(run.id)}`;
-      ctx.logger.info(`queued Petal run ${run.id} (${run.pipeline}, ${run.status})`);
+      ctx.logger.info(
+        `queued Petal run ${run.id} (${run.pipeline} from ${run.repo}@${run.ref}, ${run.status})`,
+      );
       ctx.logger.info(`follow it at ${runUrl}`);
       ctx.output('runId', run.id);
       ctx.output('runUrl', runUrl);
@@ -115,18 +176,22 @@ export default createBackendModule({
       deps: {
         scaffolder: scaffolderActionsExtensionPoint,
         config: coreServices.rootConfig,
+        catalog: catalogServiceRef,
       },
-      async init({ scaffolder, config }) {
+      async init({ scaffolder, config, catalog }) {
         scaffolder.addActions(
-          createPetalRunAction({
-            baseUrl:
-              config.getOptionalString('petal.baseUrl') ??
-              'http://petal.petal.svc.cluster.local',
-            consoleUrl:
-              config.getOptionalString('petal.consoleUrl') ??
-              'https://petal.lab.home',
-            token: config.getOptionalString('petal.token') ?? '',
-          }),
+          createPetalRunAction(
+            {
+              baseUrl:
+                config.getOptionalString('petal.baseUrl') ??
+                'http://petal.petal.svc.cluster.local',
+              consoleUrl:
+                config.getOptionalString('petal.consoleUrl') ??
+                'https://petal.lab.home',
+              token: config.getOptionalString('petal.token') ?? '',
+            },
+            catalog,
+          ),
         );
       },
     });
