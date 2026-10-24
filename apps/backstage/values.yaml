@@ -9,10 +9,10 @@ backstage:
   image:
     registry: ghcr.io
     repository: blacklotus89898/backstage
-    # Pinned to the CI-built image for commit 7d4e66f (petal:run multi-repo,
+    # Pinned to the CI-built image for commit 90cf0aa (repo-aware pipeline picker,
     # runs card, petal:run). To upgrade: merge a backstage/** change, wait for the
     # build-backstage.yaml run, then bump this to the new commit sha tag.
-    tag: "7d4e66facf4d9b7a84fbc39dd82eb3d8605e80d7"
+    tag: "90cf0aadcb5c8d6c1188040f632d7c2446f41985"
     pullPolicy: IfNotPresent
 
   extraEnvVarsSecrets:
