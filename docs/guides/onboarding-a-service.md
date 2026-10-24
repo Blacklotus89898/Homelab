@@ -127,10 +127,11 @@ MCP credential **only the powers you'd hand an assistant** — for Tulip it can
 read, propose, decline and arm the kill switch, but never approve an order
 (Tulip ADR 0002 §3).
 
-**Trap — the lab CA:** Claude Code is a Node process, and Node may not trust the
-Windows certificate store (uptime-kuma needed `NODE_EXTRA_CA_CERTS` for the same
-reason). If `claude mcp get` reports a certificate error, export the root CA and
-point Node at it before starting Claude Code:
+**The lab CA:** with the root CA in the Windows user store (`docs/bootstrap.md`
+ledger), Claude Code connected to `https://tulip.lab.home/mcp` directly — no extra
+setup (verified 2026-10-24). New MCP servers load in the **next** Claude Code
+session. Fallback if a machine reports a certificate error (Node on its own does not
+read the Windows store — uptime-kuma needed this): point Node at the CA file:
 ```bash
 kubectl -n cert-manager get secret lab-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > ~/lab-root-ca.crt
 setx NODE_EXTRA_CA_CERTS "%USERPROFILE%\lab-root-ca.crt"   # Windows; new shells pick it up
