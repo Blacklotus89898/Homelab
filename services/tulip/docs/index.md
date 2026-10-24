@@ -22,6 +22,27 @@ arm the kill switch. It can **not** approve an order: approval is a
 human-channel action, single-use and bound to the exact proposal (Tulip
 ADR 0002 §3). Never add an approve tool to the MCP surface.
 
+## Approving (the operator only)
+
+1. On **your own machine**, make the passphrase hash (12+ characters; only the
+   hash ever reaches the cluster):
+   ```bash
+   cd Tulip && go run . hash-passphrase
+   ```
+2. Seal it and commit `services/tulip/sealed-approval.yaml`:
+   ```bash
+   kubectl create secret generic tulip-approval -n tulip      --from-literal=TULIP_APPROVAL_PASSPHRASE_HASH='<the printed pbkdf2-sha256$… line>'      --dry-run=client -o yaml | kubeseal --controller-name sealed-secrets-controller      --controller-namespace sealed-secrets --format yaml > services/tulip/sealed-approval.yaml
+   ```
+   Then restart Tulip (`kubectl -n tulip rollout restart deploy/tulip`) — it
+   reads the hash at startup. Until then approvals are disabled.
+3. Subscribe to ntfy topic **`tulip-approvals`** on your phone. Each suggestion
+   links to `http://192.168.0.108:30995/approve/<id>`: check the terms, type the
+   passphrase, Approve (or Decline). Approvals only execute during TSX hours.
+4. Kill switch: Claude Code can arm it; only you disarm it, at `/killswitch`.
+
+Agents never read `tulip-approval`, never call `/approve` or `/killswitch`
+(Homelab `CLAUDE.md`).
+
 ## Claude Code
 
 ```bash
@@ -31,7 +52,7 @@ claude mcp add --transport http tulip https://tulip.lab.home/mcp \
 claude mcp get tulip   # Status: Connected
 ```
 
-Tools today: `tulip_status`, `journal_list`. Trading tools land with the loop.
+Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `propose`, `decline`, `kill_switch_arm`, `cycle_run` — none approves, executes or disarms.
 
 ## Operations
 

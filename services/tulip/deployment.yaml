@@ -36,7 +36,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:11d3cbadc56acde6c010034cc4f73ff0e0a8cc77
+          image: ghcr.io/blacklotus89898/tulip:83e8385e760e382a051c9d8f5c524bcb11321974
           imagePullPolicy: IfNotPresent
           args: ["-addr", ":8080", "-db", "/data/tulip.db", "-mode", "paper"]
           env:
@@ -45,6 +45,25 @@ spec:
                 secretKeyRef:
                   name: tulip-api-token
                   key: TULIP_API_TOKEN
+            # The operator's approval passphrase, as a PBKDF2 hash only (Tulip
+            # ADR 0002 §3) — sealed by the operator (services/tulip/README in
+            # TechDocs). optional: without it Tulip runs, approvals stay
+            # disabled and suggestions just expire (fail closed).
+            # Agents never read this secret (Homelab CLAUDE.md).
+            - name: TULIP_APPROVAL_PASSPHRASE_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: tulip-approval
+                  key: TULIP_APPROVAL_PASSPHRASE_HASH
+                  optional: true
+            - name: TULIP_NTFY_URL
+              value: http://ntfy.monitoring.svc
+            - name: TULIP_NTFY_TOPIC
+              value: tulip-approvals
+            # What the approval link opens on the phone: the LAN NodePort, since
+            # the phone doesn't trust the lab CA yet (v3 gate: TLS there).
+            - name: TULIP_PUBLIC_URL
+              value: http://192.168.0.108:30995
           ports:
             - name: http
               containerPort: 8080

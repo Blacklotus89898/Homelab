@@ -34,6 +34,13 @@ kubectl get events -A --sort-by=.lastTimestamp | tail -20
 - Secrets: `.env` is gitignored and stays out. Nothing secret-shaped goes into manifests or commit messages — flag to the user instead.
 - `todo.md` holds open work (gitignored). Solutions belong in the knowledge base, not the todo.
 
+## Tulip — the approval boundary (non-negotiable)
+
+Tulip (`github.com/Blacklotus89898/Tulip`, ns `tulip`) trades only with the operator's approval (Tulip ADR 0002 §3). With cluster-admin you *could* reach around that gate, so these are hard rules:
+- **Never** read `tulip-approval-*` secrets (or `TULIP_APPROVAL_PASSPHRASE_HASH`), and never ask the user for their passphrase.
+- **Never** call Tulip's `/approve/…` or `/killswitch` endpoints, and never approve, disarm or "click through" on the user's behalf — not even "to test".
+- Through MCP you may read, `propose`, `decline`, `kill_switch_arm` and `cycle_run`. That is the whole surface.
+
 ## Knowledge base — use it in every session
 
 The `knowledge` MCP tools are connected at user scope; their full usage rules live in DaVinci's `AGENTS.md`. Condensed:

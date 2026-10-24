@@ -1,6 +1,5 @@
 # Tulip /metrics (journal events by kind, build info), scraped by vmagent
-# (selectAllByDefault). Alerts arrive with the trading loop — the skeleton has
-# nothing to page on yet.
+# (selectAllByDefault), plus alerts on the loop's health.
 apiVersion: operator.victoriametrics.com/v1beta1
 kind: VMServiceScrape
 metadata:
@@ -14,3 +13,43 @@ spec:
     - port: http
       path: /metrics
       interval: 60s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: tulip
+  namespace: tulip
+spec:
+  groups:
+    - name: tulip
+      rules:
+        # Cycles run 10:05 + 15:00 Toronto on trading days. Checked Tue–Sat
+        # after 21:00 UTC (16–17:00 Toronto), so a weekend gap can't fire it;
+        # a TSX holiday can (rare, warning).
+        - alert: TulipNoCycle
+          expr: |
+            (increase(tulip_journal_events_total{kind="cycle.finished"}[26h]) == 0)
+              and on() (day_of_week() >= 2 and day_of_week() <= 6 and hour() >= 21)
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tulip ran no cycle in 26h on a trading day"
+            description: "The loop didn't fire (pod down at the slot, calendar out of range, or a crash). kubectl -n tulip logs deploy/tulip; MCP tool cycle_run runs one by hand."
+            runbook_url: "kb://runbooks/tulip-alerts.md"
+        - alert: TulipMarketDataUnavailable
+          expr: increase(tulip_journal_events_total{kind="data.unavailable"}[1d]) > 4
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tulip market data failed repeatedly today"
+            description: "More than 4 data.unavailable events in a day — Yahoo is rate-limiting or the endpoint changed. Tulip fails closed (proposes nothing); check journal_list kind=data.unavailable."
+            runbook_url: "kb://runbooks/tulip-alerts.md"
+        - alert: TulipKillSwitchArmed
+          expr: tulip_kill_switch == 1
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tulip's kill switch is armed — nothing will execute"
+            description: "Armed by Claude Code (kill_switch_arm) or the operator. Only the operator disarms it, with the passphrase, at http://192.168.0.108:30995/killswitch."
+            runbook_url: "kb://runbooks/tulip-alerts.md"
