@@ -41,9 +41,10 @@ spec:
         - name: tulip
           image: ghcr.io/blacklotus89898/tulip:8686b4338d83a5850ce9dc4382b2ced71f3d96dc
           imagePullPolicy: IfNotPresent
-          # -mode copilot (ADR 0003) only once tulip-questrade is sealed —
+          # Co-pilot (ADR 0003): read-only Questrade, the operator places
+          # every order. Needs tulip-questrade (sealed-questrade.yaml) —
           # copilot without TULIP_QUESTRADE_ACCOUNT exits (crash-loop).
-          args: ["-addr", ":8080", "-db", "/data/tulip.db", "-mode", "paper"]
+          args: ["-addr", ":8080", "-db", "/data/tulip.db", "-mode", "copilot"]
           env:
             - name: TULIP_API_TOKEN
               valueFrom:
