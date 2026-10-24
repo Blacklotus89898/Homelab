@@ -46,6 +46,12 @@ spec:
           type: integer
           description: Port the container listens on
           default: 8080
+        healthPath:
+          title: Health check path
+          type: string
+          description: HTTP path the liveness/readiness probes hit (e.g. /health). Must return 200 without auth.
+          default: /
+          pattern: '^/.*$'
         nodePort:
           title: NodePort
           type: integer
@@ -65,6 +71,7 @@ spec:
           namespace: ${{ parameters.namespace }}
           image: ${{ parameters.image }}
           containerPort: ${{ parameters.containerPort }}
+          healthPath: ${{ parameters.healthPath }}
           nodePort: ${{ parameters.nodePort }}
           owner: user:blacklotus89898
 
