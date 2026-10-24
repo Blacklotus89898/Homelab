@@ -87,12 +87,12 @@ spec:
           # Pinned to an immutable Petal commit-sha tag (2026-10-21): a push to
           # Petal main no longer self-deploys on the next pod restart. Upgrade
           # flow: push Petal → CI builds :<sha> → bump the tag here.
-          # 4696b07 = modular/DAG steps, timeouts + cancel (ADR 0005) on multi-repo
+          # 62daabb = modular/DAG steps, timeouts + cancel (ADR 0005) on multi-repo
           # runs (ADR 0004), /metrics, declared schedules,
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:4696b07786822e453a0e59d79567d30096bdc420
+          image: ghcr.io/blacklotus89898/petal:62daabb5f12cc3ee023ff8e0866568a13f05c18d
           imagePullPolicy: IfNotPresent
           args:
             - -addr
