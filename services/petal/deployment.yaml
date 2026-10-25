@@ -82,17 +82,24 @@ spec:
             # container. Without it: "bind source path does not exist".
             - name: data
               mountPath: /data
+            # Pipeline secrets (Petal ADR 0006): step containers bind-mount
+            # single files from here, and dind resolves those sources in ITS
+            # mount namespace — so the same Secret at the same path as in the
+            # petal container.
+            - name: secrets
+              mountPath: /etc/petal-secrets
+              readOnly: true
 
         - name: petal
           # Pinned to an immutable Petal commit-sha tag (2026-10-21): a push to
           # Petal main no longer self-deploys on the next pod restart. Upgrade
           # flow: push Petal → CI builds :<sha> → bump the tag here.
-          # 62daabb = modular/DAG steps, timeouts + cancel (ADR 0005) on multi-repo
+          # e819f39 = secrets (ADR 0006) on modular/DAG steps, timeouts + cancel (ADR 0005), multi-repo
           # runs (ADR 0004), /metrics, declared schedules,
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:62daabb5f12cc3ee023ff8e0866568a13f05c18d
+          image: ghcr.io/blacklotus89898/petal:e819f39f084415aa58d77a8ffffe4495d04b759b
           imagePullPolicy: IfNotPresent
           args:
             - -addr
@@ -109,6 +116,8 @@ spec:
             - /etc/petal/repos.yaml
             - -workers
             - "2"
+            - -secrets # pipeline secrets, granted per repo+ref in repos.yaml (ADR 0006)
+            - /etc/petal-secrets
           env:
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2375
@@ -144,6 +153,9 @@ spec:
               mountPath: /git
             - name: repos
               mountPath: /etc/petal
+              readOnly: true
+            - name: secrets
+              mountPath: /etc/petal-secrets
               readOnly: true
 
         - name: git-sync
@@ -182,6 +194,13 @@ spec:
         - name: repos
           configMap:
             name: petal-repos
+        # sealed-secrets.yaml. No subPath anywhere, so a re-seal reaches the
+        # running pod (kubelet refresh, ~1 min) — Petal re-reads per run.
+        # optional: the pod starts before the Secret is unsealed.
+        - name: secrets
+          secret:
+            secretName: petal-secrets
+            optional: true
         # Docker image layers live on the SMB share, NOT the root fs: the
         # kubelet evicts on root-fs pressure, and a 15Gi build cache sharing
         # the OS disk caused repeated disk-pressure incidents (see the

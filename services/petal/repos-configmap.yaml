@@ -3,6 +3,9 @@
 # here runs on the worker next to the privileged DinD daemon, so adding a repo
 # is a reviewed commit, and the repo's own branch protection matters.
 # v1: public https repos only (Petal holds no clone credentials).
+# Secrets (Petal ADR 0006): `secrets:` grants keys of the petal-secrets Secret
+# to a repo's runs ONLY at `secret_refs` (default: default_ref) — any other
+# branch/tag/SHA gets none. Grant only to refs with branch protection.
 # `schedules:` are declarative cron triggers: synced at startup into decl-*
 # rows (insert/update/delete) — git owns them; API-made schedules are separate.
 # Petal reads it at startup — restart the pod after editing:
@@ -18,6 +21,7 @@ data:
       homelab:
         url: https://github.com/Blacklotus89898/Homelab.git
         default_ref: main
+        secrets: [e2e-canary] # secrets-e2e pipeline (random test value)
       petal:
         url: https://github.com/Blacklotus89898/Petal.git
         default_ref: main
