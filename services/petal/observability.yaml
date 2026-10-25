@@ -25,24 +25,31 @@ spec:
     - name: petal
       rules:
         # The most recent finished run of a pipeline (per repo) failed — either
-        # it failed after its last success, or it has never succeeded.
+        # it failed after its last success, or it has never succeeded — within
+        # the last 3 days. The window matters: a one-off pipeline (e.g. from a
+        # since-deleted branch) that failed once never runs again, and without
+        # it the alert would fire forever (2026-10-25: probe-docker). Recurring
+        # pipelines re-arm it on every failed run.
         - alert: PetalPipelineFailing
           expr: |
             (
-              max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
-                > max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="succeeded"})
+              (
+                max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
+                  > max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="succeeded"})
+              )
+              or
+              (
+                max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
+                  unless on (pipeline, repo) petal_run_last_finished_timestamp_seconds{status="succeeded"}
+              )
             )
-            or
-            (
-              max by (pipeline, repo) (petal_run_last_finished_timestamp_seconds{status="failed"})
-                unless on (pipeline, repo) petal_run_last_finished_timestamp_seconds{status="succeeded"}
-            )
+            > time() - 3 * 86400
           for: 5m
           labels:
             severity: warning
           annotations:
             summary: "Petal pipeline failing: {{ $labels.pipeline }} ({{ $labels.repo }})"
-            description: "The latest finished run of {{ $labels.pipeline }} from repo {{ $labels.repo }} failed. Open https://petal.lab.home and filter by pipeline; the run's error + step logs say why. Resolves on the next successful run."
+            description: "The latest finished run of {{ $labels.pipeline }} from repo {{ $labels.repo }} failed. Open https://petal.lab.home and filter by pipeline; the run's error + step logs say why. Resolves on the next successful run, or 3 days after the failure if the pipeline never runs again."
             runbook_url: "kb://runbooks/petal-alerts.md"
         - alert: PetalQueueStuck
           expr: min_over_time(petal_runs_queued[30m]) > 0
