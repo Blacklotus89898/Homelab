@@ -28,7 +28,10 @@ spec:
     - name: slo-front-door-alerts
       rules:
         - alert: SloFrontDoorDown
-          expr: min_over_time(probe_success[2m]) == 0
+          # max, not min: "no successful probe in 2m". min_over_time == 0 was true
+          # on ANY single failed probe — paged critical on every 30s deploy blip
+          # (23 pages/week vs 9 real outages, 2026-10-25).
+          expr: max_over_time(probe_success[2m]) == 0
           labels:
             severity: critical
           annotations:
