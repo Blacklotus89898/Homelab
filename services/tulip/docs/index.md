@@ -101,7 +101,17 @@ claude mcp add --transport http tulip https://tulip.lab.home/mcp \
 claude mcp get tulip   # Status: Connected
 ```
 
-Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `propose`, `review_suggestion`, `decline`, `kill_switch_arm`, `cycle_run`, `broker_account` (read-only) — none approves, executes or disarms.
+Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `propose`, `review_suggestion`, `decline`, `kill_switch_arm`, `cycle_run`, and the read-only `broker_account`, `rebalance_preview` and `scorecard`. None approves, executes or disarms.
+
+## Strategy comparison (Tulip ADR 0004)
+
+- **Justifications.** Every suggestion carries one (Tulip refuses a suggestion without). The review page shows:
+  - the rule with its numbers;
+  - what the order does to the book;
+  - for a sell, the estimated realized gain or loss, since it's taxable in the cash account.
+- **Shadow books.** Five pre-registered candidates each trade an unapproved 10k paper book on the live monthly schedule: trend-filter-200 (live), equal-weight, trend-ensemble, dual-momentum-12m and inverse-vol-60. Their trades are recorded only, never placed.
+- **Scorecard.** Ask Claude Code for the `scorecard`. It compares every book from the common start (the first shadow rebalance): return, max drawdown, trades, sells, fees and realized P&L, plus what each candidate would hold today and why.
+- **Promotion.** At least 12 months of shadow data, plus the backtest holdout, robustness and an after-tax check (sell count). The operator decides by changing `TULIP_STRATEGY` here; Tulip never switches by itself.
 
 ## Operations
 
