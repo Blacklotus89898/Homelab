@@ -45,7 +45,9 @@ spec:
           image: ghcr.io/blacklotus89898/petal-dind:27.5.1
           imagePullPolicy: IfNotPresent
           args:
-            - --host=tcp://0.0.0.0:2375
+            # Loopback only (Petal ADR 0006): steps without `docker: true` run
+            # on the daemon's bridge and must not reach it via the gateway IP.
+            - --host=tcp://127.0.0.1:2375
             - --host=unix:///var/run/docker.sock
             - --storage-driver=fuse-overlayfs
           env:
@@ -94,12 +96,12 @@ spec:
           # Pinned to an immutable Petal commit-sha tag (2026-10-21): a push to
           # Petal main no longer self-deploys on the next pod restart. Upgrade
           # flow: push Petal → CI builds :<sha> → bump the tag here.
-          # e819f39 = secrets (ADR 0006) on modular/DAG steps, timeouts + cancel (ADR 0005), multi-repo
+          # 0a11440 = secrets + docker grant (ADR 0006) on modular/DAG steps, timeouts + cancel (ADR 0005), multi-repo
           # runs (ADR 0004), /metrics, declared schedules,
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:e819f39f084415aa58d77a8ffffe4495d04b759b
+          image: ghcr.io/blacklotus89898/petal:0a114406e022e416d0be496161d705498bd49e8f
           imagePullPolicy: IfNotPresent
           args:
             - -addr

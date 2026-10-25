@@ -3,9 +3,11 @@
 # here runs on the worker next to the privileged DinD daemon, so adding a repo
 # is a reviewed commit, and the repo's own branch protection matters.
 # v1: public https repos only (Petal holds no clone credentials).
-# Secrets (Petal ADR 0006): `secrets:` grants keys of the petal-secrets Secret
-# to a repo's runs ONLY at `secret_refs` (default: default_ref) — any other
-# branch/tag/SHA gets none. Grant only to refs with branch protection.
+# Privileges (Petal ADR 0006): `secrets:` (keys of the petal-secrets Secret)
+# and `docker: true` (steps may drive the DinD daemon) are granted ONLY at a
+# repo's `trusted_refs` (default: default_ref) — any other branch/tag/SHA runs
+# unprivileged. docker reaches everything the privileged daemon can, every
+# secret included: grant it only where you'd grant all, on protected refs.
 # `schedules:` are declarative cron triggers: synced at startup into decl-*
 # rows (insert/update/delete) — git owns them; API-made schedules are separate.
 # Petal reads it at startup — restart the pod after editing:
@@ -17,6 +19,8 @@ metadata:
   namespace: petal
 data:
   repos.yaml: |
+    self: # the git-synced Petal repo (always main)
+      docker: true # docker-image builds Petal
     repos:
       homelab:
         url: https://github.com/Blacklotus89898/Homelab.git
@@ -25,6 +29,7 @@ data:
       petal:
         url: https://github.com/Blacklotus89898/Petal.git
         default_ref: main
+        docker: true # docker-image, run via Backstage petal:run (repo: petal)
     schedules:
       # Nightly self-check of the Homelab repo — the job Jenkins used to run
       # (Homelab ADR 0010). Dead-man alert: PetalNightlyValidateMissing.

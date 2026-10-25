@@ -36,7 +36,10 @@ true in git for that to work:
    (`services/petal/sealed-secrets.yaml`).
 2. **The grant**: `repos-configmap.yaml` lists the name under the repo's
    `secrets:` (or `self.secrets` for the Petal repo). Only runs at the repo's
-   `secret_refs` (default: its `default_ref`) receive it.
+   `trusted_refs` (default: its `default_ref`) receive it.
+
+`sealed-secrets.yaml` has no comments on purpose: `--merge-into` rewrites the
+file. It holds `e2e-canary`, a random non-sensitive test value.
 
 Adding a real credential (operator only — never paste it into a chat or a
 commit). Run it on your own machine, in PowerShell:
@@ -47,7 +50,7 @@ $v = Read-Host -AsSecureString "value"
 $plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($v))
 $f = New-TemporaryFile; [IO.File]::WriteAllText($f, $plain); $plain = $null
 kubectl create secret generic petal-secrets -n petal --from-file=ghcr-push=$f --dry-run=client -o json |
-  kubeseal --controller-namespace sealed-secrets --merge-into services/petal/sealed-secrets.yaml
+  kubeseal --controller-namespace sealed-secrets --format yaml --merge-into services/petal/sealed-secrets.yaml
 Remove-Item $f
 ```
 
@@ -56,9 +59,15 @@ a minute (no restart); a new grant needs a Petal restart (the config is read
 at startup).
 
 Masking replaces every value with `***` in the run's logs, outputs and
-errors, but it is best-effort. The real boundary is the allowlist plus branch
-protection on the granted refs: a step that drives Docker shares the
-privileged DinD daemon and could reach anything it can see.
+errors, but it is best-effort.
+
+**Docker access is a privilege too.** Only `docker: true` steps get
+`DOCKER_HOST`, and only where the config grants `docker: true` at a trusted
+ref (today: Petal's own `docker-image`). Every other step runs on dind's
+bridge with no daemon access. A docker step shares the privileged DinD daemon
+and can read **every** secret file and other runs' workspaces, so grant
+docker only where you'd grant everything. The ref gate only means something
+while branch protection on `main` is enforced: today, admin pushes bypass it.
 
 E2E check: run `secrets-e2e` on `homelab@main`. The log shows
 `value in the log: ***` and a 12-character hash prefix, and the
