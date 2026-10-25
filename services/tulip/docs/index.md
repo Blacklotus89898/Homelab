@@ -110,7 +110,7 @@ Tools: `tulip_status`, `journal_list`, `portfolio`, `suggestions_pending`, `prop
   - what the order does to the book;
   - for a sell, the estimated realized gain or loss, since it's taxable in the cash account.
 - **Shadow books.** Five pre-registered candidates each trade an unapproved 10k paper book on the live monthly schedule: trend-filter-200 (live), equal-weight, trend-ensemble, dual-momentum-12m and inverse-vol-60. Their trades are recorded only, never placed.
-- **Scorecard.** Ask Claude Code for the `scorecard`. It compares every book from the common start (the first shadow rebalance): return, max drawdown, trades, sells, fees and realized P&L, plus what each candidate would hold today and why.
+- **Scorecard.** Open **http://192.168.0.108:30995/scorecard** on your phone (home Wi-Fi) or https://tulip.lab.home/scorecard, or ask Claude Code for the `scorecard`. A monthly ntfy push on `tulip-approvals` summarizes it right after each month's shadow rebalance. It compares every book from the common start (the first shadow rebalance): return, max drawdown, trades, sells, fees and realized P&L, plus what each candidate would hold today and why.
 - **Promotion.** At least 12 months of shadow data, plus the backtest holdout, robustness and an after-tax check (sell count). The operator decides by changing `TULIP_STRATEGY` here; Tulip never switches by itself.
 
 ## Operations

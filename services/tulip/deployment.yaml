@@ -39,7 +39,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:c14cbc624c88bd86496f4f0f55e8cc20c0f76782
+          image: ghcr.io/blacklotus89898/tulip:7c8bf667ea90065869e0d9f5794944da34dde186
           imagePullPolicy: IfNotPresent
           # paper until the Questrade token redeems (2026-10-24: login returned
           # HTTP 500 server-side). Co-pilot (ADR 0003) = "-mode", "copilot";
