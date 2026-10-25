@@ -47,6 +47,10 @@ spec:
           args:
             # Loopback only (Petal ADR 0006): steps without `docker: true` run
             # on the daemon's bridge and must not reach it via the gateway IP.
+            # `dockerd` first: when args start with a flag, the dind
+            # entrypoint prepends its own --host=tcp://0.0.0.0:2375 (which
+            # then collides with this one: "address already in use").
+            - dockerd
             - --host=tcp://127.0.0.1:2375
             - --host=unix:///var/run/docker.sock
             - --storage-driver=fuse-overlayfs
