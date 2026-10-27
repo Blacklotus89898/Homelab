@@ -39,7 +39,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:2494d187a54a6c3c5dcddc2ae788a39a06a4bb61
+          image: ghcr.io/blacklotus89898/tulip:5a826cbcd7f1c2dc34371d213aa817be22949d5b
           imagePullPolicy: IfNotPresent
           # paper until the Questrade token redeems (2026-10-24: login returned
           # HTTP 500 server-side). Co-pilot (ADR 0003) = "-mode", "copilot";
@@ -86,6 +86,12 @@ spec:
             # Re-tune these to the real account before co-pilot mode.
             - name: TULIP_STRATEGY
               value: trend-filter-200
+            # Paper training (Tulip ADR 0005, operator decision 2026-10-27):
+            # the rules' own suggestions fill the PAPER book without approval
+            # (journaled order.auto_executed). Paper mode only — Tulip refuses
+            # to start with it in co-pilot. Remove to require approvals again.
+            - name: TULIP_AUTOEXECUTE
+              value: paper
             - name: TULIP_THORN_MAX_ORDER_VALUE
               value: "10000"
             - name: TULIP_THORN_MAX_POSITION_WEIGHT

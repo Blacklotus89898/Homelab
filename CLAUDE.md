@@ -39,6 +39,7 @@ kubectl get events -A --sort-by=.lastTimestamp | tail -20
 Tulip (`github.com/Blacklotus89898/Tulip`, ns `tulip`) trades only with the operator's approval (Tulip ADR 0002 §3). With cluster-admin you *could* reach around that gate, so these are hard rules:
 - **Never** read `tulip-approval-*` secrets (or `TULIP_APPROVAL_PASSPHRASE_HASH`), and never ask the user for their passphrase.
 - **Never** call Tulip's `/approve/…` or `/killswitch` endpoints, and never approve, disarm or "click through" on the user's behalf — not even "to test".
+- Paper training (Tulip ADR 0005): `TULIP_AUTOEXECUTE=paper` is the operator's setting — it auto-fills only the loop's own rules suggestions in the paper book. Never enable it beyond paper mode, never extend it to MCP/brain proposals, and never use `propose` expecting it to fill.
 - Through MCP you may read (incl. `broker_account`, `rebalance_preview`, `scorecard`), `propose` (a justification is required), `review_suggestion`, `decline`, `kill_switch_arm` and `cycle_run`. That is the whole surface.
 - **Questrade (co-pilot, Tulip ADR 0003):** never read the `tulip-questrade` secret, the rotated token under Tulip's `/data`, or use any Questrade token outside Tulip — refresh tokens are single-use, so one stray refresh silently breaks Tulip's chain. Never ask the user to paste a token; they seal it themselves. Tulip is read-only on Questrade; the user places every order.
 
