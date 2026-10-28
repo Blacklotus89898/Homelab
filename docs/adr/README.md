@@ -16,6 +16,7 @@ a row graduates to an ADR when it shapes how the platform is built, not just wha
 | [0008](0008-nodeport-until-gateway.md) | Raw NodePort exposure until the gateway consolidation | Partly superseded by 0009 | 2026-10-15 |
 | [0009](0009-front-door-istio-gateway-api.md) | Front door = Istio Gateway API on `*.lab.home` with a local CA | Accepted, live (gateway on 80/443) | 2026-10-21 |
 | [0010](0010-retire-jenkins-and-arc.md) | Retire Jenkins and ARC; CI = GitHub Actions + Petal (reactivation runbooks kept) | Accepted | 2026-10-23 |
+| [0011](0011-warden-sre-agent.md) | Warden: incident-investigation agent — read-only SA, fixed tool catalogue, journal + ntfy only; phased (PRs, then gated actions) | Accepted (phase 1a) | 2026-10-27 |
 
 ## Open decisions (no ADR yet — each needs a choice before work starts)
 
