@@ -32,7 +32,7 @@ alerts. It is built in phases, and each phase ships on its own:
 
 | Phase | What | Status |
 |---|---|---|
-| 1a | Alert → deterministic evidence bundle → journal + ntfy digest (no model) | this ADR |
+| 1a | Alert → deterministic evidence bundle → journal + ntfy digest (no model) | live 2026-10-28 (Warden f601223) |
 | 1b | Model summary over the bundle (Messages-API tool loop, configurable base URL/model) | needs an operator-sealed key |
 | 2 | Eval set: replay journaled bundles and past KB incidents, score diagnoses | |
 | 3 | Fix proposals as **pull requests** (operator merges; GitOps rule intact) | |
