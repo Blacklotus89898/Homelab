@@ -1,0 +1,14 @@
+# Warden's journal (append-only SQLite): alerts, skips, evidence bundles —
+# phase 2's eval set. 1Gi: bundles are small JSON; disk is the #1 constraint.
+# Recovery stance as Tulip: accepted loss on a full rebuild (Homelab ADR 0003).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: warden-data
+  namespace: warden
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

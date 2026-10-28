@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: warden
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Blacklotus89898/Homelab.git
+    targetRevision: HEAD
+    path: services/warden
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: warden
+  syncPolicy:
+    automated:
+      prune: true # house standard: git deletions remove the live object
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

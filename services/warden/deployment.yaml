@@ -1,0 +1,155 @@
+# Warden — incident-investigation agent (github.com/Blacklotus89898/Warden,
+# Homelab ADR 0011). Phase 1a: alert → read-only evidence → journal + ntfy.
+#   - Recreate: the journal is SQLite, one writer.
+#   - SA warden (rbac.yaml): get/list only; no secrets/configmaps/exec.
+#     The SA token IS mounted (unlike Tulip) — reading the API is the job.
+#   - Two git-sync sidecars mirror the knowledge base read-only: DaVinci
+#     docs/ and this repo's docs/ (shallow, every 10 min — KB churn is low).
+#   - Untrusted inputs (alert labels, logs): read-only role caps the blast
+#     radius; digests are redacted (ntfy is unauthenticated on the LAN).
+# Upgrade: push Warden → its CI builds :<sha> → bump the tag here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warden
+  namespace: warden
+  labels:
+    app: warden
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: warden
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: warden
+    spec:
+      serviceAccountName: warden
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: warden
+          image: ghcr.io/blacklotus89898/warden:f6012231c188216782f6e53108ccdf3879dbea6c
+          imagePullPolicy: IfNotPresent
+          args: ["-addr", ":8080", "-db", "/data/warden.db"]
+          env:
+            # Off switch (ADR 0011 §5): "false" = journal alerts, do nothing else.
+            - name: WARDEN_ENABLED
+              value: "true"
+            - name: WARDEN_DAILY_CAP
+              value: "40"
+            - name: WARDEN_NTFY_URL
+              value: http://ntfy.monitoring.svc
+            - name: WARDEN_NTFY_TOPIC
+              value: warden
+            - name: WARDEN_VM_URL
+              value: http://vmsingle-vmstack.monitoring.svc:8428
+            - name: WARDEN_KB_ROOTS
+              value: davinci=/kb/davinci/repo/docs,homelab=/kb/homelab/repo/docs
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: kb
+              mountPath: /kb
+              readOnly: true
+        - name: kb-davinci
+          image: registry.k8s.io/git-sync/git-sync:v4.1.0
+          args:
+            - --repo=https://github.com/Blacklotus89898/DaVinci.git
+            - --ref=main
+            - --depth=1
+            - --period=10m
+            - --root=/kb/davinci
+            - --link=repo
+            - --http-bind=:2345 # probe target (house rule: every container probed)
+          readinessProbe: &probedavinci
+            tcpSocket:
+              port: 2345
+            periodSeconds: 30
+          livenessProbe: *probedavinci
+          resources: &gitsync
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 300m
+              memory: 128Mi
+          securityContext: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: kb
+              mountPath: /kb
+            - name: tmp
+              mountPath: /tmp
+        - name: kb-homelab
+          image: registry.k8s.io/git-sync/git-sync:v4.1.0
+          args:
+            - --repo=https://github.com/Blacklotus89898/Homelab.git
+            - --ref=main
+            - --depth=1
+            - --period=10m
+            - --root=/kb/homelab
+            - --link=repo
+            - --http-bind=:2346 # probe target (house rule: every container probed)
+          readinessProbe: &probehomelab
+            tcpSocket:
+              port: 2346
+            periodSeconds: 30
+          livenessProbe: *probehomelab
+          resources: *gitsync
+          securityContext: *locked
+          volumeMounts:
+            - name: kb
+              mountPath: /kb
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: warden-data
+        - name: kb
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

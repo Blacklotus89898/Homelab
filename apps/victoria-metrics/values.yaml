@@ -91,6 +91,14 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 4h
       routes:
+        # Warden (Homelab ADR 0011): investigate what would page — FIRST, with
+        # continue, so every alert still reaches the routes below unchanged.
+        # Mirrors the blackholes: only warning/critical, not the structural ones.
+        - receiver: warden
+          continue: true
+          matchers:
+            - severity =~ "warning|critical"
+            - alertname !~ "Watchdog|KubeMemoryOvercommit|KubeCPUOvercommit"
         - receiver: blackhole
           matchers:
             - alertname = "Watchdog" # always-firing heartbeat; would page every 4h
@@ -112,6 +120,11 @@ alertmanager:
             - alertname = "KubeCPUOvercommit"
     receivers:
       - name: blackhole # no integrations = drop
+      - name: warden # evidence bundle → journal + ntfy topic "warden"
+        webhook_configs:
+          - url: "http://warden.warden.svc:8080/alerts"
+            send_resolved: false # nothing to investigate on resolve
+            max_alerts: 10
       - name: ntfy
         webhook_configs:
           - url: "http://ntfy.monitoring.svc/homelab-alerts?template=alertmanager"

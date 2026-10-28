@@ -1,0 +1,42 @@
+# Warden /metrics (journal events by kind, warden_enabled), scraped by
+# vmagent, plus alerts on Warden itself. These route to ntfy like any alert —
+# and to Warden too, which then investigates its own namespace.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: warden
+  namespace: warden
+spec:
+  selector:
+    matchLabels:
+      app: warden
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: warden
+  namespace: warden
+spec:
+  groups:
+    - name: warden
+      rules:
+        - alert: WardenNotifyFailing
+          expr: increase(warden_journal_events_total{kind="notify.error"}[1h]) > 2
+          labels:
+            severity: warning
+          annotations:
+            summary: "Warden can't push investigation digests to ntfy"
+            description: "Bundles are still journaled (GET /investigations on warden.warden.svc:8080). Check ntfy in ns monitoring."
+            runbook_url: "kb://runbooks/warden.md"
+        - alert: WardenSkippingAlerts
+          expr: increase(warden_journal_events_total{kind="alert.skipped"}[1h]) > 5
+          labels:
+            severity: warning
+          annotations:
+            summary: "Warden is skipping alerts (daily cap, full queue or disabled)"
+            description: "An alert storm or a stuck investigation. Skips are journaled with the reason; raise WARDEN_DAILY_CAP only if the storm is real."
+            runbook_url: "kb://runbooks/warden.md"

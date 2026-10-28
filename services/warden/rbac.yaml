@@ -1,0 +1,46 @@
+# Warden's identity (Homelab ADR 0011 §1): get/list on what an investigation
+# reads, and nothing else. A custom role, not `view`: view grants configmaps
+# (some carry credentials here) and aggregates whatever future CRDs add.
+# EXCLUDED on purpose: secrets, configmaps, pods/exec, pods/attach,
+# pods/portforward, */proxy, and every write verb. Widening this needs a new
+# ADR — phases 3-4 act through PRs and an approval gate, never through this SA.
+# Verify: kubectl auth can-i --list --as=system:serviceaccount:warden:warden
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: warden
+  namespace: warden
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: warden-read
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log, events, nodes, namespaces, services, endpoints, persistentvolumeclaims]
+    verbs: [get, list]
+  - apiGroups: [events.k8s.io]
+    resources: [events]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets, replicasets]
+    verbs: [get, list]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list]
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: warden-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: warden-read
+subjects:
+  - kind: ServiceAccount
+    name: warden
+    namespace: warden

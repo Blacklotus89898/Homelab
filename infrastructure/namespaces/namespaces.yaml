@@ -107,6 +107,14 @@ metadata:
   name: tulip
 
 ---
+# Warden incident-investigation agent (github.com/Blacklotus89898/Warden,
+# Homelab ADR 0011) — read-only SA; not in the mesh yet
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: warden
+
+---
 # Argo Rollouts controller — no mesh label needed; talks to the API server only
 apiVersion: v1
 kind: Namespace
