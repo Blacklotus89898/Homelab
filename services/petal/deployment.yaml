@@ -105,7 +105,7 @@ spec:
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:0a114406e022e416d0be496161d705498bd49e8f
+          image: ghcr.io/blacklotus89898/petal:4a771996a491c93e3e52d376fe1bcf1b1a16cf45
           imagePullPolicy: IfNotPresent
           args:
             - -addr
