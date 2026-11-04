@@ -58,6 +58,11 @@ spec:
             - --host=tcp://127.0.0.1:2375
             - --host=unix:///var/run/docker.sock
             - --storage-driver=fuse-overlayfs
+            # Match the pod network (flannel VXLAN eth0 = 1450). docker0
+            # defaults to 1500, so step containers' >1450-byte packets were
+            # dropped: small TLS handshakes passed, Yahoo's big cert chain
+            # timed out ("TLS handshake timeout"). KB solutions/dind-mtu-tls-timeout.md
+            - --mtu=1450
           env:
             - name: DOCKER_TLS_CERTDIR
               value: "" # TLS off; port is loopback-only inside the pod
