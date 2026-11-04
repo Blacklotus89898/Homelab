@@ -10,8 +10,8 @@
 # secret included: grant it only where you'd grant all, on protected refs.
 # `schedules:` are declarative cron triggers: synced at startup into decl-*
 # rows (insert/update/delete) — git owns them; API-made schedules are separate.
-# Petal reads it at startup — restart the pod after editing:
-#   kubectl -n petal rollout restart deploy/petal   (or bump the deployment)
+# Petal reads it at startup — restart through git: bump the
+# `petal.io/config-rev` pod annotation in deployment.yaml in the same commit.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -30,6 +30,12 @@ data:
         url: https://github.com/Blacklotus89898/Petal.git
         default_ref: main
         docker: true # docker-image, run via Backstage petal:run (repo: petal)
+      tulip:
+        url: https://github.com/Blacklotus89898/Tulip.git
+        default_ref: main
+        # No secrets, no docker: the backtest pipeline is read-only (Yahoo
+        # history in, a text summary out). Tulip's approval boundary and the
+        # tulip-questrade / tulip-approval-* secrets never come near Petal.
     schedules:
       # Nightly self-check of the Homelab repo — the job Jenkins used to run
       # (Homelab ADR 0010). Dead-man alert: PetalNightlyValidateMissing.
@@ -37,3 +43,9 @@ data:
         repo: homelab
         pipeline: validate
         cron: "17 3 * * *" # 03:17 UTC, off the :00 marks
+      # Monthly re-run of Tulip's pre-registered allocator comparison
+      # (Tulip docs/backtests) on fresh history; summary = the run output.
+      - id: tulip-backtest-monthly
+        repo: tulip
+        pipeline: backtest
+        cron: "41 6 2 * *" # 06:41 UTC on the 2nd: month-end bars are in

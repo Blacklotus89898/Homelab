@@ -35,6 +35,10 @@ spec:
     metadata:
       labels:
         app: petal
+      annotations:
+        # Petal reads repos-configmap.yaml only at startup. Bump this with any
+        # change to that ConfigMap so the restart goes through git, not kubectl.
+        petal.io/config-rev: "2026-11-03-tulip-backtest"
     spec:
       containers:
         - name: dind
