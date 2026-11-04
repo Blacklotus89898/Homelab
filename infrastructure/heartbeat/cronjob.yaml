@@ -20,6 +20,9 @@ spec:
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 3600 # keep last evidence an hour for debugging
+      # The script retries internally; one extra pod is plenty. (Default 6 meant
+      # up to 7 "push FAILED" pages per beat during a GitHub outage.)
+      backoffLimit: 1
       template:
         metadata:
           labels:
@@ -49,18 +52,30 @@ spec:
                   git config --global user.email "heartbeat@homelab.local"
                   # credential helper keeps the token out of remote URLs and error output
                   git config --global credential.helper '!f() { printf "username=x-access-token\npassword=%s\n" "$GH_TOKEN"; }; f'
-                  git clone --quiet --depth 1 -b heartbeat https://github.com/Blacklotus89898/Homelab.git /hb
-                  cd /hb
-                  printf '%s\n' "$(date -u +%s) $(date -u +%FT%TZ)" > heartbeat.txt
-                  git add heartbeat.txt
-                  git commit --quiet -m "heartbeat $(date -u +%FT%TZ)"
-                  if ! git push --quiet origin heartbeat; then
-                    # Cluster is UP but the beat can't get out (PAT expired?
-                    # GitHub unreachable?). Say so locally before the watchdog
-                    # pages "cluster dark" — busybox wget, alpine/git has no curl.
-                    wget -qO- --header "Title: Heartbeat push FAILED (cluster is up)" \
-                      --header "Tags: warning" \
-                      --post-data="Heartbeat CronJob could not push to GitHub. If this keeps failing the GitHub watchdog will page 'cluster dark'. Check the PAT in heartbeat-github-pat and: kubectl -n heartbeat get jobs" \
-                      http://ntfy.monitoring.svc.cluster.local/homelab-alerts || true
-                    exit 1
-                  fi
+                  # One beat = fresh clone + commit + push. Retried in-script so a
+                  # GitHub blip doesn't page: 2026-11-04 a major GitHub Git-ops
+                  # incident failed the first push at 10:07Z and 10:37Z, the Job's
+                  # retry pod landed both beats ~10s later — yet each first
+                  # failure had already paged. Clone failures are covered too
+                  # (under -e a failed clone used to exit before the alert).
+                  beat() {
+                    rm -rf /hb
+                    git clone --quiet --depth 1 -b heartbeat https://github.com/Blacklotus89898/Homelab.git /hb || return 1
+                    printf '%s\n' "$(date -u +%s) $(date -u +%FT%TZ)" > /hb/heartbeat.txt
+                    git -C /hb add heartbeat.txt
+                    git -C /hb commit --quiet -m "heartbeat $(date -u +%FT%TZ)" || return 1
+                    git -C /hb push --quiet origin heartbeat
+                  }
+                  for wait in 0 20 60; do
+                    sleep "$wait"
+                    if beat; then exit 0; fi
+                    echo "heartbeat attempt failed (next wait after ${wait}s)" >&2
+                  done
+                  # Cluster is UP but the beat can't get out after ~80s of retries
+                  # (PAT expired? GitHub down?). Say so locally before the watchdog
+                  # pages "cluster dark" — busybox wget, alpine/git has no curl.
+                  wget -qO- --header "Title: Heartbeat push FAILED (cluster is up)" \
+                    --header "Tags: warning" \
+                    --post-data="Heartbeat CronJob could not push to GitHub after 3 attempts (~80s). Check https://www.githubstatus.com first; if GitHub is fine, check the PAT in heartbeat-github-pat and: kubectl -n heartbeat get jobs" \
+                    http://ntfy.monitoring.svc.cluster.local/homelab-alerts || true
+                  exit 1
