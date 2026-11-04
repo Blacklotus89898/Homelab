@@ -114,7 +114,7 @@ spec:
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:8629ffb7f626052efe50611dc9565bc5fadf7d36
+          image: ghcr.io/blacklotus89898/petal:df0c14807a35326e9e6adbb312ff3f6f26eae4a7
           imagePullPolicy: IfNotPresent
           args:
             - -addr
@@ -142,6 +142,15 @@ spec:
             - petal
             - -public-url
             - https://petal.lab.home
+            # Retention (Petal ADR 0009): finished runs older than 30d go
+            # (rows, events, step logs), newest 20 per pipeline always kept —
+            # so monthly pipelines keep a 20-month history. Sweeps at start + 6h.
+            - -retention
+            - 720h
+            - -retention-keep
+            - "20"
+            - -retention-every
+            - 6h
           env:
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2375
