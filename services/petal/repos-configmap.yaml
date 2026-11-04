@@ -36,6 +36,7 @@ data:
         # No secrets, no docker: the backtest pipeline is read-only (Yahoo
         # history in, a text summary out). Tulip's approval boundary and the
         # tulip-questrade / tulip-approval-* secrets never come near Petal.
+        notify_success: [backtest] # monthly summary → ntfy "petal" (ADR 0008)
     schedules:
       # Nightly self-check of the Homelab repo — the job Jenkins used to run
       # (Homelab ADR 0010). Dead-man alert: PetalNightlyValidateMissing.

@@ -38,7 +38,7 @@ spec:
       annotations:
         # Petal reads repos-configmap.yaml only at startup. Bump this with any
         # change to that ConfigMap so the restart goes through git, not kubectl.
-        petal.io/config-rev: "2026-11-03-tulip-backtest"
+        petal.io/config-rev: "2026-11-03-notify-success"
     spec:
       containers:
         - name: dind
@@ -114,7 +114,7 @@ spec:
           # orphaned-run recovery, on top of the
           # orchestrator contract (ADR 0003: writes need the bearer token below
           # — without it every POST /api/runs returns 503).
-          image: ghcr.io/blacklotus89898/petal:4a771996a491c93e3e52d376fe1bcf1b1a16cf45
+          image: ghcr.io/blacklotus89898/petal:8629ffb7f626052efe50611dc9565bc5fadf7d36
           imagePullPolicy: IfNotPresent
           args:
             - -addr
@@ -133,6 +133,15 @@ spec:
             - "2"
             - -secrets # pipeline secrets, granted per repo+ref in repos.yaml (ADR 0006)
             - /etc/petal-secrets
+            # Run notifications (Petal ADR 0008): every failed run, plus the
+            # outputs of pipelines listed in notify_success (repos-configmap).
+            # Subscribe on a phone: topic "petal" on http://192.168.0.108:30310.
+            - -ntfy-url
+            - http://ntfy.monitoring.svc
+            - -ntfy-topic
+            - petal
+            - -public-url
+            - https://petal.lab.home
           env:
             - name: DOCKER_HOST
               value: tcp://127.0.0.1:2375
