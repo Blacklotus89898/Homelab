@@ -308,13 +308,16 @@ pushes). No keyring restored, so phase 5 ran as [If the keyring is lost](#if-the
   Phase 8), and the petal/tulip HTTPRoutes (removed apps).
 - **Real rebuild blockers found and fixed:**
   1. authentik's pinned digest 404'd on ghcr; production only ran it from the worker's image
-     cache. Re-pinned to the digest tag `2025.2.4` serves (built 2025-04-08).
+     cache. ghcr's `2025.2.4` tag now serves an arm64-only image (the first re-pin to it
+     crashlooped with `exec format error`). Fixed by pulling the *same* index digest from
+     Docker Hub (`docker.io/beryju/authentik`), which still has amd64.
   2. `services/linkding/pvc.yaml` pinned `volumeName` to this cluster's PV, so a fresh claim
      stayed Pending forever. Removed; the app ignores and respects `/spec/volumeName`.
 - **Not proven:** Phase 4's host install (k3d skips the install script and systemd units, so
   its ⚠️ stays), Phase 5's keyring restore, and the virtiofs/NodePort/Pi-hole pieces.
 - **Lesson:** a digest pin can rot while production keeps running from cache. Before trusting
-  a rebuild, check every pinned image still resolves, for example
+  a rebuild, check every pinned image still resolves *and still includes linux/amd64* (a
+  version label is not enough), for example
   `curl -sI -H "Authorization: Bearer <anon token>" https://ghcr.io/v2/<repo>/manifests/<digest>`.
 
 ## Out-of-git ledger (summary)
