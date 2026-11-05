@@ -295,6 +295,28 @@ Point a copy of `root-app.yaml` at a branch and expect the hand-made secrets and
 host-specific bits (virtiofs, NodePorts, Pi-hole) to fail. Everything else should converge.
 Record the result here and drop the ⚠️ marks it clears.
 
+### 2026-11-05: k3d on `ubuntu.home`, no keyring
+
+k3d v5.8.3, k3s v1.34.5 (1 server cordoned + 1 agent, traefik disabled, same eviction-hard),
+ArgoCD 10.2.1 from `apps/argocd/values.yaml`, root app on a throwaway branch with `tulip`,
+`heartbeat` and `petal` removed (outward side effects: orders, heartbeat commits, image
+pushes). No keyring restored, so phase 5 ran as [If the keyring is lost](#if-the-keyring-is-lost).
+
+- **Converged in ~20 min:** 22/30 apps. No sync-wave deadlock; gateway Programmed; cert-manager
+  minted a fresh `lab-root-ca` and wildcard cert. ~5.5 GiB RAM across both nodes.
+- **Expected failures:** 6 SealedSecrets (no key), `backstage-github-token` (hand-made,
+  Phase 8), and the petal/tulip HTTPRoutes (removed apps).
+- **Real rebuild blockers found and fixed:**
+  1. authentik's pinned digest 404'd on ghcr; production only ran it from the worker's image
+     cache. Re-pinned to the digest tag `2025.2.4` serves (built 2025-04-08).
+  2. `services/linkding/pvc.yaml` pinned `volumeName` to this cluster's PV, so a fresh claim
+     stayed Pending forever. Removed; the app ignores and respects `/spec/volumeName`.
+- **Not proven:** Phase 4's host install (k3d skips the install script and systemd units, so
+  its ⚠️ stays), Phase 5's keyring restore, and the virtiofs/NodePort/Pi-hole pieces.
+- **Lesson:** a digest pin can rot while production keeps running from cache. Before trusting
+  a rebuild, check every pinned image still resolves, for example
+  `curl -sI -H "Authorization: Bearer <anon token>" https://ghcr.io/v2/<repo>/manifests/<digest>`.
+
 ## Out-of-git ledger (summary)
 
 | Layer | Lives in | Captured in git? |
