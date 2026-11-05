@@ -23,6 +23,11 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      # The PVC no longer pins volumeName (it named a PV that only exists on
+      # the current cluster, so a rebuild left the claim Pending forever —
+      # 2026-11-05 bootstrap rehearsal). volumeName is immutable once bound:
+      # ignore it below AND respect that on sync, or SSA would try to clear it.
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
@@ -38,3 +43,4 @@ spec:
         - /metadata/annotations/volume.beta.kubernetes.io~1storage-provisioner
         - /metadata/annotations/volume.kubernetes.io~1selected-node
         - /metadata/annotations/volume.kubernetes.io~1storage-provisioner
+        - /spec/volumeName

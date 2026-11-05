@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: authentik
-          image: ghcr.io/goauthentik/server@sha256:36233579415aa2e2e52a6b0c45736cb871fe71460bfe0cf95d83f67528fb1182 # 2025.2.4
+          image: ghcr.io/goauthentik/server@sha256:1839674f14911f4e50cf6495caa2de9db0d7a16b5ce46341bcdc37a8a6848c0a # 2025.2.4 (previous pin 404s on ghcr; found by the 2026-11-05 bootstrap rehearsal)
           imagePullPolicy: IfNotPresent
           args:
             - server
