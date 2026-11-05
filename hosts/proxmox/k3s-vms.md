@@ -13,7 +13,7 @@ roadmap, not here.
 | Memory | 12288 MiB (no balloon setting) | 24576 MiB |
 | Machine / BIOS | q35 / SeaBIOS (default) | q35 / SeaBIOS (default) |
 | Disk | `hard_drive:100/vm-100-disk-0.qcow2`, 32G, virtio-scsi-single, iothread | `hard_drive:104/vm-104-disk-0.qcow2`, 52G, virtio-scsi-single, iothread |
-| NIC | net0 virtio `BC:24:11:0C:ED:76` on vmbr0 (firewall=1) | net0 virtio `BC:24:11:8F:CB:EE` on vmbr0 (firewall=1); net1 virtio `BC:24:11:2C:AD:68` on vmbr3 |
+| NIC | net0 virtio `BC:24:11:0C:ED:76` on vmbr0 (firewall=1) | net0 virtio `BC:24:11:8F:CB:EE` on vmbr0 (firewall=1). The second NIC (net1 on vmbr3) was **removed 2026-11-04**: after the power cut NetworkManager brought it up instead of net0, so the worker had no network. Keep one NIC |
 | VirtIOFS | — | `virtiofs0: smb_storage,expose-acl=1` → mounted at `/mnt/smb_storage` (fstab: `bootstrap/nodes/worker/fstab.snippet`). ACL/xattr exposure is required for DinD/buildkit (`docs/solutions/virtiofs-xattr-dind-buildkit.md`) |
 | Guest agent | enabled | enabled |
 | Start at boot | `onboot=1` (set 2026-10-28; no `startup` order — that needs `Sys.Modify` on `/`; Pi-hole CT 107 has order=1 so DNS comes first, unordered guests follow) | `onboot=1` (same) |
