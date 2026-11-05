@@ -53,7 +53,7 @@ Add `backend.add(import('@backstage/plugin-<name>-backend'))` to `packages/backe
 
 ## Auth
 
-GitHub OAuth only. Configured via `backstage-github-auth` SealedSecret (namespace: `backstage`).
+GitHub OAuth only. Configured via the `backstage-github-auth` Secret (namespace `backstage`). It's a **hand-made Secret, not sealed and not in git**, so a rebuild must recreate it (`docs/bootstrap.md` Phase 8).
 No guest access.
 
 ## Catalog

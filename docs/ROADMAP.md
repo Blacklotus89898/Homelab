@@ -103,10 +103,12 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
 - [ ] **Phase 5 — hardening & consolidation** (from the 2026-10-23 full assessment)
   - P0
     - [ ] **Re-export the sealed-secrets keyring after the 2026-10-24 03:15 UTC rotation** (user; keys rotate every 30d — the 10-21 backup lacks the new key, so anything sealed after the rotation won't decrypt on a rebuild)
+    - [ ] **Seal the three hand-made Backstage Secrets** (`backstage-github-token`, `backstage-github-auth`, `backstage-k8s-token`). They're live-only, so a rebuild loses them silently (2026-11-05 inventory, `docs/bootstrap.md` Phase 8). Do it after the keyring re-export above.
     - [ ] **Rotate OpenObserve credentials** — repo is PUBLIC and `infrastructure/openobserve/secret.yaml` + `OO_AUTH` in `platform/observability/otel-collector.yaml` carry `admin@homelab.local`/`admin` in plaintext (in git history forever → sealing alone is not enough). Change via OpenObserve's API/UI first (root env is read on first start only — verify), then seal + `OO_AUTH` from a `secretKeyRef`. Or retire OpenObserve (P2).
   - P1
     - [ ] Bootstrap rehearsal: steps 4–7 on a throwaway kind/k3d cluster (local, then CI) — the system is *documented*, not *rehearsed*; the Gateway sync-wave deadlock (198a0fa) only existed on a fresh create
     - [x] Petal multi-repo runs ✅ 2026-10-24 (Petal ADR 0004, Petal 456e289; Homelab 1b01bb5 → 7d4e66f): allowlist ConfigMap, `petal-checkout` step, `petal.io/repo` annotation drives `petal:run`; Jenkins' old job lives on as `.petal/pipelines/validate.yaml` (first real runs caught two silent-pass bugs in the NodePort check — KB solutions/petal-multi-repo-runs.md)
+    - [ ] Capture Pi-hole `dns.hosts` (35 records) into `hosts/pihole/`. It's the last DNS piece a host rebuild can't recreate (needs the Pi-hole password, so it's the user's job).
     - [ ] Floaters: decide juice-shop, portainer-agent, paperless (6 PVCs ≈ 22Gi) — adopt or delete
     - [ ] Capture Pi-hole `dns.hosts` (35 records; needs the Pi-hole password) into `hosts/pihole/`
     - [ ] Branch protection is admin-bypassed on every push ("Bypassed rule violations… 8 of 8 required status checks") — enforce for admins or document the bypass as policy
