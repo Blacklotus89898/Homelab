@@ -26,7 +26,9 @@ spec:
       # The PVC no longer pins volumeName (it named a PV that only exists on
       # the current cluster, so a rebuild left the claim Pending forever —
       # 2026-11-05 bootstrap rehearsal). volumeName is immutable once bound:
-      # ignore it below AND respect that on sync, or SSA would try to clear it.
+      # it's ignored below so the app isn't OutOfSync. The PVC itself opts out
+      # of SSA (annotation in services/linkding/pvc.yaml); RespectIgnoreDifferences
+      # alone did not stop SSA clearing the field (sync failed 2026-11-05).
       - RespectIgnoreDifferences=true
     retry:
       limit: 5

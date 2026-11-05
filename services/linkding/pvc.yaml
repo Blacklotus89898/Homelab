@@ -5,6 +5,13 @@ metadata:
   namespace: linkding
   labels:
     app: linkding
+  annotations:
+    # Client-side apply for this one object. The live claim was server-side
+    # applied with volumeName (argocd-controller is its sole owner), so SSA of
+    # this manifest tries to clear the immutable field and the sync fails.
+    # Client-side apply leaves fields it never applied alone (tested on the
+    # 2026-11-05 rehearsal cluster). A fresh cluster just creates the claim.
+    argocd.argoproj.io/sync-options: ServerSideApply=false
 spec:
   accessModes:
     - ReadWriteOnce
