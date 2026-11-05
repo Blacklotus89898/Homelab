@@ -38,8 +38,8 @@ flowchart LR
   PE & TU & WA -->|CI builds :sha| GHCR
   HL -->|sync| AR
   AR --> PEs & TUs & WAs
-  GHCR -.pulled.-> PEs & TUs & WAs
-  DV -.git-synced KB.-> WAs
+  GHCR -.->|pulled| PEs & TUs & WAs
+  DV -.->|git-synced KB| WAs
   AM[alertmanager] -->|webhook| WAs
 ```
 
