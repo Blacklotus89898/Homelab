@@ -1,6 +1,51 @@
 # Homelab
 
-GitOps-managed homelab on k3s using ArgoCD app-of-apps, Istio ambient mesh, VictoriaMetrics + Grafana, OpenObserve, OTel, Jenkins, and [Petal](https://github.com/Blacklotus89898/Petal) (pipeline orchestrator) running alongside [Backstage](backstage/) (developer portal) — see Petal ADR 0003: **Backstage is the portal, Petal is the orchestrator.**
+GitOps-managed homelab on k3s: ArgoCD app-of-apps, Istio ambient mesh with a Gateway API front
+door (`*.lab.home`), VictoriaMetrics + Grafana, OpenObserve, OTel, [Backstage](backstage/) as the
+developer portal and [Petal](https://github.com/Blacklotus89898/Petal) as the pipeline
+orchestrator (Petal ADR 0003: **Backstage is the portal, Petal is the orchestrator**). Jenkins and
+ARC are retired (ADR 0010).
+
+## Platform repos
+
+This repo is the umbrella: everything that runs is declared here, and the sibling repos ship
+images that `services/<name>/` deploys by commit SHA.
+
+| Repo | Role | Deployed by |
+|---|---|---|
+| **Homelab** (this) | cluster state, GitOps, platform ADRs, Backstage | ArgoCD (root app) |
+| [Petal](https://github.com/Blacklotus89898/Petal) | pipeline orchestrator: **builds** | `services/petal` |
+| [Tulip](https://github.com/Blacklotus89898/Tulip) | human-approved trading agent: **trades** (paper) | `services/tulip` |
+| [Warden](https://github.com/Blacklotus89898/Warden) | read-only alert investigator + status map: **investigates** | `services/warden` |
+| [DaVinci](https://github.com/Blacklotus89898/DaVinci) | knowledge base (runbooks, solutions) + its MCP server: **remembers** | workstation MCP; Warden reads its `docs/` |
+
+```mermaid
+flowchart LR
+  subgraph GH["GitHub"]
+    HL[Homelab]
+    PE[Petal]
+    TU[Tulip]
+    WA[Warden]
+    DV[DaVinci]
+  end
+  GHCR[(ghcr.io images)]
+  subgraph K3S["k3s cluster"]
+    AR[ArgoCD]
+    PEs[petal]
+    TUs[tulip]
+    WAs[warden]
+  end
+  PE & TU & WA -->|CI builds :sha| GHCR
+  HL -->|sync| AR
+  AR --> PEs & TUs & WAs
+  GHCR -.->|pulled| PEs & TUs & WAs
+  DV -.->|git-synced KB| WAs
+  AM[alertmanager] -->|webhook| WAs
+```
+
+Where docs live: platform decisions in [`docs/adr/`](docs/adr/README.md); a sibling's own
+decisions in that repo's `docs/adr/` (numbering is per repo); runbooks and incident knowledge in
+DaVinci `docs/`; per-service operating notes in `services/*/docs/` (TechDocs).
 
 ## Documentation
 

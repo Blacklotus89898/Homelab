@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-21 (mirrors Petal repo ADR 0003; fixes the README's old framing)
+- **Canonical record:** [Petal ADR 0003](https://github.com/Blacklotus89898/Petal/blob/main/docs/adr/0003-backstage-portal-petal-orchestrator.md). This copy keeps the platform-side view; when the two disagree, Petal's wins, and changes go there first.
 
 ## Context
 
