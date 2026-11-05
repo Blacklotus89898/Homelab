@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: warden
-          image: ghcr.io/blacklotus89898/warden:57ef13b16c9bbf01d55e6c6d6d67ddaca1d72e4a
+          image: ghcr.io/blacklotus89898/warden:fd73d199e8ce98de48641322fb283ec8c593b936
           imagePullPolicy: IfNotPresent
           args: ["-addr", ":8080", "-db", "/data/warden.db"]
           env:
