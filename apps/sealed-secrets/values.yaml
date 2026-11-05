@@ -8,5 +8,11 @@ resources:
   limits:
     memory: 128Mi
 
-# Key rotation: default is 30d key renewal, 365d expiry. Fine for homelab.
-# keyrenewperiod: "720h"
+# Key renewal OFF (2026-11-05). The 30-day default only added new keys. It
+# never re-encrypts or retires old ones (the controller keeps every key so old
+# SealedSecrets still decrypt), so each renewal just made the off-cluster
+# keyring backup stale. With renewal off, one backup of the current keys stays
+# complete. To rotate deliberately: set this back to "720h", or run
+# `kubeseal --re-encrypt` after a manual renewal, then export the keyring again.
+# Chart key is camelCase: the old commented `keyrenewperiod` was ignored.
+keyRenewPeriod: "0"

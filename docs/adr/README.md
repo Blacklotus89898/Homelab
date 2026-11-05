@@ -24,8 +24,6 @@ a row graduates to an ADR when it shapes how the platform is built, not just wha
   VictoriaMetrics, or consolidate (e.g. VictoriaLogs into the same Grafana).
 - **Root app-of-apps** (`directory.recurse` over `apps/`) vs. an ApplicationSet per app
   directory — the current pattern caused two wedge incidents.
-- **sealed-secrets key renewal**: keep the ~monthly default (backup must be re-exported each
-  time) or disable renewal (`--key-renew-period=0`).
 
 ## Conventions
 
