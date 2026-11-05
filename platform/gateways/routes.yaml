@@ -354,7 +354,8 @@ spec:
 ---
 # Warden status map (Warden README "Status map"). ONLY /map and /map.json are
 # routed: /investigations and /alerts stay in-cluster (bundles carry logs;
-# the webhook is alertmanager's). PathPrefix /map covers both paths.
+# the webhook is alertmanager's). PathPrefix matches whole path SEGMENTS
+# (/map, /map/...), never /map.json — so the data needs its own Exact match.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -382,3 +383,6 @@ spec:
         - path:
             type: PathPrefix
             value: /map
+        - path:
+            type: Exact
+            value: /map.json
