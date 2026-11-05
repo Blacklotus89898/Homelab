@@ -19,9 +19,11 @@ spec:
           - app: linkding
             namespace: staging-linkding
             path: environments/staging/linkding
-          - app: kavita
-            namespace: staging-kavita
-            path: environments/staging/kavita
+          # kavita removed 2026-11-04: no upstream stable past 0.9.1, so it
+          # only mirrored prod — and its emptyDir config re-runs the full DB
+          # migration on every start, which crashlooped it after the power
+          # outage. Re-add (this element + the overlay dir, see git history
+          # of environments/staging/kavita) when a real candidate lands.
   template:
     metadata:
       name: 'staging-{{.app}}'
