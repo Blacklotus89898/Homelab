@@ -351,3 +351,34 @@ spec:
         - path:
             type: PathPrefix
             value: /
+---
+# Warden status map (Warden README "Status map"). ONLY /map and /map.json are
+# routed: /investigations and /alerts stay in-cluster (bundles carry logs;
+# the webhook is alertmanager's). PathPrefix /map covers both paths.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: warden
+  namespace: warden
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
+  hostnames:
+    - warden.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: warden
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /map

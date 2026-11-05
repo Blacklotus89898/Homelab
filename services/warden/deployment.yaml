@@ -55,6 +55,11 @@ spec:
               value: http://vmsingle-vmstack.monitoring.svc:8428
             - name: WARDEN_KB_ROOTS
               value: davinci=/kb/davinci/repo/docs,homelab=/kb/homelab/repo/docs
+            # Status map (/map): front-door hosts whose first label is neither a
+            # namespace nor an ArgoCD app name. Keep in step with
+            # platform/gateways/routes.yaml when a route's name differs.
+            - name: WARDEN_MAP_HOSTS
+              value: grafana=monitoring,auth=default
           ports:
             - name: http
               containerPort: 8080
