@@ -48,9 +48,10 @@ A rebuild is only as good as what you hold outside the lab. Check these quarterl
 | Tulip approval passphrase | your head / password manager | approvals stay disabled (fail closed) until you re-hash one |
 | k3s datastore copy (optional, pre-planned outages) | on `debian` under `db-backup/` | only needed for a *cluster-only* restore |
 
-**The keyring backup must contain the newest key.** The controller mints a new key every 30
-days (03:15 UTC on the 24th–26th: 07-26, 08-25, 09-24, 10-24, next ≈ 11-23). Anything sealed after
-the newest backed-up key won't decrypt on a rebuild. Check and re-export:
+**The keyring backup must contain the newest key.** Key renewal is **off** (`apps/sealed-secrets/values.yaml`,
+2026-11-05), so the set of keys only changes if someone renews on purpose, and one export stays
+complete. Before that change the controller minted a key every 30 days, and the 10-24 key was
+missing from the 10-21 backup. Check, and export after any deliberate renewal:
 
 ```bash
 kubectl -n sealed-secrets get secret -l sealedsecrets.bitnami.com/sealed-secrets-key \
