@@ -5,7 +5,7 @@ metadata:
   name: openobserve-api
   description: OpenObserve REST API — logs, metrics, traces ingestion and query
   links:
-    - url: http://192.168.0.108:30500/swagger-ui
+    - url: http://192.168.0.108:30500/swagger/
       title: Swagger UI
 spec:
   type: openapi
@@ -13,7 +13,7 @@ spec:
   owner: user:blacklotus89898
   system: homelab
   definition:
-    $text: http://192.168.0.108:30500/api-json
+    $text: http://192.168.0.108:30500/api-doc/openapi.json # v0.14.6 serves its spec here; /api-json is 404
 
 ---
 apiVersion: backstage.io/v1alpha1
