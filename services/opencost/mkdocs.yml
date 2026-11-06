@@ -1,0 +1,5 @@
+site_name: opencost
+site_description: "Capacity and shadow-cloud cost view per namespace"
+docs_dir: docs
+plugins:
+  - techdocs-core
