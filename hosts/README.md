@@ -7,6 +7,7 @@ on memory. Nothing here is applied automatically.
 |---|---|---|
 | `glance/` | Glance dashboard, Proxmox LXC 116 (192.168.0.118, `glance.home`), Docker | copy `glance.yml` to `/root/glance/config/`, `docker-compose.yml` to `/root/glance/`, plus `lab-root-ca.crt` (from `kubectl -n cert-manager get secret lab-root-ca -o jsonpath='{.data.ca\.crt}' \| base64 -d`); `docker compose up -d` |
 | `proxmox/k3s-vms.md` | the two k3s VMs on Proxmox node `my` | recreate per the table (docs/bootstrap.md step 1) |
+| `pihole/` | Pi-hole, Proxmox CT 107 (192.168.0.53): `dns.hosts` + `*.lab.home` wildcard | `pihole-FTL --config` per `pihole/README.md` |
 
 Glance gotchas (KB `solutions/`): `${VAR}` is expanded everywhere in the file,
 comments included, and an unset one stops Glance from starting; `config:validate`

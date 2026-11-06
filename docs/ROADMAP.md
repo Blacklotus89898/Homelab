@@ -109,9 +109,8 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - [x] Bootstrap rehearsal (local) ✅ 2026-11-05: k3d on ubuntu.home, no keyring, 22/30 apps converged, no sync-wave deadlock. Found two rebuild blockers (authentik digest gone from ghcr; linkding PVC pinned volumeName), fixed in #20/#21 (KB solutions/image-digest-rot-and-pvc-volumename.md). Results in `docs/bootstrap.md` → Rehearsal
     - [ ] Bootstrap rehearsal in CI + a scheduled check that every pinned image digest still resolves with linux/amd64; keyring-restore (phase 5) still unproven
     - [x] Petal multi-repo runs ✅ 2026-10-24 (Petal ADR 0004, Petal 456e289; Homelab 1b01bb5 → 7d4e66f): allowlist ConfigMap, `petal-checkout` step, `petal.io/repo` annotation drives `petal:run`; Jenkins' old job lives on as `.petal/pipelines/validate.yaml` (first real runs caught two silent-pass bugs in the NodePort check — KB solutions/petal-multi-repo-runs.md)
-    - [ ] Capture Pi-hole `dns.hosts` (35 records) into `hosts/pihole/`. It's the last DNS piece a host rebuild can't recreate (needs the Pi-hole password, so it's the user's job).
+    - [x] Pi-hole DNS captured ✅ 2026-11-05: `hosts/pihole/` has 35 `dns.hosts` records plus the `*.lab.home` dnsmasq wildcard (cnameRecords is empty), with re-capture and restore steps
     - [ ] Floaters: decide juice-shop, portainer-agent, paperless (6 PVCs ≈ 22Gi) — adopt or delete
-    - [ ] Capture Pi-hole `dns.hosts` (35 records; needs the Pi-hole password) into `hosts/pihole/`
     - [ ] Branch protection is admin-bypassed on every push ("Bypassed rule violations… 8 of 8 required status checks") — enforce for admins or document the bypass as policy
     - [ ] Re-run `tools/uptime-kuma/provision.py` (user creds) — 13 monitors still on `:30328`
     - [ ] Backstage via the gateway (`https://backstage.lab.home`; GitHub OAuth callback is the user step)
