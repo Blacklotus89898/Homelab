@@ -36,6 +36,12 @@ spec:
                   echo "== disk before =="
                   df -h / | tail -1
                   crictl --runtime-endpoint unix:///run/k3s/containerd/containerd.sock rmi --prune
+                  # apt-get clean equivalent (2026-11-05: 2.6G of cached .debs
+                  # on the worker). Only downloaded archives + the binary
+                  # package caches, which apt regenerates; lists/ untouched.
+                  echo "== apt cache before: $(du -sh /host-apt-cache | cut -f1) =="
+                  rm -f /host-apt-cache/archives/*.deb /host-apt-cache/archives/partial/*.deb /host-apt-cache/*.bin
+                  echo "== apt cache after: $(du -sh /host-apt-cache | cut -f1) =="
                   echo "== disk after =="
                   df -h / | tail -1
               # privileged: node-admin scope — talks to the host containerd
@@ -57,6 +63,8 @@ spec:
                 - name: k3s-agent-etc
                   mountPath: /var/lib/rancher/k3s/agent/etc
                   readOnly: true
+                - name: apt-cache
+                  mountPath: /host-apt-cache
           volumes:
             - name: containerd-sock
               hostPath:
@@ -65,6 +73,10 @@ spec:
             - name: k3s-agent-etc
               hostPath:
                 path: /var/lib/rancher/k3s/agent/etc
+                type: Directory
+            - name: apt-cache
+              hostPath:
+                path: /var/cache/apt
                 type: Directory
 ---
 # Same prune for the control plane (debian). Cordon does not block
@@ -102,6 +114,12 @@ spec:
                   echo "== disk before =="
                   df -h / | tail -1
                   crictl --runtime-endpoint unix:///run/k3s/containerd/containerd.sock rmi --prune
+                  # apt-get clean equivalent (2026-11-05: 2.6G of cached .debs
+                  # on the worker). Only downloaded archives + the binary
+                  # package caches, which apt regenerates; lists/ untouched.
+                  echo "== apt cache before: $(du -sh /host-apt-cache | cut -f1) =="
+                  rm -f /host-apt-cache/archives/*.deb /host-apt-cache/archives/partial/*.deb /host-apt-cache/*.bin
+                  echo "== apt cache after: $(du -sh /host-apt-cache | cut -f1) =="
                   echo "== disk after =="
                   df -h / | tail -1
               securityContext:
@@ -119,6 +137,8 @@ spec:
                 - name: k3s-agent-etc
                   mountPath: /var/lib/rancher/k3s/agent/etc
                   readOnly: true
+                - name: apt-cache
+                  mountPath: /host-apt-cache
           volumes:
             - name: containerd-sock
               hostPath:
@@ -127,4 +147,8 @@ spec:
             - name: k3s-agent-etc
               hostPath:
                 path: /var/lib/rancher/k3s/agent/etc
+                type: Directory
+            - name: apt-cache
+              hostPath:
+                path: /var/cache/apt
                 type: Directory
