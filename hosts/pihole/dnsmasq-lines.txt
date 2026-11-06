@@ -1,0 +1,3 @@
+# Pi-hole FTL `misc.dnsmasq_lines`, captured 2026-11-05.
+# Wildcard for the Istio gateway front door (*.lab.home -> worker, ADR 0009).
+address=/lab.home/192.168.0.108

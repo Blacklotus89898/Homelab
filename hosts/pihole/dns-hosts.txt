@@ -1,0 +1,38 @@
+# Pi-hole CT 107 (192.168.0.53) local DNS records: FTL `dns.hosts`, hosts-file format.
+# Captured 2026-11-05 with `pihole-FTL --config dns.hosts` (35 records, order as in Pi-hole).
+# `dns.cnameRecords` was empty. The `*.lab.home` wildcard is in dnsmasq-lines.txt.
+192.168.0.113 ubuntu.home
+192.168.0.53 pihole.home
+192.168.0.134 dashboard.home
+192.168.0.114 smb.home
+192.168.0.201 wg.home
+192.168.0.200 nextcloud.home
+192.168.0.115 proxmox.home
+192.168.0.103 agent.home
+192.168.0.103 ollama.home
+192.168.0.103 search.home
+192.168.0.116 whitelotus.home
+192.168.0.50 qbit.home
+192.168.0.116 garden.home
+192.168.0.100 desktop.home
+192.168.0.104 ipad.home
+192.168.0.107 arch.home
+192.168.0.117 jellyfin.home
+192.168.0.1 router.home
+192.168.0.118 unifi.home
+192.168.0.118 glance.home
+192.168.0.119 npm.home
+192.168.0.119 gitea.local
+192.168.0.120 gitea.home
+192.168.0.121 vaultwarden.home
+192.168.0.122 pdf.home
+192.168.0.123 docmost.home
+192.168.0.119 i2p.local
+192.168.0.119 jellyfin.lan
+192.168.0.112 debian.home
+192.168.0.108 worker.home
+192.168.0.117 kali.home
+192.168.0.126 immich.home
+192.168.0.119 kavita.lan
+192.168.0.202 vault.home
+192.168.0.108 paperless.local
