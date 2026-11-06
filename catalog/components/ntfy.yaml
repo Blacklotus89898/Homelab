@@ -1,0 +1,24 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ntfy
+  description: "Push notification server: the single alert sink (topic homelab-alerts)"
+  links:
+    - url: https://ntfy.lab.home/
+      title: ntfy UI
+  annotations:
+    argocd/app-name: ntfy
+    backstage.io/kubernetes-namespace: monitoring
+    backstage.io/kubernetes-label-selector: 'app=ntfy'
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "true"
+    homelab.io/recovery: git
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/ntfy
+  tags:
+    - observability
+    - alerting
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

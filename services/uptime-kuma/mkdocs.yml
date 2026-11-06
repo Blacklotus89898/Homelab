@@ -1,0 +1,5 @@
+site_name: uptime-kuma
+site_description: "Uptime monitoring with a status UI"
+docs_dir: docs
+plugins:
+  - techdocs-core

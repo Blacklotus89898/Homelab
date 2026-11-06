@@ -7,7 +7,7 @@ Identity provider and SSO. Workloads live in the `default` namespace (historical
 | Check | Status | Notes |
 |---|---|---|
 | Image pinned | yes | server/worker `2025.2.4` digest-pinned; postgres 16.x and redis 7 digest-pinned (`services/authentik/`) |
-| SLO | no | Deliberate: postgres parked, WAL reset pending (`resetwal` job blocked on a user gate) - no probe until authentik is stable again |
+| SLO | yes | WAL recovered, all 4 deployments serving. `/-/health/ready/` probed service-direct (`authentik.default.svc:9000`) and via `https://auth.lab.home/` (2026-11-05) |
 | Recovery | git | Manifests in `services/authentik/`, Application `authentik`; PVC contents = accepted loss (2026-09-29 decision) |
 
 ## Overview

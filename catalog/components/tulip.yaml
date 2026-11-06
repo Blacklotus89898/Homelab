@@ -15,6 +15,9 @@ metadata:
     backstage.io/kubernetes-namespace: tulip
     backstage.io/kubernetes-label-selector: 'app=tulip'
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/tulip
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "true"
+    homelab.io/recovery: git
   tags:
     - self-hosted
 spec:

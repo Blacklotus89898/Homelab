@@ -4,13 +4,15 @@ metadata:
   name: authentik
   description: Identity provider and SSO
   links:
-    - url: http://192.168.0.108:30080
+    - url: https://auth.lab.home/
       title: Authentik UI
   annotations:
     argocd/app-name: authentik
+    backstage.io/kubernetes-namespace: default # Portainer-era in-place adoption: authentik lives in `default`
+    backstage.io/kubernetes-label-selector: 'app in (authentik-server, authentik-worker, authentik-postgres, authentik-redis)'
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/authentik
     homelab.io/image-pinned: "true"
-    homelab.io/has-slo: "false"
+    homelab.io/has-slo: "true"
     homelab.io/recovery: git
 spec:
   type: service

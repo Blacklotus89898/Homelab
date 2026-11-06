@@ -1,0 +1,5 @@
+site_name: warden
+site_description: "Read-only SRE investigator: turns firing alerts into evidence bundles (ADR 0011)"
+docs_dir: docs
+plugins:
+  - techdocs-core
