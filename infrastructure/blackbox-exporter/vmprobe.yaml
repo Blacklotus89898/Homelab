@@ -25,5 +25,10 @@ spec:
         - http://linkding-svc.linkding.svc.cluster.local:9090
         - http://argocd-server.argocd.svc.cluster.local
         - http://victoria-metrics-grafana.monitoring.svc.cluster.local
-        # Excluded by design: authentik (postgres parked at replicas=0, WAL recovery
-        # pending), audiobookshelf (app Suspended). Add back when they serve again.
+        # Added 2026-11-05 — health paths verified 200 via blackbox /probe. tulip/warden
+        # serve 404 on `/`, so probe their own readiness path (/health). tulip: GET
+        # /health only — never the approval/killswitch endpoints (CLAUDE.md boundary).
+        - http://tulip-svc.tulip.svc.cluster.local:8080/health
+        - http://warden.warden.svc.cluster.local:8080/health
+        - http://authentik.default.svc.cluster.local:9000/-/health/ready/ # WAL recovered; lives in `default` ns
+        # Excluded by design: audiobookshelf (app Suspended). Add back when it serves again.
