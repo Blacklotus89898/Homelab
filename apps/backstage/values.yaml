@@ -82,10 +82,12 @@ backstage:
       reading:
         allow:
           - host: raw.githubusercontent.com
-          # Cluster NodePort host: lets apis.yaml $text placeholders fetch
-          # swagger specs from in-cluster services (previously a warn per API
-          # entity on every refresh).
-          - host: 192.168.0.108
+          # Cluster NodePorts: lets apis.yaml $text placeholders fetch specs.
+          # `host` is matched against host:port, so a bare IP only allows
+          # port 80. Each NodePort must be listed (2026-11-06 fix: the bare
+          # entry had silently blocked both specs since 2026-10-14).
+          - host: 192.168.0.108:30500 # openobserve
+          - host: 192.168.0.108:31991 # argocd
       csp:
         upgrade-insecure-requests: false
         connect-src: ["'self'", 'http:', 'https:']
