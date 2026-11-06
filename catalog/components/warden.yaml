@@ -1,0 +1,26 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: warden
+  description: "Read-only SRE investigator: turns firing alerts into evidence bundles (ADR 0011)"
+  links:
+    - url: https://warden.lab.home/map
+      title: Status map
+    - url: https://github.com/Blacklotus89898/Warden
+      title: Source
+  annotations:
+    argocd/app-name: warden
+    backstage.io/kubernetes-namespace: warden
+    backstage.io/kubernetes-label-selector: 'app=warden'
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "true"
+    homelab.io/recovery: git
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/warden
+  tags:
+    - observability
+    - self-hosted
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

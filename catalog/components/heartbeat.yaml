@@ -1,0 +1,24 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: heartbeat
+  description: "Dead-man switch: the cluster pushes a beat to GitHub and a GitHub workflow pages if it goes stale"
+  links:
+    - url: https://github.com/Blacklotus89898/Homelab/tree/heartbeat
+      title: heartbeat branch
+  annotations:
+    argocd/app-name: heartbeat
+    backstage.io/kubernetes-namespace: heartbeat
+    backstage.io/kubernetes-label-selector: 'app=cluster-heartbeat'
+    homelab.io/image-pinned: "true"
+    homelab.io/has-slo: "false"
+    homelab.io/recovery: git
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/heartbeat
+  tags:
+    - observability
+    - alerting
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

@@ -30,4 +30,5 @@ spec:
         - https://ntfy.lab.home/
         - https://tulip.lab.home/health
         - https://warden.lab.home/map # only /map + /map.json are routed (PathPrefix is segment-wise)
-        # authentik: no HTTPRoute yet (NodePort 30080 only) — add when it gets a lab.home name
+        - https://auth.lab.home/-/health/ready/ # authentik (HTTPRoute `authentik`, host auth.lab.home)
+        - https://opencost.lab.home/

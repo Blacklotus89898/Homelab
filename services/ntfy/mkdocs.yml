@@ -1,0 +1,5 @@
+site_name: ntfy
+site_description: "Push notification server: the single alert sink (topic homelab-alerts)"
+docs_dir: docs
+plugins:
+  - techdocs-core

@@ -1,0 +1,5 @@
+site_name: heartbeat
+site_description: "Dead-man switch: the cluster pushes a beat to GitHub and a GitHub workflow pages if it goes stale"
+docs_dir: docs
+plugins:
+  - techdocs-core

@@ -1,0 +1,5 @@
+site_name: monitoring-stack
+site_description: "VictoriaMetrics k8s-stack: metrics, alert rules, alertmanager and Grafana"
+docs_dir: docs
+plugins:
+  - techdocs-core
