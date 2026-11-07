@@ -1,0 +1,58 @@
+# vmagent/vmalert run selectAllByDefault, so these CRs wire up from any namespace.
+{%- if values.metrics %}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: ${{ values.name }}
+  namespace: ${{ values.name }}
+spec:
+  selector:
+    matchLabels:
+      app: ${{ values.name }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+{%- endif %}
+{%- if values.slo %}
+---
+# Service-direct front door: job front-doors feeds the 99%/30d SLO and burn-rate
+# alerts (infrastructure/blackbox-exporter/vmrule.yaml).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  name: ${{ values.name }}-front-door
+  namespace: ${{ values.name }}
+spec:
+  jobName: front-doors
+  interval: 30s
+  vmProberSpec:
+    url: blackbox-exporter.monitoring.svc:9115
+    scheme: http
+  module: http_2xx
+  targets:
+    staticConfig:
+      targets:
+        - http://${{ values.name }}-svc.${{ values.name }}.svc.cluster.local:${{ values.containerPort }}${{ values.healthPath }}
+{%- if values.route %}
+---
+# The real front door: DNS, gateway, lab-CA TLS, then the route (job gateway-front-doors).
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  name: ${{ values.name }}-gateway-front-door
+  namespace: ${{ values.name }}
+spec:
+  jobName: gateway-front-doors
+  interval: 30s
+  vmProberSpec:
+    url: blackbox-exporter.monitoring.svc:9115
+    scheme: http
+  module: https_lab
+  targets:
+    staticConfig:
+      targets:
+        - https://${{ values.name }}.lab.home${{ values.healthPath }}
+{%- endif %}
+{%- endif %}

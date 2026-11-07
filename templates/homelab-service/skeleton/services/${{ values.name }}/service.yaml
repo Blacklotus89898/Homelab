@@ -2,15 +2,18 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ${{ values.name }}-svc
-  namespace: ${{ values.namespace }}
+  namespace: ${{ values.name }}
   labels:
     app: ${{ values.name }}
 spec:
-  type: NodePort
+  type: ${{ "NodePort" if values.nodePort else "ClusterIP" }}
   selector:
     app: ${{ values.name }}
   ports:
-    - port: ${{ values.containerPort }}
-      targetPort: ${{ values.containerPort }}
+    - name: http # the VMServiceScrape and HTTPRoute refer to it
+      port: ${{ values.containerPort }}
+      targetPort: http
+{%- if values.nodePort %}
       nodePort: ${{ values.nodePort }}
+{%- endif %}
       protocol: TCP

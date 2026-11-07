@@ -1,0 +1,12 @@
+# Smallest that works: local-path on the worker, and disk is the platform's #1 constraint.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ${{ values.name }}-data
+  namespace: ${{ values.name }}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: ${{ values.pvcSize }}

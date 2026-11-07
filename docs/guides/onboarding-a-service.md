@@ -42,20 +42,46 @@ public repo, came up public.)
 
 ## 2. Generate the Homelab side with the golden path
 
-Backstage → **Create** → **New Homelab Service**: name, namespace (= name),
-pinned image (`…:<sha>`), container port, **health path**, a free NodePort.
-It opens a PR with the ArgoCD app, deployment, service, catalog entry and
-TechDocs.
+Backstage → **Create** → **New Homelab Service**. The form has four pages:
 
-- Free NodePorts: `grep -rhoE 'nodePort: *[0-9]+' apps services infrastructure environments | sort -u`
-- Scripted (no browser): `POST /api/scaffolder/v2/tasks` with the `automation`
-  token — see `tools/petal-e2e/run.sh` for the call shape.
+| Page | Asks for | Generates |
+|---|---|---|
+| Service | name (also the namespace and `<name>.lab.home`), description, source repo | `apps/<name>/application.yaml` (wave 1, `prune: true`), `namespace.yaml`, catalog entry with links and a GitHub slug |
+| Runtime | pinned image, port, health path, UID, size | hardened `deployment.yaml`: non-root, `fsGroup`, read-only root fs with `/tmp` emptyDir, all capabilities dropped, probes on the named port `http` |
+| Storage | PVC size (or none), mount path | `pvc.yaml` (`local-path`); a volume switches the rollout to **Recreate** |
+| Exposure & monitoring | route, optional NodePort, metrics, SLO | `route.yaml` (HTTPRoute in the service's namespace), `service.yaml` (ClusterIP unless a NodePort is set), `observability.yaml` (VMServiceScrape plus VMProbes in `front-doors` and `gateway-front-doors`) |
 
-**Traps fixed in the template while onboarding Tulip:**
-- probes were hard-coded to `/` → a service with `/health` would crash-loop
-  (now the `healthPath` parameter);
-- a description containing `: ` produced invalid YAML in the catalog and mkdocs
-  files (now rendered with `| dump`).
+It opens **one PR**. Everything is per-service under `services/<name>/`
+(golden path v2, 2026-11-07), so you don't edit shared files any more:
+- The namespace and route used to need hand edits in
+  `infrastructure/namespaces/namespaces.yaml` and `platform/gateways/routes.yaml`.
+  Now they live with the app.
+- The app's **wave 1** puts it after the gateways app (wave 0). That keeps the
+  route-before-Gateway deadlock (ADR 0009) out of a rebuild, even though the
+  route is in a different app.
+
+Optional files are skipped by templated filenames
+(`${{ 'pvc.yaml' if values.pvcSize != 'none' }}`). Use single quotes: Windows
+doesn't allow `"` in a filename.
+
+- **Test template changes before merging:** `fetch:template` reads `./skeleton`
+  from `main`. To render a branch, POST the template and skeleton to
+  `/api/scaffolder/v2/dry-run` with the `automation` token. Nothing gets pushed,
+  and the rendered files come back for yamllint and kubeconform.
+- **Free NodePorts:** `grep -rhoE 'nodePort: *[0-9]+' apps services infrastructure environments | sort -u`
+- **Scripted (no browser):** `POST /api/scaffolder/v2/tasks` with the `automation`
+  token. `tools/petal-e2e/run.sh` shows the call shape.
+
+**Traps fixed in the template:**
+- **Onboarding Tulip:**
+  - Probes were hard-coded to `/`, so a service serving `/health` would
+    crash-loop. Fixed with the `healthPath` parameter.
+  - A description containing `: ` produced invalid YAML in the catalog and
+    mkdocs files. Fixed by rendering it with `| dump`.
+- **v2:**
+  - The namespace defaulted to `default`.
+  - `prune: false`.
+  - A NodePort was mandatory.
 
 ## 3. Add what the template can't know (on the same PR branch)
 
@@ -63,13 +89,13 @@ TechDocs.
 git fetch origin add-service-<name> && git checkout -b add-service-<name> origin/add-service-<name>
 ```
 
-- [ ] **Namespace** in `infrastructure/namespaces/namespaces.yaml` (wave -5, house
-      convention; the app's `CreateNamespace=true` is only a fallback).
-- [ ] **Rollout strategy:** `Recreate` for a single-writer store (SQLite).
-- [ ] **Storage:** `pvc.yaml`, smallest that works (`local-path`; worker disk is
-      the #1 constraint).
-- [ ] **Security context:** `runAsNonRoot`, `fsGroup` matching the image user,
-      `readOnlyRootFilesystem`, drop all capabilities.
+The v2 template already covers the old checklist: namespace, Recreate plus
+storage, security context, named port, route, metrics, `prune: true`, and
+catalog links. What's left is only what the service itself knows:
+
+- [ ] **Args and env:** flags, config, and the env vars the service reads.
+- [ ] **Alerts** as a `VMRule` in `observability.yaml`, once there is something to
+      page on. Give every schedule a "didn't run" alert.
 - [ ] **Secrets as SealedSecrets** (never printed, never committed in clear):
       ```bash
       kubectl create secret generic <name>-api-token -n <name> \
@@ -82,15 +108,7 @@ git fetch origin add-service-<name> && git checkout -b add-service-<name> origin
       **Trap:** a SealedSecret is only recoverable on a rebuild if the
       sealed-secrets keyring backup contains the key it was sealed with — re-export
       the keyring after each 30-day rotation (`docs/bootstrap.md` step 4).
-- [ ] **Named service port** (`name: http`) — scrapes and routes refer to it.
-- [ ] **Route** `<name>.lab.home` in `platform/gateways/routes.yaml`:
-      `sectionName: https` and **`sync-wave: "5"`** (a route created before its
-      Gateway deadlocks the sync — learned the hard way, ADR 0009).
-- [ ] **Metrics:** `services/<name>/observability.yaml` with a `VMServiceScrape`
-      (vmagent picks up any namespace). Alerts as `VMRule` once there's something
-      to page on — and give every schedule a "didn't run" alert.
-- [ ] **App:** `prune: true` (house standard).
-- [ ] **Catalog + TechDocs:** real links (`https://<name>.lab.home`), ops notes.
+- [ ] **TechDocs:** service-specific ops notes in `services/<name>/docs/index.md`.
 
 **Check before pushing** (CI runs the same — a yamllint slip broke CI for hours once):
 ```bash
