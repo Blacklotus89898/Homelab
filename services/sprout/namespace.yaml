@@ -1,0 +1,8 @@
+# Per-service namespace, owned by this app (golden path). Older services declare
+# theirs in infrastructure/namespaces; a template can't edit that shared file.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sprout
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"

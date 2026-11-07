@@ -1,0 +1,27 @@
+# https://sprout.lab.home on the lab gateway (ADR 0009). The Gateway's
+# https listener allows routes from all namespaces, so the route lives with its app.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sprout
+  namespace: sprout
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
+  hostnames:
+    - sprout.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: sprout-svc
+          port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
