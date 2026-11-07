@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: sprout
-          image: ghcr.io/blacklotus89898/sprout:f2a2abbb26d60db62bef39774c154c5233176412
+          image: ghcr.io/blacklotus89898/sprout:9b34d51b1bab82626f46d747cbc81a58b42ae3c4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http # the Service, VMServiceScrape and HTTPRoute refer to it
