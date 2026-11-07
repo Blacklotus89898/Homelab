@@ -2,39 +2,28 @@
 
 ${{ values.description }}
 
-## Overview
-
 | Field | Value |
 |---|---|
-| Namespace | `${{ values.namespace }}` |
+| Namespace | `${{ values.name }}` |
 | Image | `${{ values.image }}` |
-| URL | http://192.168.0.108:${{ values.nodePort }} |
+| URL | ${{ "https://" + values.name + ".lab.home" if values.route else "in-cluster only" }}{% if values.nodePort %} · LAN `http://192.168.0.108:${{ values.nodePort }}`{% endif %} |
+| Health | `${{ values.healthPath }}` |
+| Storage | ${{ values.pvcSize }}{% if values.pvcSize != "none" %} at `${{ values.dataPath }}` (rollout: Recreate){% endif %} |
+{%- if values.sourceRepo %}
+| Source | [${{ values.sourceRepo }}](https://github.com/${{ values.sourceRepo }}) |
+{%- endif %}
+
+## Deploy a new version
+
+The service repo's CI pushes `:<commit sha>`. Bump `image:` in
+`services/${{ values.name }}/deployment.yaml` in a PR, and ArgoCD rolls it out.
 
 ## Operations
 
-### Restart
-
 ```bash
-kubectl rollout restart deployment/${{ values.name }} -n ${{ values.namespace }}
+kubectl -n argocd get app ${{ values.name }}                 # Synced / Healthy
+kubectl -n ${{ values.name }} get pods,svc
+kubectl -n ${{ values.name }} logs deploy/${{ values.name }} -f
 ```
 
-### Logs
-
-```bash
-kubectl logs -n ${{ values.namespace }} deployment/${{ values.name }} -f
-```
-
-### Scale down / up
-
-```bash
-kubectl scale deployment/${{ values.name }} -n ${{ values.namespace }} --replicas=0
-kubectl scale deployment/${{ values.name }} -n ${{ values.namespace }} --replicas=1
-```
-
-## ArgoCD
-
-Managed by ArgoCD Application `${{ values.name }}`. To force a sync:
-
-```bash
-argocd app sync ${{ values.name }}
-```
+Restarts and scaling go through git (Homelab CLAUDE.md: no live `kubectl` edits).

@@ -3,96 +3,185 @@ kind: Template
 metadata:
   name: homelab-service
   title: New Homelab Service
-  description: Scaffold a new Kubernetes service with ArgoCD Application and catalog entry
+  description: >-
+    Onboard a service end to end. It opens ONE PR with the ArgoCD app, a
+    namespace, a hardened deployment, a service, optional storage, a
+    https://<name>.lab.home route, metrics scraping, front-door SLO probes,
+    and a catalog entry with TechDocs. Everything is per-service under
+    services/<name>/, so nothing needs editing by hand after merge
+    (docs/guides/onboarding-a-service.md).
   tags:
     - homelab
     - kubernetes
+    - golden-path
 spec:
   owner: user:blacklotus89898
   type: service
 
   parameters:
-    - title: Service Details
-      required:
-        - name
-        - namespace
-        - image
-        - containerPort
-        - nodePort
-        - description
+    - title: Service
+      required: [name, description]
       properties:
         name:
-          title: Service Name
+          title: Service name
           type: string
-          description: Lowercase name, no spaces (e.g. my-app)
-          pattern: '^[a-z0-9-]+$'
+          description: >-
+            Lowercase, digits and dashes (e.g. sprout). It is also the namespace
+            (house rule - one namespace per service) and the hostname <name>.lab.home.
+          pattern: '^[a-z][a-z0-9-]{1,30}[a-z0-9]$'
           ui:autofocus: true
         description:
           title: Description
           type: string
-          description: Short description of what this service does
-        namespace:
-          title: Namespace
+          description: One line. Shown in the catalog and TechDocs.
+        sourceRepo:
+          title: Source repository (optional)
           type: string
-          description: Kubernetes namespace for this service — one namespace per service is the house pattern (e.g. the service name itself)
-          default: default
+          description: owner/repo of the service's code (e.g. Blacklotus89898/Sprout). It links the catalog entry to GitHub.
+          pattern: '^$|^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$'
+
+    - title: Runtime
+      required: [image, containerPort, healthPath]
+      properties:
         image:
-          title: Container Image
+          title: Container image (pinned)
           type: string
-          description: Docker image to run, PINNED to a version tag or digest (e.g. nginx:1.27 or nginx@sha256:…) — `:latest` is rejected by CI policy (Kyverno disallow-latest-tag)
-          pattern: '^.+[:@].+$'
+          description: >-
+            A SHA or version tag, never :latest (Kyverno rejects it). Platform repos push
+            ghcr.io/blacklotus89898/<name>:<full commit sha>. The first push creates a
+            PRIVATE package; make it public in GitHub, or the pod gets ImagePullBackOff.
+          pattern: '^[a-z0-9./_-]+(:[A-Za-z0-9._-]+|@sha256:[a-f0-9]{64})$'
         containerPort:
-          title: Container Port
+          title: Container port
           type: integer
-          description: Port the container listens on
           default: 8080
+          minimum: 1
+          maximum: 65535
         healthPath:
-          title: Health check path
+          title: Health path
           type: string
-          description: HTTP path the liveness/readiness probes hit (e.g. /health). Must return 200 without auth.
-          default: /
+          description: Must return 200 without auth. Probes, the SLO probe and the gateway probe all use it.
+          default: /health
           pattern: '^/.*$'
-        nodePort:
-          title: NodePort
+        runAsUser:
+          title: Container user ID
           type: integer
-          description: External NodePort (30000-32767) — check existing services to avoid conflicts
+          description: Non-root UID the image runs as. 65532 = distroless :nonroot (the Go services). It is also fsGroup, so volumes are writable.
+          default: 65532
+          minimum: 1
+        size:
+          title: Resources
+          type: string
+          description: Requests / limits
+          default: small
+          enum: [small, medium, large]
+          enumNames:
+            - 'small: 50m/64Mi request, 500m/256Mi limit (Go services)'
+            - 'medium: 100m/128Mi request, 1 CPU/512Mi limit'
+            - 'large: 250m/256Mi request, 2 CPU/1Gi limit'
+
+    - title: Storage
+      properties:
+        pvcSize:
+          title: Persistent volume
+          type: string
+          description: >-
+            Only if the service keeps state (SQLite etc.). Disk is the platform's #1
+            constraint, so pick the smallest size that works. A volume also switches the
+            rollout to Recreate (one writer, so pods never overlap).
+          default: none
+          enum: [none, 1Gi, 2Gi, 5Gi]
+          enumNames: ['none (stateless)', '1Gi', '2Gi', '5Gi']
+        dataPath:
+          title: Volume mount path
+          type: string
+          default: /data
+          pattern: '^/.+$'
+
+    - title: Exposure & monitoring
+      properties:
+        route:
+          title: Route https://<name>.lab.home
+          type: boolean
+          description: HTTPRoute on the Istio gateway (ADR 0009), TLS by the lab CA
+          default: true
+        nodePort:
+          title: NodePort (optional)
+          type: integer
+          description: >-
+            Leave empty for ClusterIP plus the route (recommended). Set it only if a
+            LAN client can't use the lab CA (e.g. a phone). Find free ports with:
+            grep -rhoE 'nodePort: *[0-9]+' apps services infrastructure | sort -u
           minimum: 30000
           maximum: 32767
+        metrics:
+          title: Scrape /metrics
+          type: boolean
+          description: VMServiceScrape on the named port `http` (Prometheus text format)
+          default: true
+        slo:
+          title: Join the front-door SLO
+          type: boolean
+          description: >-
+            Probe the health path in the job front-doors (99%/30d SLO, burn-rate alerts)
+            and, with a route, through the gateway too. Turn it off while the service is
+            still experimental.
+          default: true
 
   steps:
     - id: fetch
       name: Generate manifests
       action: fetch:template
       input:
-        url: https://github.com/Blacklotus89898/Homelab/tree/main/templates/homelab-service/skeleton
+        url: ./skeleton
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
-          namespace: ${{ parameters.namespace }}
+          sourceRepo: ${{ parameters.sourceRepo }}
           image: ${{ parameters.image }}
           containerPort: ${{ parameters.containerPort }}
           healthPath: ${{ parameters.healthPath }}
+          runAsUser: ${{ parameters.runAsUser }}
+          size: ${{ parameters.size }}
+          pvcSize: ${{ parameters.pvcSize }}
+          dataPath: ${{ parameters.dataPath }}
+          route: ${{ parameters.route }}
           nodePort: ${{ parameters.nodePort }}
+          metrics: ${{ parameters.metrics }}
+          slo: ${{ parameters.slo }}
           owner: user:blacklotus89898
 
     - id: publish
-      name: Open Pull Request
+      name: Open pull request
       action: publish:github:pull-request
       input:
         repoUrl: github.com?repo=Homelab&owner=Blacklotus89898
-        title: "feat: add ${{ parameters.name }} service"
-        branchName: "add-service-${{ parameters.name }}"
+        title: "feat(${{ parameters.name }}): onboard via golden path"
+        branchName: add-service-${{ parameters.name }}
         description: |
-          Adds **${{ parameters.name }}** to the homelab.
+          Onboards **${{ parameters.name }}** (Backstage golden path, `templates/homelab-service`).
 
-          - Namespace: `${{ parameters.namespace }}`
-          - Image: `${{ parameters.image }}`
-          - Port: `${{ parameters.containerPort }}`
-          - NodePort: `${{ parameters.nodePort }}`
+          | | |
+          |---|---|
+          | Image | `${{ parameters.image }}` |
+          | Namespace | `${{ parameters.name }}` |
+          | Port / health | `${{ parameters.containerPort }}` / `${{ parameters.healthPath }}` |
+          | Storage | `${{ parameters.pvcSize }}` |
+          | Route | ${{ "https://" + parameters.name + ".lab.home" if parameters.route else "none" }} |
+          | Metrics / SLO | ${{ parameters.metrics }} / ${{ parameters.slo }} |
 
-          Merge this PR to deploy via ArgoCD automatically.
+          **Before merge**
+          - [ ] The image exists and is **public** (GHCR package settings). A new package is private.
+          - [ ] Validate PR checks are green (yamllint, kubeconform, Kyverno, NodePort conflicts, TechDocs).
+          - [ ] Secrets? Add `services/${{ parameters.name }}/sealed-*.yaml` on this branch (kubeseal recipe in the onboarding guide §3).
+
+          **After merge**: ArgoCD syncs the `${{ parameters.name }}` app.
+          - [ ] `kubectl -n argocd get app ${{ parameters.name }}` is Synced/Healthy.
+          - [ ] uptime-kuma + Glance entries (shared files, onboarding guide §6).
 
   output:
     links:
-      - title: Pull Request
+      - title: Pull request
         url: ${{ steps.publish.output.remoteUrl }}
+      - title: Onboarding guide
+        url: https://github.com/Blacklotus89898/Homelab/blob/main/docs/guides/onboarding-a-service.md

@@ -2,6 +2,10 @@
 # syntax errors, duplicate keys, stray tabs/trailing spaces.
 ---
 extends: default
+# Scaffolder skeletons are Nunjucks templates ({%- if %} blocks), not YAML.
+# Lint their RENDERED output instead: tools/scaffolder-dry-run/dryrun.py.
+ignore: |
+  templates/*/skeleton/
 rules:
   line-length: disable # long explanatory comments are house style
   document-start: disable # no --- headers in manifests

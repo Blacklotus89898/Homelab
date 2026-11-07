@@ -4,15 +4,29 @@ metadata:
   name: ${{ values.name }}
   description: ${{ values.description | dump }} # dump = JSON-quoted: free text may contain ": "
   links:
+{%- if values.route %}
+    - url: https://${{ values.name }}.lab.home
+      title: ${{ values.name }}
+{%- endif %}
+{%- if values.nodePort %}
     - url: http://192.168.0.108:${{ values.nodePort }}
-      title: ${{ values.name }} UI
+      title: ${{ values.name }} (LAN NodePort)
+{%- endif %}
+{%- if values.sourceRepo %}
+    - url: https://github.com/${{ values.sourceRepo }}
+      title: Source
+{%- endif %}
   annotations:
     argocd/app-name: ${{ values.name }}
-    backstage.io/kubernetes-namespace: ${{ values.namespace }}
+    backstage.io/kubernetes-namespace: ${{ values.name }}
     backstage.io/kubernetes-label-selector: 'app=${{ values.name }}'
     backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/${{ values.name }}
+{%- if values.sourceRepo %}
+    github.com/project-slug: ${{ values.sourceRepo }}
+{%- endif %}
   tags:
     - self-hosted
+    - golden-path
 spec:
   type: service
   lifecycle: production
