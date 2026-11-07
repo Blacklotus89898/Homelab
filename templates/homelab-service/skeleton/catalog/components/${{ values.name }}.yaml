@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.name }}
-  description: ${{ values.description | dump }} # dump = JSON-quoted: free text may contain ": "
+  description: ${{ values.description | trim | dump }} # dump = JSON-quoted: free text may contain ": "
   links:
 {%- if values.route %}
     - url: https://${{ values.name }}.lab.home
