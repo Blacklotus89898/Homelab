@@ -5,7 +5,7 @@ Language learning: read, mine, review, speak (Mandarin first)
 | Field | Value |
 |---|---|
 | Namespace | `sprout` |
-| Image | `ghcr.io/blacklotus89898/sprout:a2cf4ac311c554471f05dac3924178d90e99c156` |
+| Image | `ghcr.io/blacklotus89898/sprout:0421d1c5cd867666098b57cab149bbf5e903df32` |
 | URL | https://sprout.lab.home |
 | Health | `/health` |
 | Storage | none |
@@ -16,9 +16,15 @@ Language learning: read, mine, review, speak (Mandarin first)
 The service repo's CI pushes `:<commit sha>`. Bump `image:` in
 `services/sprout/deployment.yaml` in a PR, and ArgoCD rolls it out.
 
-## Translation (Google Translate API key)
+## Translation
 
-Translate uses the Google Cloud Translation API (Basic): the first 500k
+In desktop Chrome (138+), Sprout translates **on the device** with Chrome's
+built-in Translator API: free, no key needed (Sprout ADR 0003). The key below
+is optional and only serves phones, Safari and Firefox.
+
+### Optional: Google Translate API key
+
+The fallback uses the Google Cloud Translation API (Basic): the first 500k
 characters a month are free, then $20 per million. Word colors come from the
 CC-CEDICT dictionary, with no AI (Sprout ADR 0002). Without the key, Sprout runs
 and the section says translation isn't configured.
