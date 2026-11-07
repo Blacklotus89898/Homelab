@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: sprout
-          image: ghcr.io/blacklotus89898/sprout:a2cf4ac311c554471f05dac3924178d90e99c156
+          image: ghcr.io/blacklotus89898/sprout:0421d1c5cd867666098b57cab149bbf5e903df32
           imagePullPolicy: IfNotPresent
           env:
             # Translation (Sprout ADR 0002): Google Cloud Translation API; word
