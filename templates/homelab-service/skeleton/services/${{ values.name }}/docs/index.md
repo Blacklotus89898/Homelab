@@ -1,6 +1,6 @@
 # ${{ values.name }}
 
-${{ values.description }}
+${{ values.description | trim }}
 
 | Field | Value |
 |---|---|
