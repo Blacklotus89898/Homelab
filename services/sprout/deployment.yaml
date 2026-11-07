@@ -31,8 +31,18 @@ spec:
           type: RuntimeDefault
       containers:
         - name: sprout
-          image: ghcr.io/blacklotus89898/sprout:9b34d51b1bab82626f46d747cbc81a58b42ae3c4
+          image: ghcr.io/blacklotus89898/sprout:d15cde3fffeb836f1967e29d7979049aee4e556a
           imagePullPolicy: IfNotPresent
+          env:
+            # Translation (Sprout ADR 0001 §4) calls the Claude API. optional:
+            # without the secret Sprout runs and the Translate section says it
+            # isn't configured. The operator seals the key (TechDocs: Translation).
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sprout-anthropic
+                  key: ANTHROPIC_API_KEY
+                  optional: true
           ports:
             - name: http # the Service, VMServiceScrape and HTTPRoute refer to it
               containerPort: 8080
