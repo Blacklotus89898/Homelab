@@ -5,7 +5,7 @@ Language learning: read, mine, review, speak (Mandarin first)
 | Field | Value |
 |---|---|
 | Namespace | `sprout` |
-| Image | `ghcr.io/blacklotus89898/sprout:0421d1c5cd867666098b57cab149bbf5e903df32` |
+| Image | `ghcr.io/blacklotus89898/sprout:28d695973e54016b6733074f044b064130e2459c` |
 | URL | https://sprout.lab.home |
 | Health | `/health` |
 | Storage | none |
