@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sprout-svc
+  namespace: sprout
+  labels:
+    app: sprout
+spec:
+  type: ClusterIP
+  selector:
+    app: sprout
+  ports:
+    - name: http # the VMServiceScrape and HTTPRoute refer to it
+      port: 8080
+      targetPort: http
+      protocol: TCP

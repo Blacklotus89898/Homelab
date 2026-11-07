@@ -1,0 +1,24 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: sprout
+  description: " Language learning: read, mine, review, speak (Mandarin first)" # dump = JSON-quoted: free text may contain ": "
+  links:
+    - url: https://sprout.lab.home
+      title: sprout
+    - url: https://github.com/Blacklotus89898/Sprout
+      title: Source
+  annotations:
+    argocd/app-name: sprout
+    backstage.io/kubernetes-namespace: sprout
+    backstage.io/kubernetes-label-selector: 'app=sprout'
+    backstage.io/techdocs-ref: url:https://github.com/Blacklotus89898/Homelab/tree/main/services/sprout
+    github.com/project-slug: Blacklotus89898/Sprout
+  tags:
+    - self-hosted
+    - golden-path
+spec:
+  type: service
+  lifecycle: production
+  owner: user:blacklotus89898
+  system: homelab

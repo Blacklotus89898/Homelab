@@ -1,0 +1,15 @@
+# vmagent/vmalert run selectAllByDefault, so these CRs wire up from any namespace.
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: sprout
+  namespace: sprout
+spec:
+  selector:
+    matchLabels:
+      app: sprout
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
