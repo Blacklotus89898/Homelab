@@ -1,5 +1,5 @@
 site_name: sprout
-site_description: " Language learning: read, mine, review, speak (Mandarin first)"
+site_description: "Language learning: read, mine, review, speak (Mandarin first)"
 docs_dir: docs
 plugins:
   - techdocs-core

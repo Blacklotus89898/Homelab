@@ -31,14 +31,14 @@ spec:
           type: RuntimeDefault
       containers:
         - name: sprout
-          image: ghcr.io/blacklotus89898/sprout:3e7b865f7e4ec3a32a190bc7639a0452101b6b0a
+          image: ghcr.io/blacklotus89898/sprout:f2a2abbb26d60db62bef39774c154c5233176412
           imagePullPolicy: IfNotPresent
           ports:
             - name: http # the Service, VMServiceScrape and HTTPRoute refer to it
               containerPort: 8080
               protocol: TCP
           resources:
-            requests: {cpu: 50m, memory: 64Mi}
+            requests: {cpu: 50m, memory: 128Mi} # embedded CC-CEDICT: ~75 MB RSS (measured 2026-11-07)
             limits: {cpu: 500m, memory: 256Mi}
           livenessProbe:
             httpGet:
