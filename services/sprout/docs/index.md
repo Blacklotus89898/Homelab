@@ -1,11 +1,11 @@
 # sprout
 
- Language learning: read, mine, review, speak (Mandarin first)
+Language learning: read, mine, review, speak (Mandarin first)
 
 | Field | Value |
 |---|---|
 | Namespace | `sprout` |
-| Image | `ghcr.io/blacklotus89898/sprout:3e7b865f7e4ec3a32a190bc7639a0452101b6b0a` |
+| Image | `ghcr.io/blacklotus89898/sprout:f2a2abbb26d60db62bef39774c154c5233176412` |
 | URL | https://sprout.lab.home |
 | Health | `/health` |
 | Storage | none |

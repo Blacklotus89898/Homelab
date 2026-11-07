@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: sprout
-  description: " Language learning: read, mine, review, speak (Mandarin first)" # dump = JSON-quoted: free text may contain ": "
+  description: "Language learning: read, mine, review, speak (Mandarin first)" # dump = JSON-quoted: free text may contain ": "
   links:
     - url: https://sprout.lab.home
       title: sprout
