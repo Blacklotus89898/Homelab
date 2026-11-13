@@ -5,7 +5,7 @@ Language learning: read, mine, review, speak (Mandarin first)
 | Field | Value |
 |---|---|
 | Namespace | `sprout` |
-| Image | `ghcr.io/blacklotus89898/sprout:dd1f33c336457c37ee53388d01f20d6c3c8583c0` |
+| Image | `ghcr.io/blacklotus89898/sprout:f16aaaa7223ffe0213c6f997aee4c4d57df408d8` |
 | URL | https://sprout.lab.home |
 | Health | `/health` |
 | Storage | none |
@@ -45,6 +45,17 @@ unset KEY
 
 Cost controls in Sprout: 1000 characters per request, 30 calls per minute
 across all users, a 500-entry cache.
+
+## Saved words and the tutor
+
+- **Saved words** live in each browser's `localStorage` (Sprout ADR 0005).
+  Nothing is stored in the cluster: no PVC, no database. Clearing site data
+  deletes them; the Words page has Export/Import for backups.
+- **Conversation tutor** runs on Chrome's built-in model (Gemini Nano) on the
+  learner's own machine: no key, no server call, nothing to configure here.
+  It needs desktop Chrome 148+, about 22 GB of free disk and a GPU with more
+  than 4 GB of memory. Mandarin is experimental (Chrome doesn't list Chinese
+  yet); Spanish is supported.
 
 ## Operations
 
