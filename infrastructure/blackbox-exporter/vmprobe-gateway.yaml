@@ -32,3 +32,4 @@ spec:
         - https://warden.lab.home/map # only /map + /map.json are routed (PathPrefix is segment-wise)
         - https://auth.lab.home/-/health/ready/ # authentik (HTTPRoute `authentik`, host auth.lab.home)
         - https://opencost.lab.home/
+        - https://sprout.lab.home/health # 200 via blackbox https_lab, verified 2026-11-12
