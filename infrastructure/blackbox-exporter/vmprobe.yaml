@@ -30,5 +30,6 @@ spec:
         # /health only — never the approval/killswitch endpoints (CLAUDE.md boundary).
         - http://tulip-svc.tulip.svc.cluster.local:8080/health
         - http://warden.warden.svc.cluster.local:8080/health
+        - http://sprout-svc.sprout.svc.cluster.local:8080/health # 200 via blackbox /probe, verified 2026-11-12
         - http://authentik.default.svc.cluster.local:9000/-/health/ready/ # WAL recovered; lives in `default` ns
         # Excluded by design: audiobookshelf (app Suspended). Add back when it serves again.

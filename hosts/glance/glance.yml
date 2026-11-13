@@ -1,5 +1,5 @@
 # =============================================================================
-# Glance Dashboard — Homelab edition (reviewed 2026-10-21, Glance v0.8.4)
+# Glance Dashboard — Homelab edition (reviewed 2026-11-12: +Sprout, Tulip, Warden, OpenCost)
 #
 # Every homelab URL below was probed from the LAN before writing this file.
 # Two one-time prerequisites (see the notes at the bottom of this file):
@@ -120,6 +120,19 @@ pages:
               - title: ntfy
                 url: https://ntfy.lab.home/v1/health
                 icon: di:ntfy
+              # Added 2026-11-12, each verified 200 from the LAN first.
+              - title: Tulip
+                url: https://tulip.lab.home/health # /health only, never /approve or /killswitch
+                icon: si:tradingview
+              - title: Warden
+                url: https://warden.lab.home/map # only /map + /map.json are routed
+                icon: si:datadog
+              - title: Sprout
+                url: https://sprout.lab.home/health
+                icon: si:duolingo
+              - title: OpenCost
+                url: https://opencost.lab.home/
+                icon: si:kubernetes
 
           - type: monitor
             title: Apps & Home Network
@@ -217,6 +230,14 @@ pages:
                     icon: di:backstage
                   - title: Petal
                     url: https://petal.lab.home/
+                  - title: Tulip scorecard
+                    url: https://tulip.lab.home/scorecard
+                  - title: Tulip charts
+                    url: https://tulip.lab.home/charts
+                  - title: Warden status map
+                    url: https://warden.lab.home/map
+                  - title: Sprout
+                    url: https://sprout.lab.home/
                   - title: Authentik
                     url: https://auth.lab.home/
                     icon: di:authentik
@@ -225,6 +246,9 @@ pages:
                 links:
                   - title: Grafana (k3s)
                     url: https://grafana.lab.home/
+                    icon: di:grafana
+                  - title: Service health (uptime, golden signals)
+                    url: https://grafana.lab.home/d/service-health
                     icon: di:grafana
                   - title: Uptime Kuma
                     url: https://uptime.lab.home/
@@ -306,6 +330,15 @@ pages:
                     icon: si:github
                   - title: DaVinci repo
                     url: https://github.com/Blacklotus89898/DaVinci
+                    icon: si:github
+                  - title: Tulip repo
+                    url: https://github.com/Blacklotus89898/Tulip
+                    icon: si:github
+                  - title: Warden repo
+                    url: https://github.com/Blacklotus89898/Warden
+                    icon: si:github
+                  - title: Sprout repo
+                    url: https://github.com/Blacklotus89898/Sprout
                     icon: si:github
 
           - type: rss
@@ -581,6 +614,24 @@ pages:
 
           - type: repository
             repository: Blacklotus89898/DaVinci
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: repository
+            repository: Blacklotus89898/Tulip
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: repository
+            repository: Blacklotus89898/Warden
+            pull-requests-limit: 5
+            issues-limit: 5
+            commits-limit: 5
+
+          - type: repository
+            repository: Blacklotus89898/Sprout
             pull-requests-limit: 5
             issues-limit: 5
             commits-limit: 5

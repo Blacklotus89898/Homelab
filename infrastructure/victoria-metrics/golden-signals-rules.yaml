@@ -1,0 +1,146 @@
+# Golden signals + pod-kill/OOM prevention (2026-11-12). Fills the gaps the
+# chart's defaultRules leave; it does NOT repeat KubePodCrashLooping,
+# KubeContainerWaiting, KubeNodeEviction, CPUThrottlingHigh,
+# KubePersistentVolumeFillingUp or NodeFilesystem*.
+#
+# Routing is unchanged: warning/critical → ntfy "homelab-alerts" + Warden's
+# evidence bundle; info → Grafana only (alertmanager blackhole).
+#
+# Every threshold was replayed over the previous 7 days before merging
+# (would-fire counts in the comments), so none of these re-create the
+# 23-pages-a-week noise the SLO rules once had.
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMRule
+metadata:
+  name: golden-signals
+  namespace: monitoring
+spec:
+  groups:
+    - name: workload-prevention
+      rules:
+        # A container killed for memory. container_oom_events_total misses the
+        # kill when the cgroup goes away with it, so use kube-state-metrics'
+        # last termination reason, gated on a restart in the last 10 minutes
+        # (otherwise an OOM from weeks ago keeps the alert firing).
+        # 7d replay: 0.
+        - alert: ContainerOOMKilled
+          expr: |
+            (max by (namespace, pod, container) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}) == 1)
+              and on (namespace, pod, container)
+            (sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[10m])) > 0)
+          labels:
+            severity: warning
+          annotations:
+            summary: "OOMKilled: {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }})"
+            description: "The container hit its memory limit and was killed. Raise resources.limits.memory in git, or find the leak (Grafana → Service health → Memory headroom)."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+        # Prevention: the OOM before it happens. Both sides aggregated to one
+        # series per container first: cAdvisor and kube-state-metrics carry
+        # different extra labels, and a raw division matches nothing.
+        # 7d replay at 0.9 for 15m: 0 (linkding peaks at 0.89; staging 0.87).
+        - alert: ContainerMemoryNearLimit
+          expr: |
+            max by (namespace, pod, container) (container_memory_working_set_bytes{container!="", container!="POD"})
+              /
+            max by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
+              > 0.9
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Memory at {{ $value | humanizePercentage }} of limit: {{ $labels.namespace }}/{{ $labels.container }}"
+            description: "Working set has been above 90% of the memory limit for 15 minutes; the next spike is an OOM kill. Raise the limit in git or find what grew."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+        # Prevention: a leak. Linear trend over 6h says the limit is reached
+        # within 6h, and the container is already past 75% (so a fresh pod's
+        # warm-up slope doesn't count). 7d replay: 0.
+        - alert: ContainerMemoryLeakPredicted
+          expr: |
+            (
+              max by (namespace, pod, container) (predict_linear(container_memory_working_set_bytes{container!="", container!="POD"}[6h], 6 * 3600))
+                >
+              max by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
+            )
+              and
+            (
+              max by (namespace, pod, container) (container_memory_working_set_bytes{container!="", container!="POD"})
+                /
+              max by (namespace, pod, container) (kube_pod_container_resource_limits{resource="memory"})
+                > 0.75
+            )
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Memory leak? {{ $labels.namespace }}/{{ $labels.container }} reaches its limit within 6h"
+            description: "At the last 6 hours' growth rate this container hits its memory limit within 6 hours. Look at the trend in Grafana → Service health before it becomes an OOM kill."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+        # Any pod kill/restart, for the record: info = Grafana only, no push.
+        - alert: ContainerRestarted
+          expr: sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[15m])) > 0
+          labels:
+            severity: info
+          annotations:
+            summary: "Restarted: {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }})"
+            description: "The container restarted in the last 15 minutes. Single restarts are informational; ContainerRestartingOften pages."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+        # Repeated kills before they become a CrashLoop (KubePodCrashLooping
+        # needs 15 minutes in back-off). 7d replay at >= 3/1h: 1 (petal git-sync,
+        # 5 restarts in one hour, a real event).
+        - alert: ContainerRestartingOften
+          expr: sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[1h])) >= 3
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value | humanize }} restarts in 1h: {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }})"
+            description: "The container keeps getting killed or exiting. Check `kubectl -n {{ $labels.namespace }} logs {{ $labels.pod }} -c {{ $labels.container }} --previous` and the pod's events (Warden's bundle has both)."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+    - name: service-golden-signals
+      # Traffic, errors and latency as the Istio gateway sees each service
+      # (reporter="source" = the gateway's Envoy). Ambient mesh has no
+      # sidecars, so in-mesh calls aren't in istio_requests_total; the front
+      # door is. Most traffic here is probes (~0.04 req/s per service), so
+      # every rule has a request floor, and there are no traffic-drop rules:
+      # the blackbox SLO rules already catch a door that stops answering.
+      rules:
+        # 7d replay at > 10% with >= 20 req/10m for 10m: grafana ~1 (slow
+        # query timeouts), petal 0.
+        - alert: ServiceErrorRateHigh
+          expr: |
+            (
+              sum by (destination_service_name) (increase(istio_requests_total{reporter="source", response_code=~"5.."}[10m]))
+                /
+              sum by (destination_service_name) (increase(istio_requests_total{reporter="source"}[10m]))
+            ) > 0.10
+              and
+            sum by (destination_service_name) (increase(istio_requests_total{reporter="source"}[10m])) >= 20
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.destination_service_name }}: {{ $value | humanizePercentage }} of requests failing (5xx)"
+            description: "More than 10% of requests through the gateway returned 5xx for 10 minutes. Grafana → Service health shows which codes; the app's logs show why."
+            runbook_url: "kb://solutions/golden-signals.md"
+
+        # Grafana is excluded: its p95 is user queries (up to 9s over 30d
+        # ranges), not health. 7d replay at p95 > 3s for 15m, >= 10 req: 0
+        # (warden's /map peaked at 2.3s).
+        - alert: ServiceLatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le, destination_service_name) (rate(istio_request_duration_milliseconds_bucket{reporter="source", destination_service_name!~"victoria-metrics-grafana|unknown"}[15m]))
+            ) > 3000
+              and
+            sum by (destination_service_name) (increase(istio_requests_total{reporter="source"}[15m])) >= 10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.destination_service_name }} slow: p95 {{ $value | humanize }}ms"
+            description: "The 95th percentile response time through the gateway has been above 3s for 15 minutes. Check saturation (CPU throttling, memory) for the service in Grafana → Service health."
+            runbook_url: "kb://solutions/golden-signals.md"
