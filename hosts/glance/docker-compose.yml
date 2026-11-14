@@ -1,6 +1,6 @@
 services:
   glance:
-    image: glanceapp/glance:v0.8.4 # pinned (was :latest); bump deliberately
+    image: glanceapp/glance:v0.8.8 # pinned (was :latest); bump deliberately
     container_name: glance
     dns:
       - 192.168.0.53
