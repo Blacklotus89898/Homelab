@@ -39,7 +39,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: tulip
-          image: ghcr.io/blacklotus89898/tulip:28e6c4a5c489dc1d2ea7cfa932cf9bc4db812776
+          image: ghcr.io/blacklotus89898/tulip:61f1c126be1990e6c2fc27c229abaa67c4e581ab
           imagePullPolicy: IfNotPresent
           # paper until the Questrade token redeems (2026-10-24: login returned
           # HTTP 500 server-side). Co-pilot (ADR 0003) = "-mode", "copilot";
@@ -100,6 +100,16 @@ spec:
               value: ZAG.TO=1
             - name: TULIP_THORN_MAX_SUGGESTIONS_PER_DAY
               value: "8"
+            # US desk (Tulip ADR 0006, operator decision 2026-11-15): IVV, EFA,
+            # safe IEF; trend-filter-200; IVV benchmark; NYSE calendar; its own
+            # journal at /data/tulip-us.db and pages under /us/. Synthetic paper
+            # fills until the IBKR broker exists; paper training starts its
+            # 12-month record. US Thorn caps default to 10k / 0.55 / IEF=1 / 8
+            # (TULIP_US_THORN_* to override). Remove TULIP_US to turn it off.
+            - name: TULIP_US
+              value: "on"
+            - name: TULIP_US_AUTOEXECUTE
+              value: paper
             - name: TULIP_NTFY_URL
               value: http://ntfy.monitoring.svc
             - name: TULIP_NTFY_TOPIC
