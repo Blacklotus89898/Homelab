@@ -10849,11 +10849,11 @@ __metadata:
   linkType: hard
 
 "@testing-library/user-event@npm:^14.0.0":
-  version: 14.6.1
-  resolution: "@testing-library/user-event@npm:14.6.1"
+  version: 14.6.12
+  resolution: "@testing-library/user-event@npm:14.6.12"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10c0/75fea130a52bf320d35d46ed54f3eec77e71a56911b8b69a3fe29497b0b9947b2dc80d30f04054ad4ce7f577856ae3e5397ea7dff0ef14944d3909784c7a93fe
+  checksum: 10c0/6b5b1c8219a17b00d6fcc968f9d257a62d3be3a5fa05b9373d26a965e272613f8a58c3d716b8ba226741fd1c77ecced6db23118020813ed2731e73ab944edbe3
   languageName: node
   linkType: hard
 
