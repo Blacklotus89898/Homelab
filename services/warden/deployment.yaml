@@ -60,6 +60,13 @@ spec:
             # platform/gateways/routes.yaml when a route's name differs.
             - name: WARDEN_MAP_HOSTS
               value: grafana=monitoring,auth=default
+            # /services: Uptime Kuma public status page (no credentials; ADR 0011
+            # amendment 2026-11-24) and the monitors whose names resolve to no
+            # namespace on their own. ';'-separated: monitor names may hold commas.
+            - name: WARDEN_KUMA_URL
+              value: http://uptime-kuma.monitoring.svc:3001
+            - name: WARDEN_KUMA_MAP
+              value: Kubernetes API=kube-system;Istiod=istio-system;VictoriaMetrics=monitoring;vmagent=monitoring;vmalert=monitoring;Alertmanager=monitoring
           ports:
             - name: http
               containerPort: 8080

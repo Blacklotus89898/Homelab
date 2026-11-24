@@ -33,7 +33,7 @@ alerts. It is built in phases, and each phase ships on its own:
 | Phase | What | Status |
 |---|---|---|
 | 1a | Alert → deterministic evidence bundle → journal + ntfy digest (no model) | live 2026-10-28 (Warden f601223) |
-| 1b | Model summary over the bundle (Messages-API tool loop, configurable base URL/model) | needs an operator-sealed key |
+| 1b | Model summary over the bundle (Messages-API tool loop, configurable base URL/model) | **on hold** (2026-11-24, see amendment) |
 | 2 | Eval set: replay journaled bundles and past KB incidents, score diagnoses | |
 | 3 | Fix proposals as **pull requests** (operator merges; GitOps rule intact) | |
 | 4 | Fixed catalogue of live actions behind single-use human approval (Tulip pattern) | |
@@ -87,3 +87,24 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   The roadmap's VictoriaLogs move becomes a dependency for richer evidence.
 - **Reopen if** a phase needs a write verb on the SA: the answer is a new ADR
   plus an approval gate, never a wider ClusterRole.
+
+## Amendment — 2026-11-24: services view, Uptime Kuma, 1b on hold
+
+- **Phase 1b is on hold.** The operator investigates incidents and is the
+  approval step for anything a model would automate, to learn the platform
+  hands-on. Warden gathers and presents evidence; it does not conclude. No
+  model credential is sealed. Deterministic automation is unaffected.
+- **`/services`** (Warden 34b8a30): one row per ArgoCD-deployed namespace
+  with the four golden signals over 5 minutes (traffic, 5xx share and p95 at
+  the Istio gateway; CPU and memory against limits) and that service's
+  Uptime Kuma monitors. Monitors that map to no namespace (Proxmox host,
+  LXCs, router) are listed on their own. Routed on the gateway like `/map`
+  (`/services`, `/services.json`).
+- **Boundary change (§2): one new endpoint, Uptime Kuma's public status
+  page.** Two fixed `GET` paths (`/api/status-page/homelab` and
+  `/api/status-page/heartbeat/homelab`), no credentials: Warden sees exactly
+  what any browser on the LAN sees. Pinned by
+  `TestKumaReadsOnlyThePublicStatusPage`. Kuma's authenticated `/metrics`
+  and socket API stay out of reach. Monitor names and messages are untrusted
+  input: the page renders them as text only, and messages are redacted.
+
