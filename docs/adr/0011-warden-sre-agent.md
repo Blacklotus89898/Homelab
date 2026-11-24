@@ -134,8 +134,8 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   `X-Warden-Request: 1` against CSRF.
 - **Operator setup (authentik UI, once):** Applications → Providers → Create
   → Proxy Provider, name and slug `warden-console`, mode **Forward auth
-  (single application)**, external host `https://warden.lab.home`, a signing
-  key selected. Create an Application `warden-console` with that provider,
+  (single application)**, external host `https://warden.lab.home`, its own
+  dedicated signing key (not the shared self-signed certificate). Create an Application `warden-console` with that provider,
   bind it to your user only, and add it to the **embedded outpost**. Then set
   `WARDEN_AUTH_AUDIENCE` to the provider's client ID: required, the console
   refuses every sign-in without it.
