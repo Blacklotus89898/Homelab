@@ -57,4 +57,16 @@ spec:
   podMetricsEndpoints:
     - port: http-envoy-prom
       path: /stats/prometheus
-      seriesLimit: 3000
+      # 2026-11-24: at 3000 the gateway went over the limit as routes were
+      # added, and vmagent dropped the newest series, which were latency
+      # histogram buckets: Warden /services showed traffic but no p95 for
+      # linkding, petal, tulip, sprout, openobserve and monitoring. The
+      # request/response *size* histograms (~20 buckets per
+      # source x destination x code) are read by no dashboard, rule or
+      # Warden query, so they are dropped before the limit is counted, and
+      # the limit gets headroom for new routes.
+      seriesLimit: 6000
+      metricRelabelConfigs:
+        - action: drop
+          source_labels: [__name__]
+          regex: istio_(request|response)_bytes_(bucket|sum|count)
