@@ -63,6 +63,16 @@ spec:
             # /services: Uptime Kuma public status page (no credentials; ADR 0011
             # amendment 2026-11-24) and the monitors whose names resolve to no
             # namespace on their own. ';'-separated: monitor names may hold commas.
+            # Console (behind authentik at the gateway): pushes link to their
+            # investigation here; the user header comes from authentik.
+            - name: WARDEN_PUBLIC_URL
+              value: https://warden.lab.home
+            # The console user comes only from authentik's signed X-Authentik-Jwt,
+            # checked against the "warden-console" provider's public keys. Set
+            # WARDEN_AUTH_AUDIENCE to that provider's client ID once created so
+            # tokens minted for other authentik apps are refused too.
+            - name: WARDEN_AUTH_JWKS_URL
+              value: http://authentik.default.svc:9000/application/o/warden-console/jwks/
             - name: WARDEN_KUMA_URL
               value: http://uptime-kuma.monitoring.svc:3001
             - name: WARDEN_KUMA_MAP

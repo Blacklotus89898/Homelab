@@ -1,0 +1,27 @@
+# Login in front of the Warden console (ADR 0011 amendment 2026-11-24).
+# The gateway asks authentik (ext_authz provider "authentik", apps/istio
+# values) before forwarding /console on warden.lab.home. /map, /services and
+# /health stay public on the LAN as before; authentik's own callback paths
+# (/outpost.goauthentik.io/*) are routed to authentik and must stay outside
+# this policy or the login loop never completes.
+#
+# Fail-closed check: Warden also refuses every /console/api call that lacks
+# X-Authentik-Username, so if this policy were missing the console shows
+# "not signed in" instead of serving logs.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: warden-console-login
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: gateway
+  action: CUSTOM
+  provider:
+    name: authentik
+  rules:
+    - to:
+        - operation:
+            hosts: ["warden.lab.home", "warden.lab.home:*"]
+            paths: ["/console", "/console/*"]
