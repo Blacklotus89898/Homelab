@@ -392,3 +392,36 @@ spec:
         - path:
             type: Exact
             value: /services.json
+        - path:
+            type: PathPrefix
+            value: /console # behind authentik (platform/gateways/authz.yaml)
+---
+# authentik's outpost paths on warden.lab.home: the login callback and the
+# sign-out URL live under the protected app's own host in forward-auth mode.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: warden-authentik-outpost
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: https
+  hostnames:
+    - warden.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: authentik
+          port: 9000
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io

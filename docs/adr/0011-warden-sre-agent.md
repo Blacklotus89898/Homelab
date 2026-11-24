@@ -108,3 +108,35 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   and socket API stay out of reach. Monitor names and messages are untrusted
   input: the page renders them as text only, and messages are redacted.
 
+## Amendment — 2026-11-24 (2): operator console behind authentik
+
+- **`/console`** (Warden 44db4fc, #8): where the operator investigates. Investigation
+  pages (bundle, journal trail, the operator's append-only diagnosis),
+  "investigate now" on a namespace/pod/node, and per namespace: what changed
+  (ArgoCD deploys and failed syncs, restarts, events, alerts, diagnoses), blast
+  radius from observed mesh traffic over 24h, and traffic over 1h–7d. Pushes
+  link to their investigation. Warden still concludes nothing.
+- **Access:** the gateway asks authentik before forwarding `/console` on
+  `warden.lab.home` (Istio `ext_authz` provider `authentik` in
+  `apps/istio/values.yaml`; `AuthorizationPolicy warden-console-login` in
+  `platform/gateways/authz.yaml`). `/map`, `/services` and `/health` stay
+  LAN-open as before.
+- **Identity is verified, not asserted:** Warden takes the user from
+  authentik's signed `X-Authentik-Jwt`, checked against the provider's public
+  JWKS. A username header alone is ignored, so a pod calling the Service
+  directly can't claim to be the operator. Every console API call needs a
+  verified user, so a missing gateway policy fails closed.
+- **Boundary (§2–3):** no new Kubernetes read paths; vmsingle gains range
+  queries; one new fixed `GET` (authentik JWKS). The only writes are to
+  Warden's own journal: an operator investigation (same read-only collectors,
+  one at a time, ≥10s apart, daily-bounded, never pushed, refused when
+  `WARDEN_ENABLED=false`) and a diagnosis (redacted). Writes need JSON plus
+  `X-Warden-Request: 1` against CSRF.
+- **Operator setup (authentik UI, once):** Applications → Providers → Create
+  → Proxy Provider, name and slug `warden-console`, mode **Forward auth
+  (single application)**, external host `https://warden.lab.home`, its own
+  dedicated signing key (not the shared self-signed certificate). Create an Application `warden-console` with that provider,
+  bind it to your user only, and add it to the **embedded outpost**. Then set
+  `WARDEN_AUTH_AUDIENCE` to the provider's client ID: required, the console
+  refuses every sign-in without it.
+

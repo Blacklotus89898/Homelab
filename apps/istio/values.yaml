@@ -18,3 +18,25 @@ ztunnel:
       memory: 128Mi
     limits:
       memory: 256Mi
+
+# Values for the istiod subchart go under `istiod:` (the ambient umbrella
+# chart's dependency key). NOTE: the top-level `pilot:` block above is NOT
+# read by this chart; istiod runs on the chart default requests (500m / 2Gi).
+# Moving it under istiod: is a separate change, sized from istiod's measured
+# memory first.
+istiod:
+  meshConfig:
+    # authentik's embedded outpost as an Envoy ext_authz provider: the gateway
+    # asks authentik before forwarding a request an AuthorizationPolicy with
+    # `action: CUSTOM, provider: authentik` selects (platform/gateways/authz.yaml).
+    # Allowed requests carry X-Authentik-Username etc. upstream; anything else
+    # gets authentik's login redirect. ADR 0011 amendment 2026-11-24 (console).
+    extensionProviders:
+      - name: authentik
+        envoyExtAuthzHttp:
+          service: authentik.default.svc.cluster.local
+          port: 9000
+          pathPrefix: /outpost.goauthentik.io/auth/envoy
+          headersToDownstreamOnAllow: [set-cookie]
+          headersToUpstreamOnAllow: [set-cookie, x-authentik-*]
+          includeRequestHeadersInCheck: [cookie]
