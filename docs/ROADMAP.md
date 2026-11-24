@@ -3,6 +3,8 @@
 This is the canonical plan for turning this homelab into a full platform/DevOps/SRE project.
 **Any Claude session working in this repo: read this file first, pick the next unchecked item, do it, update this file (status + notes + commit).** Update `## Status` and `## Decision log` as things change — this file is the memory of the project.
 
+**Tasks are tracked on the [project board](https://github.com/users/Blacklotus89898/projects/6)** (Phase 5 = milestone on this repo, issues #57–#72; Petal #2, Warden #7). This file keeps status, notes and the decision log; when an item here has an issue, link it instead of duplicating its task list.
+
 ## Standing constraints
 
 - **Disk is the #1 bottleneck.** Everything runs on ONE Proxmox host that is nearly full. Every new component must justify its footprint: prefer single-binary variants (VictoriaMetrics over kube-prometheus-stack), bounded retention, check `df` on debian + k3s-worker-01 before and after installs. Reclaim before adding.
