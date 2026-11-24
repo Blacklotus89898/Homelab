@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: tether
+  description: "Laptop thin-client CLI: WireGuard toggle, Proxmox dev-VM inventory, one-command SSH / VS Code / tmux"
+  links:
+    - url: https://github.com/Blacklotus89898/tether
+      title: Source (private)
+  annotations:
+    # Runs on laptops, not in the cluster: no ArgoCD app, namespace or image.
+    homelab.io/recovery: git
+  tags:
+    - cli
+    - developer-tools
+spec:
+  type: tool
+  lifecycle: experimental
+  owner: user:blacklotus89898
+  system: homelab
