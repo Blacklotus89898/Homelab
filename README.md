@@ -1,5 +1,7 @@
 # Homelab
 
+[![Validate PR](https://github.com/Blacklotus89898/Homelab/actions/workflows/validate-pr.yaml/badge.svg)](https://github.com/Blacklotus89898/Homelab/actions/workflows/validate-pr.yaml)
+
 GitOps-managed homelab on k3s: ArgoCD app-of-apps, Istio ambient mesh with a Gateway API front
 door (`*.lab.home`), VictoriaMetrics + Grafana, OpenObserve, OTel, [Backstage](backstage/) as the
 developer portal and [Petal](https://github.com/Blacklotus89898/Petal) as the pipeline
@@ -18,6 +20,7 @@ images that `services/<name>/` deploys by commit SHA.
 | [Tulip](https://github.com/Blacklotus89898/Tulip) | human-approved trading agent: **trades** (paper) | `services/tulip` |
 | [Warden](https://github.com/Blacklotus89898/Warden) | read-only alert investigator + status map: **investigates** | `services/warden` |
 | [DaVinci](https://github.com/Blacklotus89898/DaVinci) | knowledge base (runbooks, solutions) + its MCP server: **remembers** | workstation MCP; Warden reads its `docs/` |
+| [Sprout](https://github.com/Blacklotus89898/Sprout) | language-learning platform: **grows** | `services/sprout` |
 
 ```mermaid
 flowchart LR
@@ -27,6 +30,7 @@ flowchart LR
     TU[Tulip]
     WA[Warden]
     DV[DaVinci]
+    SP[Sprout]
   end
   GHCR[(ghcr.io images)]
   subgraph K3S["k3s cluster"]
@@ -34,11 +38,12 @@ flowchart LR
     PEs[petal]
     TUs[tulip]
     WAs[warden]
+    SPs[sprout]
   end
-  PE & TU & WA -->|CI builds :sha| GHCR
+  PE & TU & WA & SP -->|CI builds :sha| GHCR
   HL -->|sync| AR
-  AR --> PEs & TUs & WAs
-  GHCR -.->|pulled| PEs & TUs & WAs
+  AR --> PEs & TUs & WAs & SPs
+  GHCR -.->|pulled| PEs & TUs & WAs & SPs
   DV -.->|git-synced KB| WAs
   AM[alertmanager] -->|webhook| WAs
 ```
@@ -57,6 +62,8 @@ DaVinci `docs/`; per-service operating notes in `services/*/docs/` (TechDocs).
 | [docs/bootstrap.md](docs/bootstrap.md) | How to rebuild it from scratch — ordered procedure + everything git cannot restore |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | What's done, what's next, and the running decision log |
 | `services/*/docs/` | Per-service TechDocs (rendered in Backstage) |
+| [docs/guides/onboarding-a-service.md](docs/guides/onboarding-a-service.md) | How to add a service, step by step |
+| [AGENTS.md](AGENTS.md) | How to work in this repo — for humans and coding agents |
 
 ## Cluster
 
@@ -426,12 +433,12 @@ kubectl create secret generic my-secret -n my-namespace \
 
 ## Adding a new service
 
-1. Create `apps/<service>/application.yaml` (ArgoCD Application)
-2. Create `apps/<service>/values.yaml` if using Helm
-3. Add namespace to `infrastructure/namespaces/namespaces.yaml`
-4. Add `services/<service>/limitrange.yaml` to cap container resources in the namespace
-5. Add `catalog-info.yaml` to the service repo (auto-discovered by Backstage) or add a manual entry to `catalog/components/<service>.yaml` and register in `catalog/all.yaml`
-6. `git push` — ArgoCD auto-deploys
+Use the golden path: **Backstage → Create → New Homelab Service** (`templates/homelab-service`),
+then follow [docs/guides/onboarding-a-service.md](docs/guides/onboarding-a-service.md) for what
+the template can't know. In short, Homelab gets `apps/<name>/application.yaml`, `services/<name>/`
+(SHA-pinned deployment, LimitRange, SealedSecrets), the namespace in
+`infrastructure/namespaces/namespaces.yaml`, a route in `platform/gateways/routes.yaml` and a
+catalog entry. Open a PR; `Validate PR` must pass; ArgoCD deploys on merge.
 
 ## Enrolling a service in the Istio ambient mesh
 
@@ -444,3 +451,7 @@ metadata:
 ```
 
 Note: services accessed via plain HTTP NodePort (like Backstage) must NOT be enrolled.
+
+## Contributing
+
+Read [AGENTS.md](AGENTS.md) first — it is the guide for humans and coding agents alike: commands, layout, the rules that must not break, how to add a feature and how changes ship. Every cluster change goes through git → PR → ArgoCD; never `kubectl apply` outside `bootstrap/`.
