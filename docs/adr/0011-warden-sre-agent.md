@@ -99,7 +99,8 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   the Istio gateway; CPU and memory against limits) and that service's
   Uptime Kuma monitors. Monitors that map to no namespace (Proxmox host,
   LXCs, router) are listed on their own. Routed on the gateway like `/map`
-  (`/services`, `/services.json`).
+  (`/services`, `/services.json`); history graphs (6h-30d) via
+  `/services/history.json` since Warden 77d1655.
 - **Boundary change (§2): one new endpoint, Uptime Kuma's public status
   page.** Two fixed `GET` paths (`/api/status-page/homelab` and
   `/api/status-page/heartbeat/homelab`), no credentials: Warden sees exactly

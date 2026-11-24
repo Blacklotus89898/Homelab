@@ -393,6 +393,9 @@ spec:
             type: Exact
             value: /services.json
         - path:
+            type: Exact
+            value: /services/history.json # graphs on /services (Warden #9)
+        - path:
             type: PathPrefix
             value: /console # behind authentik (platform/gateways/authz.yaml)
 ---

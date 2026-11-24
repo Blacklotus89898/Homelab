@@ -80,7 +80,7 @@ groups:
       - {name: auth.lab.home, type: http, url: "https://auth.lab.home/"}
       - {name: tulip.lab.home, type: http, url: "https://tulip.lab.home/health"}
       - {name: sprout.lab.home, type: http, url: "https://sprout.lab.home/health"}
-      - {name: warden.lab.home, type: http, url: "https://warden.lab.home/map"} # only /map(.json) and /services(.json) are routed
+      - {name: warden.lab.home, type: http, url: "https://warden.lab.home/map"} # routed: /map(.json), /services(.json), /services/history.json, /console (authentik)
 
   - name: Home network
     interval: 120
