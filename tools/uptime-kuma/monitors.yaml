@@ -62,6 +62,7 @@ groups:
       # 2026-11-06: verified 200 from the uptime-kuma pod. Tulip: GET /health only (CLAUDE.md boundary).
       - {name: Tulip, type: http, url: "http://tulip-svc.tulip.svc.cluster.local:8080/health"}
       - {name: Warden, type: http, url: "http://warden.warden.svc.cluster.local:8080/health"}
+      - {name: Sprout, type: http, url: "http://sprout-svc.sprout.svc.cluster.local:8080/health"}
 
   - name: Front door (Istio gateway)
     interval: 120
@@ -78,7 +79,8 @@ groups:
       - {name: petal.lab.home, type: http, url: "https://petal.lab.home/"}
       - {name: auth.lab.home, type: http, url: "https://auth.lab.home/"}
       - {name: tulip.lab.home, type: http, url: "https://tulip.lab.home/health"}
-      - {name: warden.lab.home, type: http, url: "https://warden.lab.home/map"} # only /map + /map.json are routed
+      - {name: sprout.lab.home, type: http, url: "https://sprout.lab.home/health"}
+      - {name: warden.lab.home, type: http, url: "https://warden.lab.home/map"} # only /map(.json) and /services(.json) are routed
 
   - name: Home network
     interval: 120
