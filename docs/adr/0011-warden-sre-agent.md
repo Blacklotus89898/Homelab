@@ -110,7 +110,7 @@ The boundary (phase 1). Each point must stay checkable in the repo:
 
 ## Amendment — 2026-11-24 (2): operator console behind authentik
 
-- **`/console`** (Warden #8): where the operator investigates. Investigation
+- **`/console`** (Warden 44db4fc, #8): where the operator investigates. Investigation
   pages (bundle, journal trail, the operator's append-only diagnosis),
   "investigate now" on a namespace/pod/node, and per namespace: what changed
   (ArgoCD deploys and failed syncs, restarts, events, alerts, diagnoses), blast
