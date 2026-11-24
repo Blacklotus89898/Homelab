@@ -94,7 +94,7 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   approval step for anything a model would automate, to learn the platform
   hands-on. Warden gathers and presents evidence; it does not conclude. No
   model credential is sealed. Deterministic automation is unaffected.
-- **`/services`** (Warden 34b8a30): one row per ArgoCD-deployed namespace
+- **`/services`** (Warden 59ab6e7): one row per ArgoCD-deployed namespace
   with the four golden signals over 5 minutes (traffic, 5xx share and p95 at
   the Istio gateway; CPU and memory against limits) and that service's
   Uptime Kuma monitors. Monitors that map to no namespace (Proxmox host,
