@@ -1,11 +1,3 @@
-pilot:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
-
 cni:
   # k3s 1.34 uses non-standard paths for both config and binaries
   cniConfDir: /var/lib/rancher/k3s/agent/etc/cni/net.d
@@ -20,11 +12,22 @@ ztunnel:
       memory: 256Mi
 
 # Values for the istiod subchart go under `istiod:` (the ambient umbrella
-# chart's dependency key). NOTE: the top-level `pilot:` block above is NOT
-# read by this chart; istiod runs on the chart default requests (500m / 2Gi).
-# Moving it under istiod: is a separate change, sized from istiod's measured
-# memory first.
+# chart's dependency key); a top-level `pilot:` block is NOT read by this
+# chart. Until 2026-11-24 the sizing sat under `pilot:` and istiod ran on the
+# chart defaults (requests 500m / 2Gi, no limit), reserving 2Gi on a small
+# node. istiod for ~20 namespaces and two nodes typically sits at 100-250Mi;
+# the 1Gi limit leaves 4x headroom (an OOM-killed istiod stops config pushes
+# only: ztunnel and the gateway keep serving their last config). Check
+# container_memory_working_set_bytes{namespace="istio-system",container="discovery"}
+# after the sync and tighten later.
 istiod:
+  pilot:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
   meshConfig:
     # authentik's embedded outpost as an Envoy ext_authz provider: the gateway
     # asks authentik before forwarding a request an AuthorizationPolicy with
