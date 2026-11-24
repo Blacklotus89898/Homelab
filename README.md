@@ -18,6 +18,7 @@ images that `services/<name>/` deploys by commit SHA.
 | [Tulip](https://github.com/Blacklotus89898/Tulip) | human-approved trading agent: **trades** (paper) | `services/tulip` |
 | [Warden](https://github.com/Blacklotus89898/Warden) | read-only alert investigator + status map: **investigates** | `services/warden` |
 | [DaVinci](https://github.com/Blacklotus89898/DaVinci) | knowledge base (runbooks, solutions) + its MCP server: **remembers** | workstation MCP; Warden reads its `docs/` |
+| [tether](https://github.com/Blacklotus89898/tether) (private) | laptop thin client: WireGuard, Proxmox dev VMs, SSH / VS Code / tmux: **connects** | runs on laptops; scoped PVE token (ROADMAP 2026-11-24) |
 
 ```mermaid
 flowchart LR
