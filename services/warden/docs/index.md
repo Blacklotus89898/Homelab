@@ -43,7 +43,10 @@ traffic. Every phone push on `warden` opens its investigation here.
 
 1. Providers → Create → **Proxy Provider**: name and slug `warden-console`,
    **Forward auth (single application)**, external host
-   `https://warden.lab.home`. Pick a signing key (Advanced protocol settings).
+   `https://warden.lab.home`. Signing key (Advanced protocol settings): a
+   **dedicated** key (System → Certificates → Generate, e.g.
+   `warden-console-signing`), not the shared self-signed one, so tokens other
+   apps get are signed by a different key and fail verification outright.
 2. Applications → Create: `warden-console`, provider `warden-console`.
    Policy/Group/User bindings: bind your user only.
 3. Outposts → **authentik Embedded Outpost** → edit → add `warden-console`.
