@@ -137,5 +137,6 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   (single application)**, external host `https://warden.lab.home`, a signing
   key selected. Create an Application `warden-console` with that provider,
   bind it to your user only, and add it to the **embedded outpost**. Then set
-  `WARDEN_AUTH_AUDIENCE` to the provider's client ID.
+  `WARDEN_AUTH_AUDIENCE` to the provider's client ID: required, the console
+  refuses every sign-in without it.
 

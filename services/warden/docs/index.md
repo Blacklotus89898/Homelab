@@ -48,7 +48,8 @@ traffic. Every phone push on `warden` opens its investigation here.
    Policy/Group/User bindings: bind your user only.
 3. Outposts → **authentik Embedded Outpost** → edit → add `warden-console`.
 4. Copy the provider's **Client ID** into `WARDEN_AUTH_AUDIENCE` in
-   `services/warden/deployment.yaml` (PR), so tokens for other apps are refused.
+   `services/warden/deployment.yaml` (PR). **Required:** until it is set the
+   console refuses every sign-in, so tokens minted for other apps can't pass.
 
 **Checks:** `/console` without a session redirects to `auth.lab.home`; after
 sign-in the header shows "signed in as <you>". "not signed in" with the page
