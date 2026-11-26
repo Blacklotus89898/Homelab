@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: warden
-          image: ghcr.io/blacklotus89898/warden:77d16552e60d0a05712888650395df41528236fb
+          image: ghcr.io/blacklotus89898/warden:e240f784c1d01c711c9c1fcc3518b1cb3f0764b6
           imagePullPolicy: IfNotPresent
           args: ["-addr", ":8080", "-db", "/data/warden.db"]
           env:
@@ -67,6 +67,14 @@ spec:
             # investigation here; the user header comes from authentik.
             - name: WARDEN_PUBLIC_URL
               value: https://warden.lab.home
+            # ntfy buttons + daily summary (Warden e240f78): the digest's Grafana
+            # button, and one low-priority summary push a day at 08:00 Toronto.
+            - name: WARDEN_GRAFANA_URL
+              value: https://grafana.lab.home/d/service-health
+            - name: WARDEN_SUMMARY_AT
+              value: "08:00"
+            - name: WARDEN_SUMMARY_TZ
+              value: America/Toronto
             # The console user comes only from authentik's signed X-Authentik-Jwt,
             # checked against the "warden-console" provider's public keys
             # (dedicated RS256 key "warden-console-signing"). The audience is
