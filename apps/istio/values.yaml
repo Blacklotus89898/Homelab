@@ -34,6 +34,10 @@ istiod:
     # `action: CUSTOM, provider: authentik` selects (platform/gateways/authz.yaml).
     # Allowed requests carry X-Authentik-Username etc. upstream; anything else
     # gets authentik's login redirect. ADR 0011 amendment 2026-11-24 (console).
+    # `authorization` lets a terminal client sign in with HTTP Basic (username
+    # + authentik app password) instead of a browser cookie; authentik checks
+    # it when the provider has header authentication on. ADR 0011 amendment
+    # 2026-11-25 (terminal client).
     extensionProviders:
       - name: authentik
         envoyExtAuthzHttp:
@@ -42,4 +46,4 @@ istiod:
           pathPrefix: /outpost.goauthentik.io/auth/envoy
           headersToDownstreamOnAllow: [set-cookie]
           headersToUpstreamOnAllow: [set-cookie, x-authentik-*]
-          includeRequestHeadersInCheck: [cookie]
+          includeRequestHeadersInCheck: [cookie, authorization]

@@ -141,3 +141,42 @@ The boundary (phase 1). Each point must stay checkable in the repo:
   `WARDEN_AUTH_AUDIENCE` to the provider's client ID: required, the console
   refuses every sign-in without it.
 
+## Amendment — 2026-11-25: terminal client (k9s plugin, later a tether view)
+
+The operator debugs from a terminal (k9s, kubectl, stern) as much as from the
+browser. Warden's evidence should be one keystroke away there too.
+
+- **Warden stays a server; the terminal side is a client.** No TUI, kubectl
+  or k9s goes into Warden's image or process. A client reads Warden's HTTP
+  API and hands off to the operator's own tools. Kubernetes actions taken from
+  k9s run with the **operator's** kubeconfig, never Warden's SA: §1 and §2 are
+  unchanged and Warden still reads, never writes.
+- **Step 1: a k9s plugin** (Warden `contrib/k9s/`). On a pod, namespace or
+  node: open the console there, or run "investigate now" and open the result.
+  Suggested k9s runs `--readonly` by default; writes are a deliberate restart
+  without it.
+- **Step 2 (later): a platform view in tether** (Bubble Tea, already the
+  laptop's dashboard): `/services.json`, investigations, what changed and
+  blast radius, with hand-offs to `k9s --readonly -n <ns>`, `stern` and
+  Grafana, and a key to append a diagnosis. Its own ADR in tether when built.
+  Not a second TUI in the Warden repo.
+- **Access change (amends 2026-11-24 (2)):** the gateway now also passes
+  `Authorization` to authentik (`includeRequestHeadersInCheck: [cookie,
+  authorization]`), so a client can sign in with HTTP Basic: the operator's
+  username and an authentik **app password**. authentik still decides and
+  still mints the signed `X-Authentik-Jwt` that Warden verifies; Warden's own
+  code and checks are unchanged. Writes still need JSON plus
+  `X-Warden-Request: 1`, and stay journal-only and rate-limited.
+- **The credential:** one app password per machine, with an expiry, stored
+  outside any repo (`~/.config/warden/credentials`, mode 600). It is the
+  operator's identity at authentik, so it can reach any application whose
+  provider accepts header authentication: enable that only on
+  `warden-console`. Revoke: authentik → Directory → Tokens → delete it.
+- **Operator setup (authentik UI, once):** on provider `warden-console`,
+  turn on **Intercept header authentication** (Advanced protocol settings),
+  then create an app password (user settings → Tokens and App passwords).
+  Check: `curl -u <user>:<app password> https://warden.lab.home/console/api/whoami`
+  returns your username. Without these steps the plugin's console links still
+  work (they open the browser, which has its cookie); only "investigate now"
+  from the terminal needs the app password.
+
