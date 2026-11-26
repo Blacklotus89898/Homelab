@@ -112,7 +112,7 @@ This is the canonical plan for turning this homelab into a full platform/DevOps/
     - [ ] Bootstrap rehearsal in CI + a scheduled check that every pinned image digest still resolves with linux/amd64; keyring-restore (phase 5) still unproven
     - [x] Petal multi-repo runs ✅ 2026-10-24 (Petal ADR 0004, Petal 456e289; Homelab 1b01bb5 → 7d4e66f): allowlist ConfigMap, `petal-checkout` step, `petal.io/repo` annotation drives `petal:run`; Jenkins' old job lives on as `.petal/pipelines/validate.yaml` (first real runs caught two silent-pass bugs in the NodePort check — KB solutions/petal-multi-repo-runs.md)
     - [x] Pi-hole DNS captured ✅ 2026-11-05: `hosts/pihole/` has 35 `dns.hosts` records plus the `*.lab.home` dnsmasq wildcard (cnameRecords is empty), with re-capture and restore steps
-    - [ ] Pi-hole settings + lists captured: `hosts/pihole/capture.sh` added 2026-11-26 (read-only, secrets redacted on the Proxmox host); run it once and commit the output
+    - [x] Pi-hole settings + lists captured ✅ 2026-11-26: `hosts/pihole/capture.sh` (read-only, secrets redacted on the Proxmox host); Pi-hole v6.4.1, upstreams 1.1.1.1/1.0.0.1, 1 adlist (StevenBlack), no domainlist entries, Default group only
     - [ ] Floaters: decide juice-shop, portainer-agent, paperless (6 PVCs ≈ 22Gi) — adopt or delete
     - [ ] Branch protection is admin-bypassed on every push ("Bypassed rule violations… 8 of 8 required status checks") — enforce for admins or document the bypass as policy
     - [ ] Re-run `tools/uptime-kuma/provision.py` (user creds) — 13 monitors still on `:30328`

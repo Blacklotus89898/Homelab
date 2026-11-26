@@ -1,0 +1,2 @@
+# groups: id | name | enabled | description, captured 2026-11-26 by hosts/pihole/capture.sh. Do not edit by hand.
+0 | Default | enabled=1 | The default group

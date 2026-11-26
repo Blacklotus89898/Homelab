@@ -1,0 +1,2 @@
+# clients: ip | comment, captured 2026-11-26 by hosts/pihole/capture.sh. Do not edit by hand.
+F6:C3:9B:DD:3C:31 | 

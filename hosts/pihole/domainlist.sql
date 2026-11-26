@@ -1,0 +1,1 @@
+-- allow/deny entries (gravity.db domainlist; type 0 exact allow, 1 exact deny, 2 regex allow, 3 regex deny), captured 2026-11-26 by hosts/pihole/capture.sh. Do not edit by hand.

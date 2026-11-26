@@ -1,0 +1,2 @@
+# Pi-hole and FTL versions, captured 2026-11-26 by hosts/pihole/capture.sh. Do not edit by hand.
+v6.4.1

@@ -27,7 +27,10 @@ hosts/pihole/capture.sh
 
 - Read-only on Pi-hole: it reads `pihole.toml` and queries `gravity.db`.
 - Password hashes and the TOTP secret are redacted **on the Proxmox host**, so they never
-  reach the laptop. If anything hash- or key-like survives, the script stops and writes nothing.
+  reach the laptop. The container's free-text Proxmox Notes are dropped too: the Pi-hole
+  installer writes its generated admin password there in plain text.
+- If anything hash-, key- or password-like survives, the script stops, names the file
+  (never the value) and writes nothing.
 - It rewrites the generated files above and only *reports* drift for `dns-hosts.txt` and
   `dnsmasq-lines.txt`; update those two by hand when it says they differ.
 - Review `git diff` before committing (client comments can carry names).

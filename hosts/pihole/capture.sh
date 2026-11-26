@@ -44,7 +44,9 @@ q "SELECT id || ' | ' || name || ' | enabled=' || enabled || ' | ' || ifnull(des
 q "SELECT ip || ' | ' || ifnull(comment, '') FROM client ORDER BY id;" >"$d/clients.txt"
 
 { x pihole-FTL --version; x sh -c 'pihole -v 2>/dev/null || true'; } >"$d/version.txt"
-pct config "$CT" >"$d/lxc-$CT.conf"
+# Drop the free-text Notes: the Pi-hole installer writes its generated admin
+# password there in plain text.
+pct config "$CT" | grep -v '^description:' >"$d/lxc-$CT.conf"
 
 tar -C "$d" -cf - .
 REMOTE
@@ -53,7 +55,11 @@ mkdir -p "$tmp/x"
 tar -C "$tmp/x" -xf "$tmp/capture.tar"
 
 # Second line of defence: nothing hash- or key-like may leave this script.
-if grep -rlE '\$(BALLOON|argon2|pbkdf2|2[aby]\$)|[0-9a-f]{64}|-----BEGIN' "$tmp/x" >"$tmp/leaks"; then
+# Hashes, keys, and plaintext passwords ("password is X", "password: X", "passwd=X"),
+# but not pihole.toml's comments about passwords.
+if { grep -rlE '\$(BALLOON|argon2|pbkdf2|2[aby]\$)|[0-9a-f]{64}|-----BEGIN' "$tmp/x"
+     grep -rniE '^[^#]*pass(word|wd)?([[:space:]]+is[[:space:]]+|[[:space:]]*[:=][[:space:]]*"?)[A-Za-z0-9]' "$tmp/x" |
+       grep -v '<redacted>' | cut -d: -f1; } | sort -u >"$tmp/leaks" && [ -s "$tmp/leaks" ]; then
   # File names only: never print the value itself.
   echo "capture.sh: something secret-looking survived redaction in: $(xargs -n1 basename <"$tmp/leaks" | tr '\n' ' ')" >&2
   echo "Nothing written. Extend the redaction sed for that key, then rerun." >&2
