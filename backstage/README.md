@@ -2,7 +2,7 @@
 
 Custom Backstage instance for the homelab, deployed via ArgoCD to the `backstage` namespace.
 
-- **Live URL:** http://192.168.0.108:30900
+- **Live URL:** https://backstage.lab.home
 - **Platform version:** 1.53.0 (new declarative frontend)
 - **Image:** `ghcr.io/blacklotus89898/backstage:latest` (built by `.github/workflows/build-backstage.yaml`)
 

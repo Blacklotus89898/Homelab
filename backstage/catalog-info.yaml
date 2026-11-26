@@ -4,7 +4,7 @@ metadata:
   name: backstage
   description: Homelab developer portal
   links:
-    - url: http://192.168.0.108:30900
+    - url: https://backstage.lab.home
       title: Backstage UI
   annotations:
     argocd/app-name: backstage

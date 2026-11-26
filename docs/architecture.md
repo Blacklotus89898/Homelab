@@ -321,13 +321,13 @@ flowchart LR
   subgraph mesh["Istio ambient (L4)"]
     Z["ztunnel sidecar-less proxy<br/>mTLS between enrolled namespaces"]
   end
-  audiobookshelf & kavita & linkding & openobserve & monitoring & homelab -.-> Z
+  audiobookshelf & kavita & linkding & openobserve & monitoring & homelab & backstage -.-> Z
 ```
 
 | Namespace | In mesh? | Why |
 |---|---|---|
 | monitoring, openobserve, homelab, kavita, linkding, audiobookshelf | ✅ | no NodePort exposure conflict |
-| backstage | ❌ | not enrolled yet (NodePort alone is no blocker — see above); ADR 0009 enrollment phase |
+| backstage | ✅ | enrolled 2026-11-25 with its move to https://backstage.lab.home |
 | petal | ❌ | privileged DinD sidecar |
 | monitoring/uptime-kuma (pod-level opt-out) | ❌ | ztunnel completes every outbound TCP connect locally — TCP port probes from inside the mesh always read UP; probers must sit outside it (KB solutions/istio-ambient-fake-tcp-connect.md) |
 | heartbeat | ❌ | a CronJob that only pushes to GitHub; nothing to protect in-mesh |

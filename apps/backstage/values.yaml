@@ -47,12 +47,12 @@ backstage:
   appConfig:
     app:
       title: Homelab Portal
-      baseUrl: http://192.168.0.108:30900
+      baseUrl: https://backstage.lab.home
     organization:
       name: Homelab
 
     backend:
-      baseUrl: http://192.168.0.108:30900
+      baseUrl: https://backstage.lab.home
       listen:
         port: 7007
       # Automation caller (E2E checks, scripted petal:run): a static service
@@ -76,7 +76,7 @@ backstage:
           user: ${POSTGRES_USER}
           password: ${POSTGRES_PASSWORD}
       cors:
-        origin: http://192.168.0.108:30900
+        origin: https://backstage.lab.home
         methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
         credentials: true
       reading:

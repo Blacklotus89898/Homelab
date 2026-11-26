@@ -4,7 +4,7 @@ metadata:
   name: backstage
   description: Developer portal - service catalog, scaffolder golden path, TechDocs
   links:
-    - url: http://192.168.0.108:30900
+    - url: https://backstage.lab.home
       title: Backstage Portal
   annotations:
     argocd/app-name: backstage

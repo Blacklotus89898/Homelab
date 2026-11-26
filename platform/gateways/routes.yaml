@@ -4,9 +4,8 @@
 # Attaches to the https listener only: https://<name>.lab.home (TLS, wildcard
 # cert). Plain http is answered by the catch-all 301 in http-redirect.yaml.
 #
-# Not routed yet: backstage — its app/backend baseUrl and GitHub OAuth callback
-# are bound to http://192.168.0.108:30900; moving it is a config + OAuth-app
-# change that ships through its canary rollout, separately.
+# backstage: routed 2026-11-25; its baseUrl and the GitHub OAuth app callback
+# moved with it (https://backstage.lab.home/api/auth/github/handler/frame).
 ---
 # server.insecure=true; CLI via gateway needs --grpc-web
 apiVersion: gateway.networking.k8s.io/v1
@@ -453,3 +452,31 @@ spec:
         - path:
             type: PathPrefix
             value: /outpost.goauthentik.io
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: backstage
+  namespace: backstage
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # after Gateway lab (4): a route is only Healthy once a parent accepts it
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: lab
+      namespace: istio-system
+      sectionName: https # http is redirect-only (http-redirect.yaml)
+  hostnames:
+    - backstage.lab.home
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: backstage
+          port: 7007
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
