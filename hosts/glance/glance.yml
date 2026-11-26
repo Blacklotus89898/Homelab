@@ -122,10 +122,12 @@ pages:
                 icon: di:ntfy
               # Added 2026-11-12, each verified 200 from the LAN first.
               - title: Tulip
-                url: https://tulip.lab.home/health # /health only, never /approve or /killswitch
+                url: https://tulip.lab.home/ # → /charts; never link /approve or /killswitch
+                check-url: https://tulip.lab.home/health
                 icon: si:tradingview
               - title: Warden
-                url: https://warden.lab.home/map # only /map + /map.json are routed
+                url: https://warden.lab.home/ # → /map
+                check-url: https://warden.lab.home/health
                 icon: si:datadog
               - title: Sprout
                 url: https://sprout.lab.home/health

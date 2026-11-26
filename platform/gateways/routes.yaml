@@ -341,6 +341,17 @@ spec:
   hostnames:
     - tulip.lab.home
   rules:
+    - matches: # Tulip has no / page; land on the charts
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /charts
+            statusCode: 302
     - backendRefs:
         - group: ""
           kind: Service
@@ -373,6 +384,17 @@ spec:
   hostnames:
     - warden.lab.home
   rules:
+    - matches: # bare host lands on the status map
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /map
+            statusCode: 302
     - backendRefs:
         - group: ""
           kind: Service
@@ -398,6 +420,9 @@ spec:
         - path:
             type: PathPrefix
             value: /console # behind authentik (platform/gateways/authz.yaml)
+        - path:
+            type: Exact
+            value: /health # LAN-open liveness (ADR 0011 amendment 2026-11-24 (2)); /investigations and /metrics stay in-cluster
 ---
 # authentik's outpost paths on warden.lab.home: the login callback and the
 # sign-out URL live under the protected app's own host in forward-auth mode.

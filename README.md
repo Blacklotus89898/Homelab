@@ -76,7 +76,8 @@ DaVinci `docs/`; per-service operating notes in `services/*/docs/` (TechDocs).
 **Front door (ADR 0009):** every service below except Backstage is also served by the Istio
 gateway at `https://<name>.lab.home` (TLS, local CA; `http://` 301s to https) — `argocd`, `grafana`, `kavita`,
 `linkding`, `audiobookshelf`, `uptime`, `ntfy`, `opencost`, `openobserve`, `jenkins`,
-`petal`, `auth`. Needs the Pi-hole wildcard (`docs/bootstrap.md` ledger) and the CA trusted
+`petal`, `auth`, `sprout`, and the gateway-only services in the table's last rows (`warden`,
+`tulip`). Needs the Pi-hole wildcard (`docs/bootstrap.md` ledger) and the CA trusted
 once per device: `kubectl -n cert-manager get secret lab-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > lab-root-ca.crt`.
 traefik is disabled (2026-10-22) — the gateway owns 80/443 via k3s ServiceLB. The raw
 NodePorts below still work but are legacy; prefer the hostnames.
@@ -96,6 +97,8 @@ NodePorts below still work but are legacy; prefer the hostnames.
 | ntfy | http://192.168.0.108:30310 | push alerts; topic `homelab-alerts` |
 | uptime-kuma | http://192.168.0.108:30320 | external prober |
 | OpenCost | http://192.168.0.108:30330 | cost view; reads vmsingle as its Prometheus |
+| Warden | https://warden.lab.home | gateway only; `/` → `/map`. LAN-open: `/map`, `/services`, `/health`; `/console` behind authentik. `/investigations`, `/metrics` stay in-cluster |
+| Tulip | https://tulip.lab.home | gateway only; `/` → `/charts`. Also `/scorecard`; `/approve/…` and `/killswitch` are the operator's (Tulip ADR 0002) |
 
 ## Bootstrap / rebuild
 
