@@ -55,7 +55,11 @@ To redo it (e.g. after losing authentik's database):
    Check: the JWKS URL below lists one RS256 key.
 3. Applications → Create: `warden-console` (slug too), provider
    `warden-console`. Bindings: your user only (`akadmin`).
-4. Outposts → **authentik Embedded Outpost** → edit → add `warden-console`.
+4. Outposts → **authentik Embedded Outpost** → edit → add `warden-console`,
+   and set its config `authentik_host: https://auth.lab.home`. The embedded
+   outpost builds the login redirect from `authentik_host`
+   (`authentik_host_browser` is ignored for it); left at the NodePort
+   (`http://192.168.0.112:30080`) the login page is served over plain HTTP.
 5. The provider's **Client ID** goes in `WARDEN_AUTH_AUDIENCE` in
    `services/warden/deployment.yaml` (PR). Without it the console refuses
    every sign-in, so tokens minted for other apps can't pass.
