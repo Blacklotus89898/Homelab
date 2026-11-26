@@ -68,12 +68,14 @@ spec:
             - name: WARDEN_PUBLIC_URL
               value: https://warden.lab.home
             # The console user comes only from authentik's signed X-Authentik-Jwt,
-            # checked against the "warden-console" provider's public keys.
-            # REQUIRED next step: add WARDEN_AUTH_AUDIENCE = that provider's
-            # client ID. Until then the console refuses every sign-in (a token
-            # minted for another authentik app would otherwise pass).
+            # checked against the "warden-console" provider's public keys
+            # (dedicated RS256 key "warden-console-signing"). The audience is
+            # that provider's client ID (public): a token minted for another
+            # authentik app fails it.
             - name: WARDEN_AUTH_JWKS_URL
               value: http://authentik.default.svc:9000/application/o/warden-console/jwks/
+            - name: WARDEN_AUTH_AUDIENCE
+              value: vpPl1PkMzjndJNxsEfqw9ulzIEMLGOEhCBqGXakW
             - name: WARDEN_KUMA_URL
               value: http://uptime-kuma.monitoring.svc:3001
             - name: WARDEN_KUMA_MAP
