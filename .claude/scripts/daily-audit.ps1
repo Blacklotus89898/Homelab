@@ -3,8 +3,8 @@
 # Logs: %USERPROFILE%\homelab-audits\audit-<stamp>.md (+ latest.md copy, 30-day retention)
 
 $ErrorActionPreference = 'Continue'
-$RepoDir = 'C:\Users\songy\Homelab'
-$Claude  = 'C:\Users\songy\.local\bin\claude.exe'
+$RepoDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)   # .claude/scripts -> repo root, wherever it's cloned
+$Claude  = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
 $LogDir  = Join-Path $env:USERPROFILE 'homelab-audits'
 $Stamp   = Get-Date -Format 'yyyy-MM-dd_HHmm'
 $Log     = Join-Path $LogDir "audit-$Stamp.md"
