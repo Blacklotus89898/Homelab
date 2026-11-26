@@ -178,6 +178,9 @@ pages:
               - title: PeakForm
                 url: https://peakformtest.vercel.app
                 icon: si:vercel
+              - title: Martlet
+                url: https://martlet-brown.vercel.app # McGill hackathon app (DongtaiHuang/Martlet)
+                icon: si:vercel
 
           - type: repository
             repository: Blacklotus89898/Homelab
@@ -228,7 +231,7 @@ pages:
                     url: https://argocd.lab.home/
                     icon: di:argo-cd
                   - title: Backstage
-                    url: http://192.168.0.108:30900/ # not on the gateway yet (OAuth callback move pending)
+                    url: https://backstage.lab.home/
                     icon: di:backstage
                   - title: Petal
                     url: https://petal.lab.home/
@@ -326,6 +329,9 @@ pages:
                 links:
                   - title: Homelab repo
                     url: https://github.com/Blacklotus89898/Homelab
+                    icon: si:github
+                  - title: Martlet repo
+                    url: https://github.com/DongtaiHuang/Martlet
                     icon: si:github
                   - title: Petal repo
                     url: https://github.com/Blacklotus89898/Petal
