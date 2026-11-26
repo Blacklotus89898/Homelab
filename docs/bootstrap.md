@@ -92,9 +92,9 @@ Pi-hole is CT 107 at **192.168.0.53** and serves `*.home` plus the front-door wi
 3. **Front-door wildcard** (ADR 0009). On Pi-hole v6, `misc.dnsmasq_lines` =
    `address=/lab.home/192.168.0.108`; on v5, drop that line into `/etc/dnsmasq.d/`.
 4. Local records (`dns.hosts`): `debian.home` → .112, `k3s-worker-01` → .108, `proxmox.home` →
-   .115, `glance.home` → .118. ⚠️ The live list has 35 records and is **not captured in git**
-   (capturing it needs the Pi-hole password). Export it (`pihole-FTL --config dns.hosts` or
-   Teleporter) into `hosts/pihole/` the next time you're in.
+   .115, `glance.home` → .118. All 35 records are in `hosts/pihole/dns-hosts.txt`.
+5. Everything else (settings, blocklists, allow/deny lists): restore from `hosts/pihole/`
+   per its README. Re-capture with `hosts/pihole/capture.sh` (read-only, secrets redacted).
 
 Done when: `nslookup anything.lab.home 192.168.0.53` → 192.168.0.108.
 
@@ -325,7 +325,7 @@ pushes). No keyring restored, so phase 5 ran as [If the keyring is lost](#if-the
 | Layer | Lives in | Captured in git? |
 |---|---|---|
 | Proxmox host config, other LXCs (immich, vault, npm, smb, portainer…) | the host | no. Only the k3s VM specs (`hosts/proxmox/`) |
-| Pi-hole `dns.hosts` (35 records) | Pi-hole | **no**. Wildcard line: yes, documented above |
+| Pi-hole records, wildcard, settings, lists | Pi-hole | yes (`hosts/pihole/`, `capture.sh`); admin password no |
 | Node OS, SSH keys, sudoers, k3s join token | nodes | config yes (`bootstrap/nodes/`); secrets no |
 | sealed-secrets keyring | password manager | never |
 | Hand-made Secrets (Phase 8) | cluster | **no** |
