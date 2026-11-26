@@ -16,7 +16,7 @@ Developer portal - service catalog, scaffolder golden path, TechDocs (this doc s
 |---|---|
 | Namespace | `backstage` |
 | Image | `ghcr.io/blacklotus89898/backstage:ddf415be3556` (CI-built) |
-| URL | http://192.168.0.108:30900 |
+| URL | https://backstage.lab.home |
 
 ## Operations
 

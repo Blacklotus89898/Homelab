@@ -85,7 +85,7 @@ NodePorts below still work but are legacy; prefer the hostnames.
 | Service | URL | Notes |
 |---|---|---|
 | ArgoCD | http://192.168.0.108:31991 | admin / see argocd secret |
-| Backstage | http://192.168.0.108:30900 | GitHub OAuth |
+| Backstage | https://backstage.lab.home | GitHub OAuth |
 | OpenObserve | http://192.168.0.108:30500 | creds: `kubectl -n openobserve get secret openobserve-auth -o jsonpath='{.data.password}' \| base64 -d` (rotation pending — see [Sealed Secrets](#sealed-secrets)) |
 | Jenkins | http://192.168.0.108:30808 | ns: jenkins; JCasC auto-configured |
 | Kavita | http://192.168.0.108:30050 | ns: kavita; hostPath /mnt/smb_storage (VirtioFS) |
